@@ -38,12 +38,26 @@ BOOL __GET_CLASS_MASK_IS_TEMPLATE(size_t* mask) {
   return (BOOL)((*mask & 256) && 1);
 }
 
+BOOL __GET_CLASS_MASK_IS_BARE(size_t* mask) {
+  return (BOOL)((*mask & 512) && 1);
+}
+
 unsigned int __GET_CLASS_MASK_COUNT_INSTANCES(size_t* mask) {
   return (*mask) >> (__CHAR_BIT__ * sizeof(int));
 }
 
 void __SET_CLASS_MASK_DYNAMIC(size_t* mask, BOOL new_type) {
   *mask |= 1;
+  *mask ^= !new_type;
+}
+
+BOOL __SET_CLASS_MASK_HYBRID(size_t* mask, BOOL new_type) {
+  *mask |= 2;
+  *mask ^= !new_type;
+}
+
+BOOL __SET_CLASS_MASK_INHERITS(size_t* mask, BOOL new_type) {
+  *mask |= 4;
   *mask ^= !new_type;
 }
 
@@ -74,6 +88,11 @@ void __SET_CLASS_MASK_SUPER(size_t* mask, BOOL new_type) {
 
 void __SET_CLASS_MASK_TEMPLATE(size_t* mask, BOOL new_type) {
   *mask |= 256;
+  *mask ^= !new_type;
+}
+
+void __SET_CLASS_MASK_BARE(size_t* mask, BOOL new_type) {
+  *mask |= 512;
   *mask ^= !new_type;
 }
 
@@ -182,20 +201,23 @@ typedef struct CLASS_NAME { \
 } CLASS_NAME; \
 void* CLASS_NAME##_init(CLASS_NAME*, ...); \
 void* CLASS_NAME##_destroy(CLASS_NAME*); \
-size_t __##CLASS_NAME##_MASK = MASK; \
-method_function_t __meta_##CLASS_NAME[2 + STATIC_METHOD_COUNT] = {(method_function_t) CLASS_NAME##_init, \
-  (method_function_t) CLASS_NAME##_destroy, __VA_ARGS__}; \
-size_t __##CLASS_NAME##_BUILT_IN_METHOD_CURRENT_INDEX__ = 3; \
-size_t __##CLASS_NAME##_BUILT_IN_METHOD_TABLE__[__BUILT_IN_METHOD_TABLE_SIZE__] = {1, 2, 0, 0, 0, 0, 0, 0, \
-                                                                                   0, 0, 0, 0, 0, 0, 0, 0, \
-                                                                                   0, 0, 0, 0, 0, 0, 0, 0, \
-                                                                                   0, 0, 0, 0, 0, 0, 0, 0};
+size_t __##CLASS_NAME##_MASK = (MASK) | \
+  (66 * (STATIC_METHOD_COUNT == 0)) | \
+  (578 * (STATIC_METHOD_COUNT + 1 == 0)); \
+method_function_t __meta_##CLASS_NAME[2 + ((STATIC_METHOD_COUNT + 1 == 0) ? 0, STATIC_METHOD_COUNT)] = \
+  {(method_function_t) CLASS_NAME##_init, (method_function_t) CLASS_NAME##_destroy, __VA_ARGS__}; \
+size_t __##CLASS_NAME##_BUILT_IN_METHOD_CURRENT_INDEX__ = (STATIC_METHOD_COUNT + 1 == 0) ? 0 : 3; \
+size_t __##CLASS_NAME##_BUILT_IN_METHOD_TABLE__[(STATIC_METHOD_COUNT + 1 == 0) ? \
+  2 : __BUILT_IN_METHOD_TABLE_SIZE__] = {1, 2, 0, 0, 0, 0, 0, 0, \
+                                         0, 0, 0, 0, 0, 0, 0, 0, \
+                                         0, 0, 0, 0, 0, 0, 0, 0, \
+                                         0, 0, 0, 0, 0, 0, 0, 0};
 
 #define CLASS( CLASS_NAME, FIELD_DEFINITIONS, METHOD_COUNT, ...  ) \
-  __GENERIC_CLASS_DEFINITION_MACRO__( CLASS_NAME, FIELD_DEFINITIONS, METHOD_COUNT, METHOD_COUNT, 3 | ((METHOD_COUNT) == 0 ? 64 : 0), __VA_ARGS__ )
+  __GENERIC_CLASS_DEFINITION_MACRO__( CLASS_NAME, FIELD_DEFINITIONS, METHOD_COUNT, METHOD_COUNT, 3, __VA_ARGS__ )
 
 #define STATIC_CLASS( CLASS_NAME, FIELD_DEFINITIONS, METHOD_COUNT, ... ) \
-  __GENERIC_CLASS_DEFINITION_MACRO__( CLASS_NAME, FIELD_DEFINITIONS, 0, METHOD_COUNT, 0 | ((METHOD_COUNT) == 0 ? 64 : 0), __VA_ARGS__ )
+  __GENERIC_CLASS_DEFINITION_MACRO__( CLASS_NAME, FIELD_DEFINITIONS, 0, METHOD_COUNT, 0, __VA_ARGS__ )
 
 #define CLASS_END( CLASS_NAME, ... ) void* CLASS_NAME##_init(CLASS_NAME* self, ...) { \
   if (sizeof(__meta_##CLASS_NAME) == 2 * sizeof(method_function_t)) { \
@@ -348,10 +370,10 @@ size_t __##CLASS_NAME##_BUILT_IN_METHOD_TABLE__[__BUILT_IN_METHOD_TABLE_SIZE__] 
 #define CLASS_META( CLASS_NAME ) __meta_##CLASS_NAME
 
 #define INHERIT( CLASS_NAME, BASE_CLASS, FIELD_DEFINITIONS, METHOD_COUNT, ... ) \
-  __GENERIC_CLASS_DEFINITION_MACRO__( CLASS_NAME, BASE_CLASS __base; FIELD_DEFINITIONS, METHOD_COUNT, METHOD_COUNT, 7 | ((METHOD_COUNT) == 0 ? 64 : 0), __VA_ARGS__ )
+  __GENERIC_CLASS_DEFINITION_MACRO__( CLASS_NAME, BASE_CLASS __base; FIELD_DEFINITIONS, METHOD_COUNT, METHOD_COUNT, 7, __VA_ARGS__ )
 
 #define STATIC_INHERIT( CLASS_NAME, BASE_CLASS, FIELD_DEFINITIONS, METHOD_COUNT, ... ) \
-  __GENERIC_CLASS_DEFINITION_MACRO__( CLASS_NAME, BASE_CLASS __base; FIELD_DEFINITIONS, 0, METHOD_COUNT, 4 | ((METHOD_COUNT) == 0 ? 64 : 0), __VA_ARGS__ )
+  __GENERIC_CLASS_DEFINITION_MACRO__( CLASS_NAME, BASE_CLASS __base; FIELD_DEFINITIONS, 0, METHOD_COUNT, 4, __VA_ARGS__ )
 
 #define INHERIT_END( CLASS_NAME, BASE_CLASS, ... ) void* CLASS_NAME##_init(CLASS_NAME* self, ...) { \
   __meta_##BASE_CLASS[0](&(self->__base)); \

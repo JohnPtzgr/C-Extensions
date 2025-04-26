@@ -1,5 +1,17 @@
 #include "matrix.h"
 
+
+CLASS_END(binary_matrix_t,
+  INIT_CLASS(binary_matrix_t,
+    SET_METHOD(binary_matrix_t,
+               __m_add__,
+               self,
+               binary_matrix_add)
+  )
+) {
+  return self;
+}
+
 void* binary_matrix_add_self(binary_matrix_t* self, binary_matrix_t* other) {
   for (size_t i = 0; i < self->shape_x * self->shape_y; ++i) {
     ((size_t*)self->container.__base.data)[i] ^= ((size_t*)other->container.__base.data)[i];
