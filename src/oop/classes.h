@@ -220,9 +220,6 @@ size_t __##CLASS_NAME##_BUILT_IN_METHOD_TABLE__[(STATIC_METHOD_COUNT + 1 == 0) ?
   __GENERIC_CLASS_DEFINITION_MACRO__( CLASS_NAME, FIELD_DEFINITIONS, 0, METHOD_COUNT, 0, __VA_ARGS__ )
 
 #define CLASS_END( CLASS_NAME, ... ) void* CLASS_NAME##_init(CLASS_NAME* self, ...) { \
-  if (sizeof(__meta_##CLASS_NAME) == 2 * sizeof(method_function_t)) { \
-    __SET_CLASS_MASK_INNER(&__##CLASS_NAME##_MASK, TRUE); \
-  } \
   __VA_ARGS__; \
   __SET_CLASS_MASK_WAS_INIT(&__##CLASS_NAME##_MASK, TRUE); \
   __SCOPE_STACK_PUSH(&__SCOPE_STACK, (generic_method_t){.obj_instance=self, \
@@ -309,32 +306,6 @@ size_t __##CLASS_NAME##_BUILT_IN_METHOD_TABLE__[(STATIC_METHOD_COUNT + 1 == 0) ?
   __METHOD_RESULT; \
 }
 
-// #define METHOD( CLASS_NAME, METHOD_ID, ... ) { \
-//   void* __METHOD_RESULT = 0; \
-//   __##CLASS_NAME##_LIST __METHOD_INDEX__ = METHOD_ID; \
-//   if (__GET_CLASS_MASK_IS_DYNAMIC(&__##CLASS_NAME##_MASK) && (__METHOD_INDEX__ >= 2)) { \
-//     __METHOD_RESULT = ((CLASS_NAME*)ARG1_VA_ARGS(__VA_ARGS__))->__meta[__METHOD_INDEX__ - 2](__VA_ARGS__); \
-//   } else { \
-//     __METHOD_RESULT = __meta_##CLASS_NAME[__METHOD_INDEX__](__VA_ARGS__); \
-//   }; \
-//   __METHOD_RESULT; \
-//   }
-
-// #define SET_METHOD( CLASS_NAME, METHOD_ID, OBJ, FUNCTION) { \
-//   __##CLASS_NAME##_LIST __METHOD_INDEX__ = METHOD_ID; \
-//   if (!__GET_CLASS_MASK_IS_CONST(&__##CLASS_NAME##_MASK)) { \
-//     if (__GET_CLASS_MASK_IS_DYNAMIC(&__##CLASS_NAME##_MASK)) { \
-//       (OBJ).__meta[METHOD_ID] = (method_function_t)FUNCTION; \
-//     } else { \
-//       __meta_##CLASS_NAME[__METHOD_INDEX__] = (method_function_t)FUNCTION; \
-//     } \
-//   } \
-// }
-
-// #define DEF_METHOD( CLASS_NAME, METHOD_ID, METHOD_INDEX ) { \
-//   __##CLASS_NAME##__BUILT_IN_METHOD_TABLE__[METHOD_ID] = METHOD_INDEX + 3; \
-// }
-
 #define SET_METHOD( CLASS_NAME, METHOD_ID, OBJ, FUNCTION) { \
   size_t __METHOD_INDEX__ = 1 + METHOD_ID - __BUILT_IN_METHOD_TABLE_SIZE__; \
   if (METHOD_ID < __BUILT_IN_METHOD_TABLE_SIZE__ && METHOD_ID > 0) { \
@@ -376,8 +347,8 @@ size_t __##CLASS_NAME##_BUILT_IN_METHOD_TABLE__[(STATIC_METHOD_COUNT + 1 == 0) ?
   __GENERIC_CLASS_DEFINITION_MACRO__( CLASS_NAME, BASE_CLASS __base; FIELD_DEFINITIONS, 0, METHOD_COUNT, 4, __VA_ARGS__ )
 
 #define INHERIT_END( CLASS_NAME, BASE_CLASS, ... ) void* CLASS_NAME##_init(CLASS_NAME* self, ...) { \
-  __meta_##BASE_CLASS[0](&(self->__base)); \
   __SET_CLASS_MASK_SUPER(&__##BASE_CLASS##_MASK, TRUE); \
+  __meta_##BASE_CLASS[0](&(self->__base)); \
   for (size_t i = 2; i < MIN(sizeof(__meta_##CLASS_NAME) / sizeof(method_function_t), \
         sizeof(__meta_##BASE_CLASS) / sizeof(method_function_t)); ++i) { \
     __meta_##CLASS_NAME[i] = __meta_##BASE_CLASS[i]; \
