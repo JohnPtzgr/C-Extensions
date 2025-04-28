@@ -1,4 +1,5 @@
 #include "../memory/dyn_alloc.h"
+#include "stdarg.h"
 #pragma once
 
 #ifndef __GET_CLASS_MASK_IS_DYNAMIC
@@ -301,7 +302,7 @@ size_t __##CLASS_NAME##_BUILT_IN_METHOD_TABLE__[(STATIC_METHOD_COUNT + 1 == 0) ?
     }; \
   } \
   if (__METHOD_PTR != 0) { \
-    __METHOD_RESULT = (__METHOD_PTR)(__VA_ARGS__); \
+    __METHOD_RESULT = (__METHOD_PTR)(__VA_ARGS__, 0); \
   }; \
   __METHOD_RESULT; \
 }
@@ -333,6 +334,13 @@ size_t __##CLASS_NAME##_BUILT_IN_METHOD_TABLE__[(STATIC_METHOD_COUNT + 1 == 0) ?
     }; \
   }; \
 }
+
+#define METHOD_ARGS( ARGS_COUNT ) \
+  va_list __RAW_METHOD_ARGS__; \
+  va_start(__RAW_METHOD_ARGS__, self); \
+  void* __ARG_LIST__[ARGS_COUNT]; \
+  size_t __ARG_CNT__ = 0; \
+  for (size_t i = 0; (__ARG_LIST__[i] = va_arg(__RAW_METHOD_ARGS__, void*)) != 0; ++i) { __ARG_CNT__++; };
 
 #define HAS_INSTANCE( CLASS_NAME ) (__GET_CLASS_MASK_COUNT_INSTANCES(&__##CLASS_NAME##_MASK) > 0)
 

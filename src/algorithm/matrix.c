@@ -7,7 +7,7 @@ CLASS_END(binary_matrix_t,
                __m_add__,
                self,
                binary_matrix_add)
-  )
+  );
 ) {
   return self;
 }
