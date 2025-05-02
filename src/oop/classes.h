@@ -205,7 +205,7 @@ void* CLASS_NAME##_destroy(CLASS_NAME*); \
 size_t __##CLASS_NAME##_MASK = (MASK) | \
   (66 * (STATIC_METHOD_COUNT == 0)) | \
   (578 * (STATIC_METHOD_COUNT + 1 == 0)); \
-method_function_t __meta_##CLASS_NAME[2 + ((STATIC_METHOD_COUNT + 1 == 0) ? 0, STATIC_METHOD_COUNT)] = \
+method_function_t __meta_##CLASS_NAME[2 + ((STATIC_METHOD_COUNT + 1 == 0) ? 0 : STATIC_METHOD_COUNT)] = \
   {(method_function_t) CLASS_NAME##_init, (method_function_t) CLASS_NAME##_destroy, __VA_ARGS__}; \
 size_t __##CLASS_NAME##_BUILT_IN_METHOD_CURRENT_INDEX__ = (STATIC_METHOD_COUNT + 1 == 0) ? 0 : 3; \
 size_t __##CLASS_NAME##_BUILT_IN_METHOD_TABLE__[(STATIC_METHOD_COUNT + 1 == 0) ? \
