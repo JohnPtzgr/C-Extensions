@@ -224,8 +224,7 @@ void* __SCOPE_STACK_HEAD = 0;
 
 #define END SCOPE_END }
 
-#define FOR( VAR, COND, EXPR ) for (VAR; COND; EXPR) { \
-  BEGIN
+#define FOR( VAR, COND, EXPR ) for (VAR; COND; EXPR) { BEGIN
 
 #define FOREACH( TYPE, VAR, SRC ) for (size_t FOR_EACH_ITER = 0; FOR_EACH_ITER < SRC.size; ++FOR_EACH_ITER) { \
   TYPE VAR = ((TYPE*)SRC.data)[FOR_EACH_ITER]; \
