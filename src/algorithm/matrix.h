@@ -1,3 +1,6 @@
+#ifndef MATRIX_H
+#define MATRIX_H
+
 #include "oop/classes.h"
 #include "vector.h"
 
@@ -13,3 +16,5 @@ void* binary_matrix_sub_self(binary_matrix_t*, binary_matrix_t*);
 void* binary_matrix_sub(binary_matrix_t*, binary_matrix_t*, binary_matrix_t*);
 void* binary_matrix_mul_self(binary_matrix_t*, binary_matrix_t*);
 void* binary_matrix_mul(binary_matrix_t*, binary_matrix_t*, binary_matrix_t*);
+
+#endif

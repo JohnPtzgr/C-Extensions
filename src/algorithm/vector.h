@@ -1,3 +1,6 @@
+#ifndef VECTOR_H
+#define VECTOR_H
+
 #include "../oop/classes.h"
 #include "string.h"
 #define UCHAR_MAX (__SCHAR_MAX__*2 + 1)
@@ -521,7 +524,6 @@ void collect_garbage(heap_t* heap, void* reference_address) {
 }
 //
 
-METHOD_LIST(vector_t, default_);
 INHERIT_END(vector_t, generic_container_t,
   self->size = 0;
   self->type_size = 0;
@@ -531,3 +533,5 @@ INHERIT_END(vector_t, generic_container_t,
   //arr
   return self;
 }
+
+#endif

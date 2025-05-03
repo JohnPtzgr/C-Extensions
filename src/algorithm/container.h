@@ -1,3 +1,5 @@
+#ifndef CONTAINER_H
+#define CONTAINER_H
 #include "../oop/classes.h"
 
 #ifndef UCHAR_MAX
@@ -15,3 +17,5 @@ STATIC_CLASS(generic_container_t,
   2)
 void* gen_cont_free(generic_container_t*);
 void* gen_cont_alloc(generic_container_t*, size_t, size_t);
+
+#endif

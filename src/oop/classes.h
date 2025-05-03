@@ -1,3 +1,6 @@
+#ifndef CLASSES_H
+#define CLASSES_H
+
 #include "../memory/dyn_alloc.h"
 #include "stdarg.h"
 #pragma once
@@ -474,3 +477,5 @@ size_t __##CLASS_NAME##_BUILT_IN_METHOD_TABLE__[(STATIC_METHOD_COUNT + 1 == 0) ?
 // #include "templates.h"
 
 // #endif // DEBUG
+
+#endif

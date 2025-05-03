@@ -1,3 +1,6 @@
+#ifndef DYN_ALLOC_H
+#define DYN_ALLOC_H
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -232,3 +235,4 @@ void* __SCOPE_STACK_HEAD = 0;
 
 #endif // SCOPE STACK TEMPLATES DEFINITIONS
 
+#endif
