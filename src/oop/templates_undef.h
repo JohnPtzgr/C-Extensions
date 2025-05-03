@@ -28,3 +28,6 @@
 #ifdef __T_ARG_CNT__
 #undef __T_ARG_CNT__
 #endif
+#ifdef __TEMPLATE__
+#undef __TEMPLATE__
+#endif
