@@ -1,6 +1,6 @@
-#include "classes.h"
+#include "../src/oop/classes.h"
 
-void* f() { printf("F():"); }
+void* f() { printf("F():"); };
 
 CLASS(base, size_t x;, 2)
 void* show(base* self, void* args) {

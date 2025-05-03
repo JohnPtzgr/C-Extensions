@@ -21,7 +21,6 @@ void* gen_cont_alloc(generic_container_t* self,
   self->size = size;
   return self;
 }
-METHOD_LIST(generic_container_t, default_);
 CLASS_END(generic_container_t,
   self->data = 0;
   self->size = 0;
