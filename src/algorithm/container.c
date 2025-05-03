@@ -33,13 +33,15 @@ CLASS_END(generic_container_t,
              ((generic_container_t**)__ARG_LIST__)[0]->data,
              self->size * self->type_size);
     case 2:
-      self->data = calloc(*((size_t**)__ARG_LIST__)[0] * *((size_t**)__ARG_LIST__)[1]);
-      self->size = *((size_t**)__ARG_LIST__)[0];
       self->type_size = *((size_t**)__ARG_LIST__)[1];
+      self->size = *((size_t**)__ARG_LIST__)[0];
+      self->data = calloc(*((size_t**)__ARG_LIST__)[0] * \
+        *((size_t**)__ARG_LIST__)[1], self->type_size);
     case 3:
-      self->data = calloc(*((size_t*)__ARG_LIST__)[0] * *((size_t*)__ARG_LIST__)[1]);
       self->size = *((size_t**)__ARG_LIST__)[0];
       self->type_size = *((size_t**)__ARG_LIST__)[1];
+      self->data = calloc(*((size_t**)__ARG_LIST__)[0] * \
+        *((size_t**)__ARG_LIST__)[1], self->type_size);
       for (size_t i = 0; i < self->size * self->type_size; i += self->type_size) {
         memcpy(self->data + i, __ARG_LIST__[2], self->type_size);
       }
