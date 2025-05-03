@@ -52,12 +52,12 @@ void __SET_CLASS_MASK_DYNAMIC(size_t* mask, BOOL new_type) {
   *mask ^= !new_type;
 }
 
-BOOL __SET_CLASS_MASK_HYBRID(size_t* mask, BOOL new_type) {
+void __SET_CLASS_MASK_HYBRID(size_t* mask, BOOL new_type) {
   *mask |= 2;
   *mask ^= !new_type;
 }
 
-BOOL __SET_CLASS_MASK_INHERITS(size_t* mask, BOOL new_type) {
+void __SET_CLASS_MASK_INHERITS(size_t* mask, BOOL new_type) {
   *mask |= 4;
   *mask ^= !new_type;
 }
@@ -118,9 +118,15 @@ void __SUB_CLASS_MASK_COUNT_INSTANCES(size_t* mask) {
 #endif // CLASS MASK RELATED DEFINITIONS
 
 
+// #ifndef __SUPPRESS_UNUSED_VARIABLE__
+// #define __SUPPRESS_UNUSED_VARIABLE__( VAR ) {(void*)(&(VAR));}
+// #endif // !__SUPPRESS_UNUSED_VARIABLE__
+
+
 #ifndef __BUILT_IN_METHOD_TABLE__
 #define __BUILT_IN_METHOD_TABLE_SIZE__ 32
 static method_function_t __default_method__;
+// __SUPPRESS_UNUSED_VARIABLE__(__default_method__);
 enum {
   __m_init__ = 0,
   __m_destroy__ = 1,
@@ -189,6 +195,7 @@ static char* __BUILT_IN_METHOD_TABLE__[__BUILT_IN_METHOD_TABLE_SIZE__] = {
   "SET",
   "GET"
 };
+// __SUPPRESS_UNUSED_VARIABLE__(__BUILT_IN_METHOD_TABLE__)
 
 #endif // BUILT-IN METHOD TABLE DEFINITION
 
@@ -340,7 +347,8 @@ size_t __##CLASS_NAME##_BUILT_IN_METHOD_TABLE__[(STATIC_METHOD_COUNT + 1 == 0) ?
   va_start(__RAW_METHOD_ARGS__, self); \
   void* __ARG_LIST__[ARGS_COUNT]; \
   size_t __ARG_CNT__ = 0; \
-  for (size_t i = 0; (__ARG_LIST__[i] = va_arg(__RAW_METHOD_ARGS__, void*)) != 0; ++i) { __ARG_CNT__++; };
+  for (size_t i = 0; (i < ARGS_COUNT) && (__ARG_LIST__[i] = va_arg(__RAW_METHOD_ARGS__, void*)); ++i) { __ARG_CNT__++; }; \
+  va_end(__RAW_METHOD_ARGS__);
 
 #define HAS_INSTANCE( CLASS_NAME ) (__GET_CLASS_MASK_COUNT_INSTANCES(&__##CLASS_NAME##_MASK) > 0)
 
