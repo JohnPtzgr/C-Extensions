@@ -340,11 +340,11 @@ void* CLASS_NAME##_destroy(CLASS_NAME* self)
 
 
 #define __GENERIC_INHERIT_END_MACRO__( CLASS_NAME, BASE_CLASS, METHOD_COUNT, MASK, ... ) \
-inline size_t __##CLASS_NAME##_MASK = MASK; \
+size_t __##CLASS_NAME##_MASK = MASK; \
 method_function_t __##CLASS_NAME##_META[2 + ((METHOD_COUNT + 1 == 0) ? 0 : METHOD_COUNT)] = \
   {(method_function_t) CLASS_NAME##_init, (method_function_t) CLASS_NAME##_destroy}; \
-inline size_t __##CLASS_NAME##_BUILT_IN_METHOD_CURRENT_INDEX__ = (METHOD_COUNT + 1 == 0) ? 0 : 3; \
-inline size_t __##CLASS_NAME##_BUILT_IN_METHOD_TABLE__[(METHOD_COUNT + 1 == 0) ? \
+size_t __##CLASS_NAME##_BUILT_IN_METHOD_CURRENT_INDEX__ = (METHOD_COUNT + 1 == 0) ? 0 : 3; \
+size_t __##CLASS_NAME##_BUILT_IN_METHOD_TABLE__[(METHOD_COUNT + 1 == 0) ? \
   2 : __BUILT_IN_METHOD_TABLE_SIZE__] = {1, 2, 0, 0, 0, 0, 0, 0, \
                                          0, 0, 0, 0, 0, 0, 0, 0, \
                                          0, 0, 0, 0, 0, 0, 0, 0, \
