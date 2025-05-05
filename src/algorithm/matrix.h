@@ -1,7 +1,7 @@
 #ifndef MATRIX_H
 #define MATRIX_H
 
-#include "oop/classes.h"
+#include "../oop/classes.h"
 #include "vector.h"
 
 
