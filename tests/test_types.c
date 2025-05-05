@@ -22,7 +22,6 @@ int funct() {
 
 int main() {
   int q = 0;
-  __typeof__(int);
   typeof(q) p = 1;
   printf("P: %d\n", p);
   hash_byte_array("0", 0);

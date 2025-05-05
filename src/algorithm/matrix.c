@@ -1,7 +1,7 @@
 #include "matrix.h"
 
 
-CLASS_END(binary_matrix_t,
+STATIC_CLASS_END(binary_matrix_t, 10,
   INIT_CLASS(binary_matrix_t,
     SET_METHOD(binary_matrix_t,
                __m_add__,

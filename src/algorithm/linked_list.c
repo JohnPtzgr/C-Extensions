@@ -1,9 +1,9 @@
 #include "linked_list.h"
 #include "string.h"
 
-CLASS_END(linked_list_node_t, ;) DEFAULT_DESTROY;
+STATIC_CLASS_END(linked_list_node_t, 0, ;) DEFAULT_DESTROY;
 
-CLASS_END(linked_list_t,
+STATIC_CLASS_END(linked_list_t, 0,
   self->push = (method_function_t)linked_list_push;
   self->pop = (method_function_t)linked_list_pop;
   self->head = NULL;

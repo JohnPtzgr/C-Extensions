@@ -1,11 +1,12 @@
-#define __T_ARG_A__ int
-#include "../src/algorithm/linked_list.h"
+#include "linked_list.h"
 
 int main() {
-  linked_list_t l;
-  LinkedList_int(&l);
-  int h = 0;
-  l.push(&l, h);
+  LinkedList(l, int);
+  printf("1\n");
+  int h = 10;
+  l.push(&l, &h);
+  printf("2\n");
   printf("LLHEAD: %d\n", l.head->value);
+  printf("3\n");
   return 0;
 }

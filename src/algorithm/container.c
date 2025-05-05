@@ -1,6 +1,6 @@
 #include "container.h"
 
-CLASS_END(smartptr_t,
+STATIC_CLASS_END(smartptr_t, 0,
   METHOD_ARGS(1);
   if (self->data != 0) {
     free(self->data);
@@ -16,7 +16,7 @@ CLASS_END(smartptr_t,
   return self;
 }
 
-CLASS_END(generic_container_t,
+STATIC_CLASS_END(generic_container_t, 2,
   METHOD_ARGS(2);
   if (self->data != 0) {
     free(self->data);
