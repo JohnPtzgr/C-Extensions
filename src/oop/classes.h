@@ -190,7 +190,7 @@ void* CLASS_NAME##_destroy(CLASS_NAME* self)
 #define __IS_EMPTY(...) ( sizeof( (char[]){#__VA_ARGS__} ) == 1 )
 
 
-#define __AUX_INIT__( CLASS_NAME, OBJ, ... ) CLASS_NAME OBJ __VA_ARGS__; \
+#define __AUX_INIT__( CLASS_NAME, OBJ, ... ) \
   if (__GET_CLASS_MASK_IS_DYNAMIC(&__##CLASS_NAME##_MASK)) { \
     for (size_t i = 0; i < sizeof((OBJ).__meta) / sizeof(method_function_t); ++i) { \
       (OBJ).__meta[i] = __##CLASS_NAME##_META[2 + i]; \
@@ -208,7 +208,7 @@ void* CLASS_NAME##_destroy(CLASS_NAME* self)
   __AUX_INIT__(CLASS_NAME, OBJ, __VA_ARGS__)
 
 
-#define __AUX_INIT_WITH__( CLASS_NAME, OBJ, ... ) CLASS_NAME OBJ; \
+#define __AUX_INIT_WITH__( CLASS_NAME, OBJ, ... ) \
   if (__GET_CLASS_MASK_IS_DYNAMIC(&__##CLASS_NAME##_MASK)) { \
     for (size_t i = 0; i < sizeof((OBJ).__meta) / sizeof(method_function_t); ++i) { \
       (OBJ).__meta[i] = __##CLASS_NAME##_META[2 + i]; \
@@ -225,13 +225,21 @@ void* CLASS_NAME##_destroy(CLASS_NAME* self)
   __AUX_INIT_WITH__(CLASS_NAME, OBJ, __VA_ARGS__)
 
 
-#define __AUX_INIT_CLASS__( CLASS_NAME, ... ) \
+#define __AUX_ON_INIT_CLASS__( CLASS_NAME, ... ) \
   if (__GET_CLASS_MASK_WAS_INIT(&__##CLASS_NAME##_MASK) == 0) { __VA_ARGS__; };
 
-#define INIT_CLASS( CLASS_NAME, ... ) \
-  __AUX_INIT_CLASS__(CLASS_NAME, __VA_ARGS__)
+#define ON_INIT_CLASS( CLASS_NAME, ... ) \
+  __AUX_ON_INIT_CLASS__(CLASS_NAME, __VA_ARGS__)
 
-  
+
+#define __AUX_DESTROY__( CLASS_NAME, OBJ ) \
+  __##CLASS_NAME##_META[1](&(OBJ))
+
+
+#define DESTROY( CLASS_NAME, OBJ ) \
+  __AUX_DESTROY__(CLASS_NAME, OBJ);
+
+
 #define __AUX_METHOD__( CLASS_NAME, METHOD_ID, ... ) { \
   method_function_t __METHOD_PTR = 0; \
   void* __METHOD_RESULT = 0; \
@@ -323,6 +331,12 @@ void* CLASS_NAME##_destroy(CLASS_NAME* self)
 
 #define CLASS_META( CLASS_NAME ) \
   __AUX_CLASS_META__(CLASS_NAME)
+
+
+#define __AUX_CLASS_MASK__( CLASS_NAME ) __##CLASS_NAME##_MASK
+
+#define CLASS_MASK( CLASS_NAME ) \
+  __AUX_CLASS_MASK__(CLASS_NAME)
 
 
 #define __AUX_INHERIT__( CLASS_NAME, BASE_CLASS, FIELD_DEFINITIONS, METHOD_COUNT ) \

@@ -6,7 +6,7 @@ CLASS(base, size_t x;, 2)
 void* show(base* self, void* args) {
   printf("SHOW:%llu\n", self->x);
 }
-CLASS_END(base,
+CLASS_END(base, 2,
   MAKE_STATIC(base);
   SET_METHOD(base, __m_to_str__, self, show);
   SET_METHOD(base, __m_call__, self, show);
@@ -19,10 +19,10 @@ CLASS(base2, char x; size_t y; method_function_t show, 0)
 void* show2(base2* self, void* args) {
   printf("SHOW:%c\n", self->x);
 }
-CLASS_END(base2,
-  INIT_CLASS(base2,
-  SET_METHOD(base2, -2, self, __default_method__);
-  printf("INIT CLASS: %llu\n", __base2_BUILT_IN_METHOD_CURRENT_INDEX__);
+CLASS_END(base2, 0,
+  ON_INIT_CLASS(base2,
+    SET_METHOD(base2, -2, self, __default_method__);
+    printf("INIT CLASS: %llu\n", __base2_BUILT_IN_METHOD_CURRENT_INDEX__);
   )
   printf("IS INNER BASE2: %llu\n", __GET_CLASS_MASK_IS_INNER(&__base2_MASK));
   self->x = 'a';
@@ -34,13 +34,16 @@ CLASS_END(base2,
 ) DEFAULT_DESTROY
 
 INHERIT(child, base, base2 __base2, 0)
-INHERIT_END(child, base,
+INHERIT_END(child, base, 0,
   INHERIT_ADD(base2, &(self->__base2));
   printf("IS INNER CHLD: %llu\n", __GET_CLASS_MASK_IS_INNER(&__child_MASK));
   printf("C show: %llu, %llu, %c\n", self, (&(self->__base2))->show, 23);
 ) DEFAULT_DESTROY
 
 int main() {
+  base a;
+  base2 b;
+  child c;
   INIT(base, a);
   a.x = 90;
   METHOD(base, __m_to_str__, &a);

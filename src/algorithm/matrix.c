@@ -2,7 +2,7 @@
 
 
 STATIC_CLASS_END(binary_matrix_t, 10,
-  INIT_CLASS(binary_matrix_t,
+  ON_INIT_CLASS(binary_matrix_t,
     SET_METHOD(binary_matrix_t,
                __m_add__,
                self,
@@ -46,6 +46,7 @@ void* binary_matrix_mul_self(binary_matrix_t* self, binary_matrix_t* other) {
 }
 
 void* binary_matrix_inverse(binary_matrix_t* self, binary_matrix_t* dest) {
+  binary_matrix_t mat_copy;
   INIT_WITH(binary_matrix_t, mat_copy, self);
   for (size_t i = 0; i < dest->shape_x; i++)
   {
