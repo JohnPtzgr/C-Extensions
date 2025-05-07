@@ -53,8 +53,9 @@ int funct() {
   printf("%s\n", v_a.type.type_name);
   printf("%d\n", v_a.type.meta.mask);
   VAR_METHOD(__m_add__, &v_a, v_a.value, v_a.value);
+  //add_b.x = 90;
   printf("A: %llu, B: %llu, C: %llu\n", add_a.x, add_b.x, add_c.x);
-  generic_add(&v_a, &v_b, &v_c);
+  generic_add(&v_a, &v_b, &v_b);
   printf("A: %llu, B: %llu, C: %llu\n", add_a.x, add_b.x, add_c.x);
   return 0;
 }
