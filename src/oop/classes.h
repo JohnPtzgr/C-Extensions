@@ -200,7 +200,7 @@ void* CLASS_NAME##_destroy(CLASS_NAME* self)
     && (__GET_CLASS_MASK_IS_TEMPLATE(&__##CLASS_NAME##_MASK) <= \
     (__GET_CLASS_MASK_IS_SUPER(&__##CLASS_NAME##_MASK) && \
     (!__IS_EMPTY(__VA_ARGS__)))) ) {\
-    __##CLASS_NAME##_META[0](&(OBJ)); \
+    __##CLASS_NAME##_META[0](&(OBJ), 0); \
     __ADD_CLASS_MASK_COUNT_INSTANCES(&__##CLASS_NAME##_MASK); \
   }
 
@@ -217,7 +217,7 @@ void* CLASS_NAME##_destroy(CLASS_NAME* self)
   if ( (!__GET_CLASS_MASK_IS_ABSTRACT(&__##CLASS_NAME##_MASK)) \
     && (__GET_CLASS_MASK_IS_TEMPLATE(&__##CLASS_NAME##_MASK) <= \
     __GET_CLASS_MASK_IS_SUPER(&__##CLASS_NAME##_MASK)) ) {\
-      __##CLASS_NAME##_META[0](&(OBJ), __VA_ARGS__); \
+      __##CLASS_NAME##_META[0](&(OBJ), __VA_ARGS__, 0); \
     __ADD_CLASS_MASK_COUNT_INSTANCES(&__##CLASS_NAME##_MASK); \
   }
 
@@ -243,7 +243,7 @@ void* CLASS_NAME##_destroy(CLASS_NAME* self)
 #define __AUX_METHOD__( CLASS_NAME, METHOD_ID, ... ) { \
   method_function_t __METHOD_PTR = 0; \
   void* __METHOD_RESULT = 0; \
-  size_t __METHOD_INDEX__ = 1 + METHOD_ID - __BUILT_IN_METHOD_TABLE_SIZE__; \
+  size_t __METHOD_INDEX__ = 1 + (METHOD_ID) - __BUILT_IN_METHOD_TABLE_SIZE__; \
   if (METHOD_ID < __BUILT_IN_METHOD_TABLE_SIZE__) { \
     __METHOD_INDEX__ = __##CLASS_NAME##_BUILT_IN_METHOD_TABLE__[METHOD_ID]; \
     if (__METHOD_INDEX__ == 0) { \
@@ -275,7 +275,7 @@ void* CLASS_NAME##_destroy(CLASS_NAME* self)
 
 
 #define __AUX_SET_METHOD__( CLASS_NAME, METHOD_ID, OBJ, FUNCTION) { \
-  size_t __METHOD_INDEX__ = 1 + METHOD_ID - __BUILT_IN_METHOD_TABLE_SIZE__; \
+  size_t __METHOD_INDEX__ = 1 + (METHOD_ID) - __BUILT_IN_METHOD_TABLE_SIZE__; \
   if (METHOD_ID < __BUILT_IN_METHOD_TABLE_SIZE__ && METHOD_ID > 0) { \
     __METHOD_INDEX__ = __##CLASS_NAME##_BUILT_IN_METHOD_TABLE__[METHOD_ID]; \
     if (__METHOD_INDEX__ == 0) { \
@@ -366,7 +366,7 @@ size_t __##CLASS_NAME##_BUILT_IN_METHOD_TABLE__[(METHOD_COUNT + 1 == 0) ? \
 void* CLASS_NAME##_init(CLASS_NAME* self, ...) { \
   const size_t __METHOD_CNT__ = METHOD_COUNT; \
   __SET_CLASS_MASK_SUPER(&__##BASE_CLASS##_MASK, TRUE); \
-  __##BASE_CLASS##_META[0](&(self->__base)); \
+  __##BASE_CLASS##_META[0](&(self->__base), 0); \
   for (size_t i = 2; i < MIN(sizeof(__##CLASS_NAME##_META) / sizeof(method_function_t), \
         sizeof(__##BASE_CLASS##_META) / sizeof(method_function_t)); ++i) { \
           __##CLASS_NAME##_META[i] = __##BASE_CLASS##_META[i]; \
