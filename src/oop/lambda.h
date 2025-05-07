@@ -1,3 +1,6 @@
+#ifndef LAMBDA_H
+#define LAMBDA_H
+
 #include "classes.h"
 #include "math.h"
 
@@ -111,6 +114,8 @@ void* __lambda_compile(lambda_t* self, const char* string, ...) {
   int prev = 0;
   return 0;
 }
-CLASS_END(lambda_t, ;) DEFAULT_DESTROY;
+STATIC_CLASS_END(lambda_t, 2, ;) DEFAULT_DESTROY;
 
 #define LAMBDA
+
+#endif

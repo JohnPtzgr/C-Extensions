@@ -1,3 +1,6 @@
+#ifndef DYN_ALLOC_H
+#define DYN_ALLOC_H
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -22,13 +25,21 @@
 
 #ifndef ARG1_VA_ARGS
 #define ARG1_VA_ARGS( ARG1, ... ) ARG1
+#define ARG1_VA_ARGS_VA( ARG1, ... ) __VA_ARGS__
 #define ARG2_VA_ARGS( ARG1, ARG2, ... ) ARG2
+#define ARG2_VA_ARGS_VA( ARG1, ARG2, ... ) __VA_ARGS__
 #define ARG3_VA_ARGS( ARG1, ARG2, ARG3, ... ) ARG3
+#define ARG3_VA_ARGS_VA( ARG1, ARG2, ARG3, ... ) __VA_ARGS__
 #define ARG4_VA_ARGS( ARG1, ARG2, ARG3, ARG4, ... ) ARG4
+#define ARG4_VA_ARGS_VA( ARG1, ARG2, ARG3, ARG4, ... ) __VA_ARGS__
 #define ARG5_VA_ARGS( ARG1, ARG2, ARG3, ARG4, ARG5, ... ) ARG5
+#define ARG5_VA_ARGS_VA( ARG1, ARG2, ARG3, ARG4, ARG5, ... ) __VA_ARGS__
 #define ARG6_VA_ARGS( ARG1, ARG2, ARG3, ARG4, ARG5, ARG6, ... ) ARG6
+#define ARG6_VA_ARGS_VA( ARG1, ARG2, ARG3, ARG4, ARG5, ARG6, ... ) __VA_ARGS__
 #define ARG7_VA_ARGS( ARG1, ARG2, ARG3, ARG4, ARG5, ARG6, ARG7, ... ) ARG7
+#define ARG7_VA_ARGS_VA( ARG1, ARG2, ARG3, ARG4, ARG5, ARG6, ARG7, ... ) __VA_ARGS__
 #define ARG8_VA_ARGS( ARG1, ARG2, ARG3, ARG4, ARG5, ARG6, ARG7, ARG8, ... ) ARG8
+#define ARG8_VA_ARGS_VA( ARG1, ARG2, ARG3, ARG4, ARG5, ARG6, ARG7, ARG8, ... ) __VA_ARGS__
 #endif // CHOOSE __VA_ARGS__ ARGUMENT (Up to 8-th)
 
 #ifndef BOOL
@@ -56,16 +67,7 @@ typedef enum {
 
 
 #ifndef memcpy
-void* memcpy(void* DEST, const void* SRC, size_t COUNT) {
-  for (size_t i = 0; i < COUNT / sizeof(void*); ++i) {
-    ((size_t*)DEST)[i] = ((size_t*)SRC)[i];
-  }
-  for (size_t i = (COUNT / sizeof(void*)) * sizeof(void*); 
-       i < COUNT; ++i) {
-    ((char*)DEST)[i] = ((char*)SRC)[i];
-  }
-  return DEST;
-}
+void* memcpy(void* DEST, const void* SRC, size_t COUNT);
 #endif // !memcpy
 
 
@@ -78,7 +80,7 @@ typedef struct generic_method_t {
   method_function_t function;
 } generic_method_t;
 
-generic_method_t generic_method = {0, 0};
+extern generic_method_t generic_method;
 
 typedef struct class_method_t {
   void* class_instance;
@@ -97,109 +99,27 @@ typedef struct __SCOPE_STACK_t {
 
 #define __SCOPE_STACK_INITIAL_CAPACITY 8
 
-void __SCOPE_STACK_ALLOC(__SCOPE_STACK_t* stack, size_t capacity) {
-  if (stack->capacity != 0) {
-    free(stack->actions);
-  }
-  stack->capacity = __SCOPE_STACK_INITIAL_CAPACITY;
-  stack->actions = (generic_method_t*)malloc(sizeof(generic_method_t) * stack->capacity);
-  stack->data = stack->actions;
-}
+void __SCOPE_STACK_ALLOC(__SCOPE_STACK_t* stack, size_t capacity);
 
-void __SCOPE_STACK_RESERVE(__SCOPE_STACK_t* stack, size_t capacity) {
-  if (stack->capacity >= capacity) {
-    stack->size = (stack->size < capacity ? stack->size : capacity);
-    return;
-  }
-  void* actions = stack->actions;
-  stack->actions = (generic_method_t*)malloc(sizeof(generic_method_t) * capacity);
-  stack->actions = (generic_method_t*)memcpy(stack->actions, actions, stack->size * sizeof(generic_method_t));
-  if (stack->capacity != 0) {
-    free(actions);
-  }
-  stack->capacity = capacity;
-  stack->data = stack->actions;
-}
+void __SCOPE_STACK_RESERVE(__SCOPE_STACK_t* stack, size_t capacity);
 
-void __SCOPE_STACK_INIT(__SCOPE_STACK_t* stack) {
-  stack->size = 0;
-  stack->capacity = 0;
-  __SCOPE_STACK_ALLOC(stack, __SCOPE_STACK_INITIAL_CAPACITY);
-}
+void __SCOPE_STACK_INIT(__SCOPE_STACK_t* stack);
 
-void __SCOPE_STACK_DESTROY(__SCOPE_STACK_t* stack) {
-  free(stack->actions);
-  stack->actions = 0;
-  stack->capacity = 0;
-  stack->size = 0;
-}
+void __SCOPE_STACK_DESTROY(__SCOPE_STACK_t* stack);
 
-void __SCOPE_STACK_PUSH(__SCOPE_STACK_t* stack, generic_method_t action) {
-  BOOL action_type = FALSE;
-  generic_method_t tmp_gen_meth = {0, 0};
-  BITWISE_CMP(&action_type, action, tmp_gen_meth);
-  if (action_type && stack->actions == 0) {
-    return;
-  }
-  if (action_type && stack->actions == 0) {
-    __SCOPE_STACK_INIT(stack);
-  }
-  if (stack->capacity == 0) {
-    __SCOPE_STACK_RESERVE(stack, __SCOPE_STACK_INITIAL_CAPACITY);
-  }
-  if (stack->size + 1 >= stack->capacity) {
-    __SCOPE_STACK_RESERVE(stack, stack->capacity * 2);
-  }
-  //printf("%llu\n", action.function);
-  stack->actions[stack->size++] = action;
-}
+void __SCOPE_STACK_PUSH(__SCOPE_STACK_t* stack, generic_method_t action);
 
-generic_method_t* __SCOPE_STACK_POP(__SCOPE_STACK_t* stack) {
-  if (stack->size == 0) {
-    return 0;
-  }
-  if (stack->size <= stack->capacity / 4) {
-    __SCOPE_STACK_RESERVE(stack, stack->capacity / 2);
-  }
-  generic_method_t* action = &(stack->actions[--stack->size]);
-  if (action->function == 0 && action->obj_instance == 0) {
-    return 0;
-  }
-  return action;
-}
+generic_method_t* __SCOPE_STACK_POP(__SCOPE_STACK_t* stack);
 
-void* __SCOPE_STACK_TOP(__SCOPE_STACK_t* stack) {
-  if (stack->size == 0) {
-    return 0;
-  }
-  generic_method_t* action = &(stack->actions[--stack->size]);
-  if (action->function == 0 && action->obj_instance == 0) {
-    return 0;
-  }
-  return action;
-}
+void* __SCOPE_STACK_TOP(__SCOPE_STACK_t* stack);
 
-void __SCOPE_STACK_EXECUTE(generic_method_t* method) {
-  method->function(method->obj_instance);
-}
+void __SCOPE_STACK_EXECUTE(generic_method_t* method);
 
-void* __SCOPE_STACK_EXECUTE_ALL(__SCOPE_STACK_t* stack) {
-  for (size_t i = stack->size; i > 0; --i) {
-    BOOL cmp = TRUE;
-    generic_method_t tmp_gen_meth = {0, 0};
-    //printf("i-%llu; j-%llu;\n", stack->actions->function, stack->actions->obj_instance);
-    BITWISE_CMP(&cmp, stack->actions[i - 1], tmp_gen_meth);
-    if (!cmp) {
-      __SCOPE_STACK_EXECUTE(&(stack->actions[i - 1]));
-      //printf("%d", i);
-    }
-  }
-  return stack;
-}
+void* __SCOPE_STACK_EXECUTE_ALL(__SCOPE_STACK_t* stack);
 
-__SCOPE_STACK_t __SCOPE_STACK = {0, 0, 0};
+extern __SCOPE_STACK_t __SCOPE_STACK;
 
-void* __SCOPE_STACK_HEAD = 0;
+extern void* __SCOPE_STACK_HEAD;
 
 #endif // SCOPE STACK RELATED DEFINITIONS
 
@@ -224,8 +144,7 @@ void* __SCOPE_STACK_HEAD = 0;
 
 #define END SCOPE_END }
 
-#define FOR( VAR, COND, EXPR ) for (VAR; COND; EXPR) { \
-  BEGIN
+#define FOR( VAR, COND, EXPR ) for (VAR; COND; EXPR) { BEGIN
 
 #define FOREACH( TYPE, VAR, SRC ) for (size_t FOR_EACH_ITER = 0; FOR_EACH_ITER < SRC.size; ++FOR_EACH_ITER) { \
   TYPE VAR = ((TYPE*)SRC.data)[FOR_EACH_ITER]; \
@@ -233,3 +152,4 @@ void* __SCOPE_STACK_HEAD = 0;
 
 #endif // SCOPE STACK TEMPLATES DEFINITIONS
 
+#endif
