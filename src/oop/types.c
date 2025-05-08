@@ -24,7 +24,8 @@ STATIC_CLASS_END(var_object_t, 0,
   METHOD_ARGS(10);
   self->type = *((type_object_t*)((void**)__ARG_LIST__[0]));
   self->value = ((void**)__ARG_LIST__[1]);
-  if (self->type.meta.meta_table) {
+  self->allocated = 0;
+  if (self->type.meta.meta_table && self->value) {
     switch (__ARG_CNT__ - 2)
     {
     case 1:
@@ -75,5 +76,15 @@ STATIC_CLASS_END(var_object_t, 0,
   if (self->type.meta.meta_table) {
     self->type.meta.meta_table[__m_destroy__](self->value);
   }
+  if (self->allocated) {
+    free(self->value);
+  }
   return self;
+}
+
+
+void* var_object_alloc(var_object_t* self) {
+  self->value = calloc(1, self->type.size);
+  self->allocated = TRUE;
+  self->type.meta.meta_table[__m_init__](self, 0);
 }

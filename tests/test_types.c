@@ -1,5 +1,6 @@
-#include "../src/oop/types.h"
 #include "../src/oop/classes.h"
+#include "../src/oop/types.h"
+#include "string.h"
 
 STATIC_CLASS(cl_t, size_t x;, 0)
 STATIC_CLASS_END(cl_t, 0, ;) DEFAULT_DESTROY
@@ -57,6 +58,11 @@ int funct() {
   printf("A: %llu, B: %llu, C: %llu\n", add_a.x, add_b.x, add_c.x);
   generic_add(&v_a, &v_b, &v_b);
   printf("A: %llu, B: %llu, C: %llu\n", add_a.x, add_b.x, add_c.x);
+  var_object_t lis[10];
+  for (size_t i = 0; i < 10; ++i) {
+    INIT_WITH(var_object_t, lis[i], &addt, 0);
+    var_object_alloc(&(lis[i]));
+  }
   return 0;
 }
 
