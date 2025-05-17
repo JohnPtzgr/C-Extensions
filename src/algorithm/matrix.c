@@ -47,7 +47,7 @@ void* binary_matrix_mul_self(binary_matrix_t* self, binary_matrix_t* other) {
 
 void* binary_matrix_inverse(binary_matrix_t* self, binary_matrix_t* dest) {
   binary_matrix_t mat_copy;
-  INIT_WITH(binary_matrix_t, mat_copy, self);
+  INIT(binary_matrix_t, &mat_copy, self);
   for (size_t i = 0; i < dest->shape_x; i++)
   {
     for (size_t j = 0; j < dest->shape_y; j++)

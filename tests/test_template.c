@@ -31,7 +31,7 @@ int main() {
   float c = 0;
   float d = 0;
   __TEMPLATE_2(int, float, cls_t) e;
-  INIT(__TEMPLATE_2(int, float, cls_t), e);
+  INIT(__TEMPLATE_2(int, float, cls_t), &e);
   e.b = 90;
   add_int(&a, &b);
   add_float(&c, &d);

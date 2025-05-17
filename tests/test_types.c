@@ -37,7 +37,7 @@ int funct() {
   printf("%llu\n", y.meta.mask);
   var_object_t a;
   cl_t w;
-  INIT_WITH(var_object_t, a, &y, &w);
+  INIT(var_object_t, &a, &y, &w);
   printf("%s\n", a.type.type_name);
   printf("%d\n", a.type.meta.mask);
   a.type.meta;
@@ -48,21 +48,22 @@ int funct() {
   cl_add_t add_b;
   cl_add_t add_c;
   CLASS_INFO(cl_add_t, addt);
-  INIT_WITH(var_object_t, v_a, &addt, &add_a);
-  INIT_WITH(var_object_t, v_b, &addt, &add_b);
-  INIT_WITH(var_object_t, v_c, &addt, &add_c);
+  INIT(var_object_t, &v_a, &addt, &add_a);
+  INIT(var_object_t, &v_b, &addt, &add_b);
+  INIT(var_object_t, &v_c, &addt, &add_c);
   printf("%s\n", v_a.type.type_name);
   printf("%d\n", v_a.type.meta.mask);
-  VAR_METHOD(__m_add__, &v_a, v_a.value, v_a.value);
+  // void* p = VAR_METHOD(__m_add__, &v_a);
+    void* q = VAR_METHOD(__m_add__, &v_a, v_a.value, v_a.value);
   //add_b.x = 90;
   printf("A: %llu, B: %llu, C: %llu\n", add_a.x, add_b.x, add_c.x);
   generic_add(&v_a, &v_b, &v_b);
   printf("A: %llu, B: %llu, C: %llu\n", add_a.x, add_b.x, add_c.x);
   var_object_t lis[10];
-  for (size_t i = 0; i < 10; ++i) {
-    INIT_WITH(var_object_t, lis[i], &addt, 0);
-    var_object_alloc(&(lis[i]));
-  }
+  // for (size_t i = 0; i < 10; ++i) {
+  //   INIT(var_object_t, &(lis[i]), &addt, 0);
+  //   var_object_alloc(&(lis[i]));
+  // }
   return 0;
 }
 

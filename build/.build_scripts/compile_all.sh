@@ -10,3 +10,4 @@
 
 ./build/.build_scripts/compile_single.sh oop/classes
 ./build/.build_scripts/compile_single.sh oop/types
+./build/.build_scripts/compile_single.sh oop/functional

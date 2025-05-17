@@ -8,4 +8,5 @@ ar rcs lib/libcextras.a \
   build/algorithm/vector.o \
   build/memory/dyn_alloc.o \
   build/oop/classes.o \
-  build/oop/types.o
+  build/oop/types.o \
+  build/oop/functional.o

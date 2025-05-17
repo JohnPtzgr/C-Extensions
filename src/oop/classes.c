@@ -1,5 +1,8 @@
 #include "classes.h"
 
+CLASS_END(DefaultObject, 0,
+) DEFAULT_DESTROY
+
 BOOL __GET_CLASS_MASK_IS_DYNAMIC(size_t* mask) {
   return (BOOL)((*mask & 1) && 1);
 }
@@ -94,22 +97,24 @@ void __SET_CLASS_MASK_BARE(size_t* mask, BOOL new_type) {
   *mask ^= !new_type;
 }
 
-void __ADD_CLASS_MASK_COUNT_INSTANCES(size_t* mask) {
+size_t __ADD_CLASS_MASK_COUNT_INSTANCES(size_t* mask) {
   unsigned int cnt = (*mask) >> (__CHAR_BIT__ * sizeof(int));
   if (cnt + 1 != 0) {
     cnt++;
   }
   *mask &= (1ull << (__CHAR_BIT__ * sizeof(int))) - 1;
   *mask += ((size_t)cnt) << (__CHAR_BIT__ * sizeof(int));
+  return cnt;
 }
 
-void __SUB_CLASS_MASK_COUNT_INSTANCES(size_t* mask) {
+size_t __SUB_CLASS_MASK_COUNT_INSTANCES(size_t* mask) {
   unsigned int cnt = (*mask) >> (__CHAR_BIT__ * sizeof(int));
   if (cnt != 0) {
     cnt--;
   }
   *mask &= (1ull << (__CHAR_BIT__ * sizeof(int))) - 1;
   *mask += ((size_t)cnt) << (__CHAR_BIT__ * sizeof(int));
+  return cnt;
 }
 
 char* __BUILT_IN_METHOD_TABLE__[__BUILT_IN_METHOD_TABLE_SIZE__] = {
@@ -144,5 +149,30 @@ char* __BUILT_IN_METHOD_TABLE__[__BUILT_IN_METHOD_TABLE_SIZE__] = {
   "CONTAINS",
   "CMP",
   "SET",
-  "GET"
+  "GET",
+  "COPY",
+  "ASSIGN",
+  "NEW",
+  "LT",
+  "GT",
+  "EQ",
+  "LE",
+  "GE",
+  "POW",
+  "CAST",
+  "BITAND",
+  "BITIAND",
+  "BITOR",
+  "BITIOR",
+  "BITXOR",
+  "BITIXOR",
+  "BITNOT",
+  "BITINOT",
+  "INC",
+  "DEC",
+  "LSH",
+  "ILSH",
+  "RSH",
+  "IRSH",
+  "INEG"
 };

@@ -12,6 +12,11 @@ void* memcpy(void* DEST, const void* SRC, size_t COUNT) {
   return DEST;
 }
 
+size_t __CALL_FUNCTION__(generic_function_t function, void* arg) {
+  function(arg);
+  return 0;
+}
+
 generic_method_t generic_method = {0, 0};
 
 void __SCOPE_STACK_ALLOC(__SCOPE_STACK_t* stack, size_t capacity) {

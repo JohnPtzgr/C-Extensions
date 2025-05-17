@@ -75,6 +75,8 @@ void* memcpy(void* DEST, const void* SRC, size_t COUNT);
 typedef void*(*method_function_t)(void*, ... );
 typedef void*(*generic_function_t)(void*, ... );
 
+size_t __CALL_FUNCTION__(generic_function_t, void*);
+
 typedef struct generic_method_t {
   void* obj_instance;
   method_function_t function;
@@ -109,7 +111,7 @@ void __SCOPE_STACK_DESTROY(__SCOPE_STACK_t* stack);
 
 void __SCOPE_STACK_PUSH(__SCOPE_STACK_t* stack, generic_method_t action);
 
-generic_method_t* __SCOPE_STACK_POP(__SCOPE_STACK_t* stack);
+extern generic_method_t* __SCOPE_STACK_POP(__SCOPE_STACK_t* stack);
 
 void* __SCOPE_STACK_TOP(__SCOPE_STACK_t* stack);
 

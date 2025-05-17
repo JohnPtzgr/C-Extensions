@@ -23,7 +23,7 @@ CLASS_END(base2, 0,
   ON_INIT_CLASS(base2,
     SET_METHOD(base2, -2, self, __default_method__);
     printf("INIT CLASS: %llu\n", __base2_BUILT_IN_METHOD_CURRENT_INDEX__);
-  )
+  );
   printf("IS INNER BASE2: %llu\n", __GET_CLASS_MASK_IS_INNER(&__base2_MASK));
   self->x = 'a';
   // SET_METHOD(base2, -1, self, __default_method__);
@@ -44,13 +44,13 @@ int main() {
   base a;
   base2 b;
   child c;
-  INIT(base, a);
+  INIT(base, &a, 0);
   a.x = 90;
   METHOD(base, __m_to_str__, &a);
-  INIT(base2, b);
+  INIT(base2, &b);
   b.x = 'q';
   METHOD(base2, __m_to_str__, &b);
-  INIT(child, c);
+  INIT(child, &c);
   c.__base2.show(&c.__base2);
   PURGE_HEAP;
   return 0;

@@ -87,4 +87,5 @@ void* var_object_alloc(var_object_t* self) {
   self->value = calloc(1, self->type.size);
   self->allocated = TRUE;
   self->type.meta.meta_table[__m_init__](self, 0);
+  return self;
 }
