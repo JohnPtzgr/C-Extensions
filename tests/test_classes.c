@@ -33,6 +33,7 @@ CLASS_END(base2, 0,
   //(*(&(self->show)))(self, 0);
 ) DEFAULT_DESTROY
 
+
 INHERIT(child, base, base2 __base2, 0)
 INHERIT_END(child, base, 0,
   INHERIT_ADD(base2, &(self->__base2));

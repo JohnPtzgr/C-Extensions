@@ -129,11 +129,7 @@ enum {
   __m_ineg__ = 57,
 };
 extern char* __BUILT_IN_METHOD_TABLE__[__BUILT_IN_METHOD_TABLE_SIZE__];
-#define __DEFAULT_BUILT_IN_METHOD_TABLE__ { \
-  1, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, \
-  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, \
-  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, \
-}
+#define __DEFAULT_BUILT_IN_METHOD_TABLE__ { 1, 2 }
 // __SUPPRESS_UNUSED_VARIABLE__(__BUILT_IN_METHOD_TABLE__)
 
 #endif // BUILT-IN METHOD TABLE DEFINITION

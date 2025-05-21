@@ -29,14 +29,6 @@ void* gen_cont_alloc(generic_container_t* self,
   return self;
 }
 
-// Dynamic data structure (C vector)
-typedef struct darray_t {
-    void* data;
-    size_t type_size;
-    size_t da_size;
-    size_t da_capacity;
-} darray_t;
-
 // Initialize empty ARRAY for objects of TYPE_SIZE size
 void array_init(darray_t* array, size_t type_size) {
     array->da_capacity = 16;
@@ -254,13 +246,6 @@ size_t array_split(darray_t* array, const void* value, darray_t* container) {
 //
 
 
-// Iterator for darray_t array
-typedef struct iterator_t {
-    darray_t container[1];
-    size_t index;
-    unsigned char flags;
-} iterator_t;
-
 // Initialize ITERATOR with the ARRAY
 void iterator_init(iterator_t* iterator, darray_t* array) {
     memcpy(iterator->container, array, sizeof(darray_t));
@@ -332,11 +317,6 @@ void reset(iterator_t* iterator) {
 //
 
 
-// Dynamic string data structure (C string)
-typedef struct string_t {
-    darray_t container[1];
-} string_t;
-
 void string_init(string_t* string) {
     array_init(string->container, 1);
 }
@@ -389,16 +369,6 @@ void string_destroy(string_t* string) {
 // }
 
 // //
-
-
-// Dynamic memory framework
-typedef struct heap_t {
-    darray_t* pointers_on_heap;
-    darray_t* pointers_on_stack;
-    size_t pointers_allocated;
-    size_t pointers_freed;
-    size_t pointers_total;
-} heap_t;
 
 // Initialize HEAP
 void heap_init(heap_t* heap) {

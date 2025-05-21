@@ -37,7 +37,7 @@ STATIC_CLASS(type_object_t, char* type_name; unsigned int size; unsigned int id;
   __AUX_CLASS_INFO__(CLASS_NAME, VAR_NAME)
 
 
-STATIC_CLASS(var_object_t, void* value; type_object_t type; char allocated, 0)
+STATIC_CLASS(var_object_t, type_object_t type; void* value; char allocated, 0)
 
 
 #define __AUX_VAR_METHOD__( METHOD_ID, ... ) ((void*)( \
