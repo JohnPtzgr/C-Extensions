@@ -12,8 +12,7 @@ STATIC_CLASS(smartptr_t,
 
 STATIC_CLASS(generic_container_t,
   void* data;
-  size_t type_size;
-  size_t size,
+  size_t capacity,
   2)
 
 void* gen_cont_free(generic_container_t*);

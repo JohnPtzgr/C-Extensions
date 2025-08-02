@@ -25,6 +25,12 @@ int add() {
 #define __T_ARG_B__ float
 #include "test_template_c.h"
 
+#define __TEMPLATE__
+#define __T_VA__ xqc
+#define __T_ARG_A__ int
+#define __T_ARG_B__ float
+#include "test_template_cva.h"
+
 int main() {
   int a = 0;
   int b = 1;

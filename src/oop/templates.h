@@ -211,6 +211,10 @@
 #endif
 #endif
 #endif
+#ifdef __T_VA__
+#define __T_ARG_CNT__ 0
+#define __TEMPLATE_VA(NAME) __TEMPLATE_1(__T_VA__, NAME)
+#endif
 #else
 #error NO TEMPLATE ARGUMENTS WERE PROVIDED
 #endif

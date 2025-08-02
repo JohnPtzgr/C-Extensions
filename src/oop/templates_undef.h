@@ -28,6 +28,9 @@
 #ifdef __T_ARG_H__
 #undef __T_ARG_H__
 #endif
+#ifdef __T_VA__
+#undef __T_VA__
+#endif
 #ifdef __T_ARG_CNT__
 #undef __T_ARG_CNT__
 #endif
