@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <stdarg.h>
 #pragma once
 
 
@@ -49,6 +50,7 @@
 #define ARG7_VA_ARGS_VA( ARG1, ARG2, ARG3, ARG4, ARG5, ARG6, ARG7, ... ) __VA_ARGS__
 #define ARG8_VA_ARGS( ARG1, ARG2, ARG3, ARG4, ARG5, ARG6, ARG7, ARG8, ... ) ARG8
 #define ARG8_VA_ARGS_VA( ARG1, ARG2, ARG3, ARG4, ARG5, ARG6, ARG7, ARG8, ... ) __VA_ARGS__
+
 #endif // CHOOSE __VA_ARGS__ ARGUMENT (Up to 8-th)
 
 #ifndef BOOL
@@ -60,7 +62,8 @@ typedef enum { FALSE = 0, TRUE = 1} BOOL_VALUES;
 typedef void*(*method_function_t)(void*, ... );
 typedef void*(*generic_function_t)(void*, ... );
 
-size_t __CALL_FUNCTION__(generic_function_t, void*);
+void* __CALL_FUNCTION__(generic_function_t, void*);
+void* __CALL_FUNCTION_N_ARGS__(generic_function_t, ... );
 #endif // METHOD RELATED DEFINITIONS
 
 
@@ -71,16 +74,20 @@ typedef struct __SCOPE_STACK__ {
   size_t size;
   method_function_t* actions;
   void** instances;
+  void*** args;
   char* masks;
 } __SCOPE_STACK__;
 
 typedef struct __SCOPE_DEFER_CHUNK__ {
   long bias_sum;
+  size_t min_indentation;
   size_t capacity;
   size_t size;
   method_function_t* predicates;
+  void*** predicate_args;
   method_function_t* actions;
   void** instances;
+  void*** args;
 } __SCOPE_DEFER_CHUNK__;
 
 typedef struct __SCOPE_DEFER_POOL__ {
@@ -94,6 +101,7 @@ typedef struct __SCOPE_DEFER_POOL__ {
   __SCOPE_DEFER_CHUNK__* chunks;
 } __SCOPE_DEFER_POOL__;
 
+
 #ifndef __SCOPE_STACK_INITIAL_CAPACITY__
 #define __SCOPE_STACK_INITIAL_CAPACITY__ 8
 #endif
@@ -103,7 +111,8 @@ size_t __scope_stack_init__(__SCOPE_STACK__* stack);
 size_t __scope_stack_destroy__(__SCOPE_STACK__* stack);
 size_t __scope_stack_push__(__SCOPE_STACK__* stack,
   method_function_t action,
-  void* instance);
+  void* instance,
+  void** args);
 size_t __scope_stack_pop__(__SCOPE_STACK__* stack);
 size_t __scope_stack_pop_top__(__SCOPE_STACK__* stack);
 void* __scope_stack_top__(__SCOPE_STACK__* stack);
@@ -128,15 +137,18 @@ size_t __scope_stack_defer__(__SCOPE_STACK__* stack,
   __SCOPE_DEFER_POOL__* defer_pool,
   method_function_t action,
   void* instance,
-  method_function_t predicate);
+  method_function_t predicate,
+  void** predicate_args);
 size_t __scope_stack_defer_action__(__SCOPE_STACK__* stack,
   __SCOPE_DEFER_POOL__* defer_pool,
   method_function_t action,
-  method_function_t predicate);
+  method_function_t predicate,
+  void** predicate_args);
 size_t __scope_stack_defer_instance__(__SCOPE_STACK__* stack,
   __SCOPE_DEFER_POOL__* defer_pool,
   void* instance,
-  method_function_t predicate);
+  method_function_t predicate,
+  void** predicate_args);
 
 
 #ifndef __SCOPE_DEFER_CHUNK_INITIAL_CAPACITY__
@@ -149,7 +161,10 @@ size_t __scope_defer_chunk_destroy__(__SCOPE_DEFER_CHUNK__* chunk);
 size_t __scope_defer_chunk_push__(__SCOPE_DEFER_CHUNK__* chunk,
   method_function_t action,
   void* instance,
-  method_function_t predicate);
+  void** args,
+  method_function_t predicate,
+  void** predicate_args,
+  size_t indentation);
 size_t __scope_defer_chunk_check__(__SCOPE_DEFER_CHUNK__* chunk,
   size_t bias_positive,
   size_t bias_negative);
@@ -158,23 +173,36 @@ size_t __scope_defer_chunk_get_bias_sum__(__SCOPE_DEFER_CHUNK__* chunk);
 
 #ifndef __SCOPE_DEFER_POOL_INITIAL_CAPACITY__
 #define __SCOPE_DEFER_POOL_INITIAL_CAPACITY__ 2
+#define __SCOPE_DEFER_POOL_DEFAULT_POSITIVE_BIAS__ 4
+#define __SCOPE_DEFER_POOL_DEFAULT_NEGATIVE_BIAS__ 1
 #endif
+
 
 size_t __scope_defer_pool_init__(__SCOPE_DEFER_POOL__* pool);
 size_t __scope_defer_pool_destroy__(__SCOPE_DEFER_POOL__* pool);
 size_t __scope_defer_pool_push__(__SCOPE_DEFER_POOL__* pool,
   method_function_t action,
   void* instance,
-  method_function_t predicate);
+  void** args,
+  method_function_t predicate,
+  void** predicate_args);
 size_t __scope_defer_pool_check__(__SCOPE_DEFER_POOL__* pool);
 size_t __scope_defer_pool_enter__(__SCOPE_DEFER_POOL__* pool);
 size_t __scope_defer_pool_escape__(__SCOPE_DEFER_POOL__* pool);
 size_t __scope_defer_pool_add_token__(__SCOPE_DEFER_POOL__* pool);
 
 
+#ifndef __SCOPE_OBJECT_MAX_ARGUMENT_COUNT__
+#define __SCOPE_OBJECT_MAX_ARGUMENT_COUNT__ 32
+#define __SCOPE_OBJECT_STACK_ARGUMENT_SIZE__ 8
+#endif
+
+
 typedef struct __SCOPE_OBJECT__ {
   __SCOPE_STACK__* stack;
   __SCOPE_DEFER_POOL__* defer_pool;
+  size_t size;
+  size_t mask;
 } __SCOPE_OBJECT__;
 
 size_t __scope_object_init__(__SCOPE_OBJECT__* scope,
@@ -183,13 +211,23 @@ size_t __scope_object_init__(__SCOPE_OBJECT__* scope,
 size_t __scope_object_destroy__(__SCOPE_OBJECT__* scope);
 size_t __scope_object_enter__(__SCOPE_OBJECT__* scope);
 size_t __scope_object_escape__(__SCOPE_OBJECT__* scope);
+size_t __scope_object_change_bias__(__SCOPE_OBJECT__* scope,
+  size_t bias_positive,
+  size_t bias_negative);
+size_t __scope_object_lock_pool__(__SCOPE_OBJECT__* scope);
 size_t __scope_object_push__(__SCOPE_OBJECT__* scope,
   void* instance,
-  method_function_t action);
+  method_function_t action,
+  ...);
+size_t __scope_object_stage__(__SCOPE_OBJECT__* scope,
+  void* instance,
+  method_function_t action,
+  ...);
 size_t __scope_object_defer__(__SCOPE_OBJECT__* scope,
   void* instance,
   method_function_t action,
-  method_function_t predicate);
+  method_function_t predicate,
+  ...);
 size_t __scope_object_skip__(__SCOPE_OBJECT__* scope,
   void* instance,
   method_function_t action);
@@ -199,6 +237,36 @@ extern __SCOPE_STACK__ __SCOPE_STACK_INST__;
 extern __SCOPE_DEFER_POOL__ __SCOPE_DEFER_POOL_INST__;
 extern __SCOPE_OBJECT__ __SCOPE_OBJECT_INST__;
 
+void* __SCOPE_BEGIN__(__SCOPE_OBJECT__* scope,
+  __SCOPE_DEFER_POOL__* pool,
+  __SCOPE_STACK__* stack);
+
+void* __SCOPE_END__(__SCOPE_OBJECT__* scope);
+
+#define SCOPE_BEGIN __SCOPE_BEGIN__(&__SCOPE_OBJECT_INST__, &__SCOPE_DEFER_POOL_INST__, &__SCOPE_STACK_INST__);
+
+#define BEGIN { SCOPE_BEGIN
+
+#define SCOPE_END __SCOPE_END__(&__SCOPE_OBJECT_INST__);
+
+#define PURGE_HEAP __scope_object_destroy__(&__SCOPE_OBJECT_INST__);
+
+#define RETURN( EXPR ) SCOPE_END return EXPR;
+
+#define FUNCTION( RETURN_TYPE, FUNCTION_NAME, ARGUMENTS... ) RETURN_TYPE FUNCTION_NAME(ARGUMENTS) BEGIN
+
+#define END SCOPE_END }
+
+#define FOR( VAR, COND, EXPR ) for (VAR; COND; EXPR) BEGIN
+
+#define SCOPE_PUSH(INSTANCE, ACTION...) __scope_object_push__(&__SCOPE_OBJECT_INST__, \
+  &(INSTANCE), ACTION, 0)
+
+#define SCOPE_DEFER(INSTANCE, ACTION, PREDICATE...) __scope_object_defer__(&__SCOPE_OBJECT_INST__, \
+  &(INSTANCE), ACTION, PREDICATE, 0);
+
+#define STAGE(INSTANCE, ACTION...) __scope_object_stage__(&__SCOPE_OBJECT_INST__, \
+  &(INSTANCE), ACTION, 0);
 
 #endif
 #endif

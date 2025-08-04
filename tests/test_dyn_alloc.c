@@ -5,51 +5,39 @@ void* doNothing(void* x, ...) {
   return 0;
 }
 
-void* destroyX(void* x, ...) {
-  printf("DESTROY X = %d\n", x);
+void* destroyX(void* x, void* y, void* z, void* w) {
+  printf("DESTROY X = %d, %d, %d, %d\n", x, y, z, w);
   return 0;
 }
 
-void* checkX(void* x, ...) {
-  printf("CHECK X = %d\n", x);
-  return 0;
+void* checkX(void* x, void* y, void* z, void* w) {
+  printf("CHECK X = %d, %d, %d, %d\n", x, y, z, w);
+  return (void*)FALSE;
 }
 
 int test_scope_stack() {
-  __SCOPE_STACK__ stack;
   __SCOPE_DEFER_POOL__ pool;
-  printf("0\n");
-  __scope_stack_init__(&stack);
-  __scope_defer_pool_init__(&pool);
-  printf("1\n");
+  __SCOPE_STACK__ stack;
+  __SCOPE_OBJECT__ scope;
+  __scope_object_init__(&scope, &stack, &pool);
   int x = 0;
-  __scope_defer_pool_enter__(&pool);
-  __scope_stack_push__(&stack, destroyX, &x);
-  __scope_defer_pool_add_token__(&pool);
-  printf("2\n");
-  void* y = __scope_stack_top__(&stack);
-  __scope_defer_pool_add_token__(&pool);
-  __scope_stack_push__(&stack, destroyX, y);
-  __scope_stack_push__(&stack, destroyX, y);
-  __scope_stack_defer_instance__(&stack, &pool, y, checkX);
-  printf("3\n");
-  x = 100;
-  if (x != *(int*)y) {
-    printf("Wrong instance on stack top!");
-    *(int*)NULL;
+  SCOPE_BEGIN
+  for (size_t i = 0; i < 2; ++i) {
+    STAGE(x, (generic_function_t)destroyX, 1, 2, 3)
+    STAGE(x, (generic_function_t)checkX, 4, 5, 6)
+    // __scope_object_stage__(&scope, &x, destroyX, 0);
+    // __scope_object_stage__(&scope, &x, 0, checkX, 0);
   }
-  __scope_stack_pop__(&stack);
-  __scope_defer_pool_escape__(&pool);
-  printf("4\n");
-  __scope_stack_destroy__(&stack);
-  printf("5\n");
-  __scope_defer_pool_destroy__(&pool);
-  printf("6\n");
+  printf("FINISH\n");
+  SCOPE_END
+  __scope_object_destroy__(&scope);
   return 0;
 }
 
 
 int main() {
+  SCOPE_BEGIN
   test_scope_stack();
+  SCOPE_END
   return 0;
 }
