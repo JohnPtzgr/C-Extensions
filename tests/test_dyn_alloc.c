@@ -20,11 +20,15 @@ int test_scope_stack() {
   __SCOPE_STACK__ stack;
   __SCOPE_OBJECT__ scope;
   __scope_object_init__(&scope, &stack, &pool);
-  int x = 0;
+  int x = 100;
   SCOPE_BEGIN
+  int* y = ALLOC(16, int);
+  for (size_t i = 0; i < 16; ++i) {
+    printf("I - %d\n", y[i]);
+  }
   for (size_t i = 0; i < 2; ++i) {
-    STAGE(x, (generic_function_t)destroyX, 1, 2, 3)
-    STAGE(x, (generic_function_t)checkX, 4, 5, 6)
+    STAGE(&x, destroyX, 1, 2, 3);
+    STAGE(&x, checkX, 4, 5, 6);
     // __scope_object_stage__(&scope, &x, destroyX, 0);
     // __scope_object_stage__(&scope, &x, 0, checkX, 0);
   }
@@ -35,9 +39,8 @@ int test_scope_stack() {
 }
 
 
-int main() {
-  SCOPE_BEGIN
+int main()
+BEGIN
   test_scope_stack();
-  SCOPE_END
-  return 0;
-}
+  RETURN(0);
+END

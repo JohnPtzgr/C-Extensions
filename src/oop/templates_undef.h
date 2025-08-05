@@ -1,12 +1,6 @@
 #ifdef __T_ARG_A__
 #undef __T_ARG_A__
 #endif
-#ifdef __T_ARG_A__
-#undef __T_ARG_A__
-#endif
-#ifdef __T_ARG_A__
-#undef __T_ARG_A__
-#endif
 #ifdef __T_ARG_B__
 #undef __T_ARG_B__
 #endif

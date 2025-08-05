@@ -218,4 +218,28 @@
 #else
 #error NO TEMPLATE ARGUMENTS WERE PROVIDED
 #endif
+#ifndef __T_ARG_A__
+#define __T_ARG_A__
+#endif
+#ifndef __T_ARG_B__
+#define __T_ARG_B__
+#endif
+#ifndef __T_ARG_C__
+#define __T_ARG_C__
+#endif
+#ifndef __T_ARG_D__
+#define __T_ARG_D__
+#endif
+#ifndef __T_ARG_E__
+#define __T_ARG_E__
+#endif
+#ifndef __T_ARG_F__
+#define __T_ARG_F__
+#endif
+#ifndef __T_ARG_G__
+#define __T_ARG_G__
+#endif
+#ifndef __T_ARG_H__
+#define __T_ARG_H__
+#endif
 #endif

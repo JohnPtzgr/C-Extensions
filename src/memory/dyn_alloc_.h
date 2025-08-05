@@ -58,8 +58,8 @@ typedef char BOOL;
 typedef enum { FALSE = 0, TRUE = 1} BOOL_VALUES;
 #endif
 
-#ifndef method_function_t
-typedef void*(*method_function_t)(void*, ... );
+#ifndef generic_function_t
+typedef void*(*generic_function_t)(void*, ... );
 typedef void*(*generic_function_t)(void*, ... );
 
 void* __CALL_FUNCTION__(generic_function_t, void*);
@@ -72,7 +72,7 @@ void* __CALL_FUNCTION_N_ARGS__(generic_function_t, ... );
 typedef struct __SCOPE_STACK__ {
   size_t capacity;
   size_t size;
-  method_function_t* actions;
+  generic_function_t* actions;
   void** instances;
   void*** args;
   char* masks;
@@ -83,12 +83,14 @@ typedef struct __SCOPE_DEFER_CHUNK__ {
   size_t min_indentation;
   size_t capacity;
   size_t size;
-  method_function_t* predicates;
+  generic_function_t* predicates;
   void*** predicate_args;
-  method_function_t* actions;
+  generic_function_t* actions;
   void** instances;
   void*** args;
 } __SCOPE_DEFER_CHUNK__;
+
+
 
 typedef struct __SCOPE_DEFER_POOL__ {
   unsigned int chunk_bias_pos;
@@ -107,47 +109,47 @@ typedef struct __SCOPE_DEFER_POOL__ {
 #endif
 
 
-size_t __scope_stack_init__(__SCOPE_STACK__* stack);
+void* __scope_stack_init__(__SCOPE_STACK__* stack);
 size_t __scope_stack_destroy__(__SCOPE_STACK__* stack);
 size_t __scope_stack_push__(__SCOPE_STACK__* stack,
-  method_function_t action,
+  generic_function_t action,
   void* instance,
   void** args);
 size_t __scope_stack_pop__(__SCOPE_STACK__* stack);
 size_t __scope_stack_pop_top__(__SCOPE_STACK__* stack);
 void* __scope_stack_top__(__SCOPE_STACK__* stack);
 size_t __scope_stack_pop_until__(__SCOPE_STACK__* stack,
-  method_function_t predicate);
+  generic_function_t predicate);
 size_t __scope_stack_pop_all__(__SCOPE_STACK__* stack);
 size_t __scope_stack_find__(__SCOPE_STACK__* stack,
-  method_function_t action,
+  generic_function_t action,
   void* instance);
 size_t __scope_stack_find_action__(__SCOPE_STACK__* stack,
-  method_function_t action);
+  generic_function_t action);
 size_t __scope_stack_find_instance__(__SCOPE_STACK__* stack,
   void* instance);
 size_t __scope_stack_skip__(__SCOPE_STACK__* stack,
-  method_function_t action,
+  generic_function_t action,
   void* instance);
 size_t __scope_stack_skip_action__(__SCOPE_STACK__* stack,
-  method_function_t action);
+  generic_function_t action);
 size_t __scope_stack_skip_instance__(__SCOPE_STACK__* stack,
   void* instance);
 size_t __scope_stack_defer__(__SCOPE_STACK__* stack,
   __SCOPE_DEFER_POOL__* defer_pool,
-  method_function_t action,
+  generic_function_t action,
   void* instance,
-  method_function_t predicate,
+  generic_function_t predicate,
   void** predicate_args);
 size_t __scope_stack_defer_action__(__SCOPE_STACK__* stack,
   __SCOPE_DEFER_POOL__* defer_pool,
-  method_function_t action,
-  method_function_t predicate,
+  generic_function_t action,
+  generic_function_t predicate,
   void** predicate_args);
 size_t __scope_stack_defer_instance__(__SCOPE_STACK__* stack,
   __SCOPE_DEFER_POOL__* defer_pool,
   void* instance,
-  method_function_t predicate,
+  generic_function_t predicate,
   void** predicate_args);
 
 
@@ -156,13 +158,13 @@ size_t __scope_stack_defer_instance__(__SCOPE_STACK__* stack,
 #endif
 
 
-size_t __scope_defer_chunk_init__(__SCOPE_DEFER_CHUNK__* chunk);
+void* __scope_defer_chunk_init__(__SCOPE_DEFER_CHUNK__* chunk);
 size_t __scope_defer_chunk_destroy__(__SCOPE_DEFER_CHUNK__* chunk);
 size_t __scope_defer_chunk_push__(__SCOPE_DEFER_CHUNK__* chunk,
-  method_function_t action,
+  generic_function_t action,
   void* instance,
   void** args,
-  method_function_t predicate,
+  generic_function_t predicate,
   void** predicate_args,
   size_t indentation);
 size_t __scope_defer_chunk_check__(__SCOPE_DEFER_CHUNK__* chunk,
@@ -178,13 +180,13 @@ size_t __scope_defer_chunk_get_bias_sum__(__SCOPE_DEFER_CHUNK__* chunk);
 #endif
 
 
-size_t __scope_defer_pool_init__(__SCOPE_DEFER_POOL__* pool);
+void* __scope_defer_pool_init__(__SCOPE_DEFER_POOL__* pool);
 size_t __scope_defer_pool_destroy__(__SCOPE_DEFER_POOL__* pool);
 size_t __scope_defer_pool_push__(__SCOPE_DEFER_POOL__* pool,
-  method_function_t action,
+  generic_function_t action,
   void* instance,
   void** args,
-  method_function_t predicate,
+  generic_function_t predicate,
   void** predicate_args);
 size_t __scope_defer_pool_check__(__SCOPE_DEFER_POOL__* pool);
 size_t __scope_defer_pool_enter__(__SCOPE_DEFER_POOL__* pool);
@@ -205,7 +207,7 @@ typedef struct __SCOPE_OBJECT__ {
   size_t mask;
 } __SCOPE_OBJECT__;
 
-size_t __scope_object_init__(__SCOPE_OBJECT__* scope,
+void* __scope_object_init__(__SCOPE_OBJECT__* scope,
   __SCOPE_STACK__* stack,
   __SCOPE_DEFER_POOL__* pool);
 size_t __scope_object_destroy__(__SCOPE_OBJECT__* scope);
@@ -217,20 +219,26 @@ size_t __scope_object_change_bias__(__SCOPE_OBJECT__* scope,
 size_t __scope_object_lock_pool__(__SCOPE_OBJECT__* scope);
 size_t __scope_object_push__(__SCOPE_OBJECT__* scope,
   void* instance,
-  method_function_t action,
+  generic_function_t action,
   ...);
 size_t __scope_object_stage__(__SCOPE_OBJECT__* scope,
   void* instance,
-  method_function_t action,
+  generic_function_t action,
   ...);
 size_t __scope_object_defer__(__SCOPE_OBJECT__* scope,
   void* instance,
-  method_function_t action,
-  method_function_t predicate,
+  generic_function_t action,
+  generic_function_t predicate,
   ...);
 size_t __scope_object_skip__(__SCOPE_OBJECT__* scope,
   void* instance,
-  method_function_t action);
+  generic_function_t action);
+size_t __scope_object_force__(__SCOPE_OBJECT__* scope,
+  void* instance,
+  generic_function_t action);
+void* __scope_object_find__(__SCOPE_OBJECT__* scope,
+  void* instance,
+  generic_function_t action);
 
 
 extern __SCOPE_STACK__ __SCOPE_STACK_INST__;
@@ -243,6 +251,29 @@ void* __SCOPE_BEGIN__(__SCOPE_OBJECT__* scope,
 
 void* __SCOPE_END__(__SCOPE_OBJECT__* scope);
 
+void* __SCOPE_CALLOC__(__SCOPE_OBJECT__* scope,
+  size_t size,
+  size_t type_size,
+  void* filler,
+  ...);
+
+void* __SCOPE_FREE__(__SCOPE_OBJECT__* scope, void* data);
+
+void* __SCOPE_FORCED_RELEASE__(__SCOPE_OBJECT__* scope,
+  void* data,
+  generic_function_t action,
+  ...);
+
+__SCOPE_OBJECT__* __LOCAL_SCOPE_NEW__();
+
+void* __LOCAL_SCOPE_FREE__(__SCOPE_OBJECT__* local_scope);
+
+void* __DEFAULT_PREDICATE__(void* instance, ...);
+
+void* __TRUE_PREDICATE__(void* instance, ...);
+
+void* __FALSE_PREDICATE__(void* instance, ...);
+
 #define SCOPE_BEGIN __SCOPE_BEGIN__(&__SCOPE_OBJECT_INST__, &__SCOPE_DEFER_POOL_INST__, &__SCOPE_STACK_INST__);
 
 #define BEGIN { SCOPE_BEGIN
@@ -251,22 +282,65 @@ void* __SCOPE_END__(__SCOPE_OBJECT__* scope);
 
 #define PURGE_HEAP __scope_object_destroy__(&__SCOPE_OBJECT_INST__);
 
-#define RETURN( EXPR ) SCOPE_END return EXPR;
+#define RETURN(EXPR...) SCOPE_END return EXPR;
 
-#define FUNCTION( RETURN_TYPE, FUNCTION_NAME, ARGUMENTS... ) RETURN_TYPE FUNCTION_NAME(ARGUMENTS) BEGIN
+#define FUNCTION(RETURN_TYPE, FUNCTION_NAME, ARGUMENTS...) RETURN_TYPE FUNCTION_NAME(ARGUMENTS) BEGIN
 
 #define END SCOPE_END }
 
-#define FOR( VAR, COND, EXPR ) for (VAR; COND; EXPR) BEGIN
+#define FOR(VAR, COND, EXPR) for (VAR; COND; EXPR) BEGIN
 
 #define SCOPE_PUSH(INSTANCE, ACTION...) __scope_object_push__(&__SCOPE_OBJECT_INST__, \
-  &(INSTANCE), ACTION, 0)
+  (void*)(INSTANCE), (generic_function_t)(ARG1_VA_ARGS(ACTION, 0)), ARG1_VA_ARGS_VA(ACTION, 0))
 
 #define SCOPE_DEFER(INSTANCE, ACTION, PREDICATE...) __scope_object_defer__(&__SCOPE_OBJECT_INST__, \
-  &(INSTANCE), ACTION, PREDICATE, 0);
+  (void*)(INSTANCE), (generic_function_t)(ACTION), (generic_function_t)(ARG1_VA_ARGS(PREDICATE, 0)), \
+  ARG1_VA_ARGS_VA(PREDICATE, 0))
 
 #define STAGE(INSTANCE, ACTION...) __scope_object_stage__(&__SCOPE_OBJECT_INST__, \
-  &(INSTANCE), ACTION, 0);
+  (void*)(INSTANCE), (generic_function_t)(ARG1_VA_ARGS(ACTION, 0)), ARG1_VA_ARGS_VA(ACTION, 0))
+
+#define FORCE_RELEASE(INSTANCE...) __SCOPE_FORCED_RELEASE__(&__SCOPE_OBJECT_INST__, \
+  ARG1_VA_ARGS(INSTANCE, 0), (generic_function_t)ARG2_VA_ARGS(INSTANCE, 0))
+
+#define ALLOC(SIZE...) (ARG2_VA_ARGS(SIZE, void)*)__SCOPE_CALLOC__(&__SCOPE_OBJECT_INST__, \
+  ARG1_VA_ARGS(SIZE), sizeof(ARG2_VA_ARGS(SIZE, (char)0)), ARG2_VA_ARGS_VA(SIZE, 0, 0))
+
+#define FREE(DATA) __SCOPE_FREE__(&__SCOPE_OBJECT_INST__, DATA)
+
+#define NEW_LOCAL_SCOPE __LOCAL_SCOPE_NEW__()
+
+#define DESTROY_LOCAL_SCOPE(LOCAL_SCOPE) __LOCAL_SCOPE_FREE__(LOCAL_SCOPE)
+
+#define LSCOPE_BEGIN(SCOPE) __SCOPE_BEGIN__(SCOPE, NULL, NULL);
+
+#define LSBEGIN(SCOPE) { LSCOPE_BEGIN(SCOPE)
+
+#define LSCOPE_END(SCOPE) __SCOPE_END__(SCOPE);
+
+#define LSPURGE_HEAP(SCOPE) __scope_object_destroy__(SCOPE);
+
+#define LSRETURN(SCOPE, EXPR...) LSCOPE_END return EXPR;
+
+#define LSEND(SCOPE) LSCOPE_END(SCOPE) }
+
+#define LSFOR(SCOPE, VAR, COND, EXPR) for (VAR; COND; EXPR) LSBEGIN(SCOPE)
+
+#define LSCOPE_PUSH(SCOPE, INSTANCE, ACTION...) __scope_object_push__(SCOPE, \
+  (void*)(INSTANCE), (generic_function_t)(ARG1_VA_ARGS(ACTION, 0)), ARG1_VA_ARGS_VA(ACTION, 0))
+
+#define LSCOPE_DEFER(SCOPE, INSTANCE, ACTION, PREDICATE...) __scope_object_defer__(SCOPE, \
+  (void*)(INSTANCE), (generic_function_t)(ACTION), (generic_function_t)(ARG1_VA_ARGS(PREDICATE, 0)), \
+  ARG1_VA_ARGS_VA(PREDICATE, 0))
+
+#define LSSTAGE(SCOPE, INSTANCE, ACTION...) __scope_object_stage__(SCOPE, \
+  (void*)(INSTANCE), (generic_function_t)(ARG1_VA_ARGS(ACTION, 0)), ARG1_VA_ARGS_VA(ACTION, 0))
+
+#define LSFORCE_RELEASE(SCOPE, INSTANCE...) __SCOPE_FORCED_RELEASE__(SCOPE, \
+  ARG1_VA_ARGS(INSTANCE, 0), (generic_function_t)ARG2_VA_ARGS(INSTANCE, 0))
+
+#define LSALLOC(SCOPE, SIZE...) (ARG2_VA_ARGS(SIZE, void)*)__SCOPE_CALLOC__(SCOPE, \
+  ARG1_VA_ARGS(SIZE), sizeof(ARG2_VA_ARGS(SIZE, (char)0)), ARG2_VA_ARGS_VA(SIZE, 0, 0))
 
 #endif
 #endif

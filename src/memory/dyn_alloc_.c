@@ -1,5 +1,9 @@
 #include "dyn_alloc_.h"
 
+#define __T_ARG_A__ dyn_alloc_pool_tree
+#define __T_ARG_B__ void*
+#include "../algorithm/rb_tree.h"
+
 
 char* __scope_stack_mask_set_active__(char* mask, BOOL state) {
   *mask = *mask & (__UCHAR_MAX__ - 1);
@@ -10,7 +14,6 @@ char* __scope_stack_mask_set_active__(char* mask, BOOL state) {
 BOOL __scope_stack_mask_get_active__(char* mask) {
   return *mask & 1;
 }
-
 
 BOOL __scope_stack_special_call_predicate__(void* instance, generic_function_t action) {
   return (instance == 0) || (action == 0);
@@ -33,7 +36,9 @@ BOOL __scope_stack_callable_predicate__(void* instance, generic_function_t actio
 }
 
 
-void* __CALL_ACTION_N_ARGS__(generic_function_t action, void* instance, void** args) {
+void* __CALL_ACTION_N_ARGS__(generic_function_t action,
+                             void* instance,
+                             void** args) {
   if (args == 0) {
     if (action) {
       return action(instance, 0);
@@ -49,7 +54,9 @@ void* __CALL_ACTION_N_ARGS__(generic_function_t action, void* instance, void** a
   void* result;
   switch (arg_size) {
   case 2:
-    result = action(instance, args[0], 0);
+    result = action(instance,
+                    args[0],
+                    0);
     break;
   case 3:
     result = action(instance, args[0], args[1], 0);
@@ -64,34 +71,48 @@ void* __CALL_ACTION_N_ARGS__(generic_function_t action, void* instance, void** a
     result = action(instance, args[0], args[1], args[2], args[3], args[4], 0);
     break;
   case 7:
-    result = action(instance, args[0], args[1], args[2], args[3], args[4], args[5], 0);
+    result = action(instance, args[0], args[1], args[2], args[3], args[4],
+                    args[5], 0);
     break;
   case 8:
-    result = action(instance, args[0], args[1], args[2], args[3], args[4], args[5], args[6], 0);
+    result = action(instance, args[0], args[1], args[2], args[3], args[4],
+                    args[5], args[6], 0);
     break;
   case 9:
-    result = action(instance, args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7], 0);
+    result = action(instance, args[0], args[1], args[2], args[3], args[4],
+                    args[5], args[6], args[7], 0);
     break;
   case 10:
-    result = action(instance, args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7], args[8], 0);
+    result = action(instance, args[0], args[1], args[2], args[3], args[4],
+                    args[5], args[6], args[7], args[8], 0);
     break;
   case 11:
-    result = action(instance, args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7], args[8], args[9], 0);
+    result = action(instance, args[0], args[1], args[2], args[3], args[4],
+                    args[5], args[6], args[7], args[8], args[9], 0);
     break;
   case 12:
-    result = action(instance, args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7], args[8], args[9], args[10], 0);
+    result = action(instance, args[0], args[1], args[2], args[3], args[4],
+                    args[5], args[6], args[7], args[8], args[9], args[10], 0);
     break;
   case 13:
-    result = action(instance, args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7], args[8], args[9], args[10], args[11], 0);
+    result = action(instance, args[0], args[1], args[2], args[3], args[4],
+                    args[5], args[6], args[7], args[8], args[9], args[10],
+                    args[11], 0);
     break;
   case 14:
-    result = action(instance, args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7], args[8], args[9], args[10], args[11], args[12], 0);
+    result = action(instance, args[0], args[1], args[2], args[3], args[4],
+                    args[5], args[6], args[7], args[8], args[9], args[10],
+                    args[11], args[12], 0);
     break;
   case 15:
-    result = action(instance, args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7], args[8], args[9], args[10], args[11], args[12], args[13], 0);
+    result = action(instance, args[0], args[1], args[2], args[3], args[4],
+                    args[5], args[6], args[7], args[8], args[9], args[10],
+                    args[11], args[12], args[13], 0);
     break;
   case 16:
-    result = action(instance, args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7], args[8], args[9], args[10], args[11], args[12], args[13], args[14], 0);
+    result = action(instance, args[0], args[1], args[2], args[3], args[4],
+                    args[5], args[6], args[7], args[8], args[9], args[10],
+                    args[11], args[12], args[13], args[14], 0);
     break;
   default:
     result = action(instance, args);
@@ -129,37 +150,53 @@ void* __CHECK_DEFER_CHUNK_PREDICATE_N_ARGS__(generic_function_t predicate,
     result = predicate(instance, action, args[0], args[1], args[2], args[3], 0);
     break;
   case 6:
-    result = predicate(instance, action, args[0], args[1], args[2], args[3], args[4], 0);
+    result = predicate(instance, action, args[0], args[1], args[2], args[3],
+                       args[4], 0);
     break;
   case 7:
-    result = predicate(instance, action, args[0], args[1], args[2], args[3], args[4], args[5], 0);
+    result = predicate(instance, action, args[0], args[1], args[2], args[3],
+                       args[4], args[5], 0);
     break;
   case 8:
-    result = predicate(instance, action, args[0], args[1], args[2], args[3], args[4], args[5], args[6], 0);
+    result = predicate(instance, action, args[0], args[1], args[2], args[3],
+                       args[4], args[5], args[6], 0);
     break;
   case 9:
-    result = predicate(instance, action, args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7], 0);
+    result = predicate(instance, action, args[0], args[1], args[2], args[3],
+                       args[4], args[5], args[6], args[7], 0);
     break;
   case 10:
-    result = predicate(instance, action, args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7], args[8], 0);
+    result = predicate(instance, action, args[0], args[1], args[2], args[3],
+                       args[4], args[5], args[6], args[7], args[8], 0);
     break;
   case 11:
-    result = predicate(instance, action, args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7], args[8], args[9], 0);
+    result = predicate(instance, action, args[0], args[1], args[2], args[3],
+                       args[4], args[5], args[6], args[7], args[8], args[9], 0);
     break;
   case 12:
-    result = predicate(instance, action, args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7], args[8], args[9], args[10], 0);
+    result = predicate(instance, action, args[0], args[1], args[2], args[3],
+                       args[4], args[5], args[6], args[7], args[8], args[9],
+                       args[10], 0);
     break;
   case 13:
-    result = predicate(instance, action, args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7], args[8], args[9], args[10], args[11], 0);
+    result = predicate(instance, action, args[0], args[1], args[2], args[3],
+                       args[4], args[5], args[6], args[7], args[8], args[9],
+                       args[10], args[11], 0);
     break;
   case 14:
-    result = predicate(instance, action, args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7], args[8], args[9], args[10], args[11], args[12], 0);
+    result = predicate(instance, action, args[0], args[1], args[2], args[3],
+                       args[4], args[5], args[6], args[7], args[8], args[9],
+                       args[10], args[11], args[12], 0);
     break;
   case 15:
-    result = predicate(instance, action, args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7], args[8], args[9], args[10], args[11], args[12], args[13], 0);
+    result = predicate(instance, action, args[0], args[1], args[2], args[3],
+                       args[4], args[5], args[6], args[7], args[8], args[9],
+                       args[10], args[11], args[12], args[13], 0);
     break;
   case 16:
-    result = predicate(instance, action, args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7], args[8], args[9], args[10], args[11], args[12], args[13], args[14], 0);
+    result = predicate(instance, action, args[0], args[1], args[2], args[3],
+                       args[4], args[5], args[6], args[7], args[8], args[9],
+                       args[10], args[11], args[12], args[13], args[14], 0);
     break;
   default:
     result = predicate(instance, action, args);
@@ -193,7 +230,9 @@ size_t __scope_stack_reserve__(__SCOPE_STACK__* stack, size_t capacity) {
       tmp_masks,
       sizeof(char) * MIN(stack->size, capacity));
     for (size_t i = MIN(stack->size, capacity); i < stack->size; ++i) {
-      __CALL_ACTION_N_ARGS__(tmp_actions[i], tmp_instances[i], tmp_args[i]);
+      __CALL_ACTION_N_ARGS__(tmp_actions[i],
+                             tmp_instances[i],
+                             tmp_args[i]);
     }
     free(tmp_actions);
     free(tmp_instances);
@@ -205,11 +244,12 @@ size_t __scope_stack_reserve__(__SCOPE_STACK__* stack, size_t capacity) {
   return stack->size;
 }
 
-size_t __scope_stack_init__(__SCOPE_STACK__* stack) {
+void* __scope_stack_init__(__SCOPE_STACK__* stack) {
   stack->capacity = 0;
   stack->size = 0;
   __scope_stack_reserve__(stack, __SCOPE_STACK_INITIAL_CAPACITY__);
-  return __scope_stack_push__(stack, NULL, NULL, NULL);
+  __scope_stack_push__(stack, NULL, NULL, NULL);
+  return stack;
 }
 
 size_t __scope_stack_destroy__(__SCOPE_STACK__* stack) {
@@ -217,7 +257,9 @@ size_t __scope_stack_destroy__(__SCOPE_STACK__* stack) {
     for (size_t i = stack->size; i > 0; --i) {
       if (!__scope_stack_indentation_predicate__(stack->instances[i - 1],
         stack->actions[i - 1])) {
-        __CALL_ACTION_N_ARGS__(stack->actions[i - 1], stack->instances[i - 1], stack->args[i - 1]);
+        __CALL_ACTION_N_ARGS__(stack->actions[i - 1],
+                               stack->instances[i - 1],
+                               stack->args[i - 1]);
       }
     }
     free(stack->actions);
@@ -286,8 +328,7 @@ size_t __scope_stack_find__(__SCOPE_STACK__* stack,
   return i - 1;
 }
 
-size_t __scope_stack_find_action__(__SCOPE_STACK__* stack,
-                                   generic_function_t action) {
+size_t __scope_stack_find_action__(__SCOPE_STACK__* stack, generic_function_t action) {
   size_t i = stack->size;
   while (stack->actions[i - 1] != action &&
     __scope_stack_mask_get_active__(stack->masks + i)) {
@@ -299,8 +340,7 @@ size_t __scope_stack_find_action__(__SCOPE_STACK__* stack,
   return i - 1;
 }
 
-size_t __scope_stack_find_instance__(__SCOPE_STACK__* stack,
-                                     void* instance) {
+size_t __scope_stack_find_instance__(__SCOPE_STACK__* stack, void* instance) {
   size_t i = stack->size;
   while (stack->instances[i - 1] != instance &&
     __scope_stack_mask_get_active__(stack->masks + i)) {
@@ -320,15 +360,13 @@ size_t __scope_stack_skip__(__SCOPE_STACK__* stack,
   return stack->size;
 }
 
-size_t __scope_stack_skip_action__(__SCOPE_STACK__* stack,
-                                   generic_function_t action) {
+size_t __scope_stack_skip_action__(__SCOPE_STACK__* stack, generic_function_t action) {
   size_t i = __scope_stack_find_action__(stack, action);
   __scope_stack_mask_set_active__(&(stack->masks[i]), 0);
   return stack->size;
 }
 
-size_t __scope_stack_skip_instance__(__SCOPE_STACK__* stack,
-                                     void* instance) {
+size_t __scope_stack_skip_instance__(__SCOPE_STACK__* stack, void* instance) {
   size_t i = __scope_stack_find_instance__(stack, instance);
   __scope_stack_mask_set_active__(&(stack->masks[i]), 0);
   return stack->size;
@@ -346,7 +384,9 @@ size_t __scope_stack_defer__(__SCOPE_STACK__* stack,
                                              stack->instances[i],
                                              stack->actions[i],
                                              predicate_args)) {
-    __CALL_ACTION_N_ARGS__(stack->actions[i],stack->instances[i], stack->args[i]);
+    __CALL_ACTION_N_ARGS__(stack->actions[i],
+                           stack->instances[i],
+                           stack->args[i]);
     return 0;
   }
   __scope_defer_pool_push__(defer_pool,
@@ -372,7 +412,9 @@ size_t __scope_stack_defer_action__(__SCOPE_STACK__* stack,
     if (i == stack->size - 1) {
       __scope_stack_pop__(stack);
     }
-    __CALL_ACTION_N_ARGS__(stack->actions[i],stack->instances[i], stack->args[i]);
+    __CALL_ACTION_N_ARGS__(stack->actions[i],
+                           stack->instances[i],
+                           stack->args[i]);
     return 0;
   }
   __scope_defer_pool_push__(defer_pool,
@@ -401,7 +443,9 @@ size_t __scope_stack_defer_instance__(__SCOPE_STACK__* stack,
                                              stack->instances[i],
                                              stack->actions[i],
                                              predicate_args)) {
-    __CALL_ACTION_N_ARGS__(stack->actions[i],stack->instances[i], stack->args[i]);
+    __CALL_ACTION_N_ARGS__(stack->actions[i],
+                           stack->instances[i],
+                           stack->args[i]);
     return 0;
   }
   __scope_defer_pool_push__(defer_pool,
@@ -417,8 +461,7 @@ void* __scope_stack_top__(__SCOPE_STACK__* stack) {
   return stack->instances[stack->size - 1];
 }
 
-size_t __scope_stack_pop_until__(__SCOPE_STACK__* stack,
-                                 generic_function_t predicate) {
+size_t __scope_stack_pop_until__(__SCOPE_STACK__* stack, generic_function_t predicate) {
   while (!predicate(stack->instances[stack->size - 1],
       stack->actions[stack->size - 1],
       stack,
@@ -461,7 +504,9 @@ size_t __scope_defer_chunk_reserve__(__SCOPE_DEFER_CHUNK__* chunk, size_t capaci
       tmp_predicate_args,
       sizeof(void**) * MIN(chunk->size, capacity));
     for (size_t i = MIN(chunk->size, capacity); i < chunk->size; ++i) {
-      __CALL_ACTION_N_ARGS__(chunk->actions[i], chunk->instances[i], chunk->args[i]);
+      __CALL_ACTION_N_ARGS__(chunk->actions[i],
+                             chunk->instances[i],
+                             chunk->args[i]);
     }
     free(tmp_predicates);
     free(tmp_actions);
@@ -474,13 +519,13 @@ size_t __scope_defer_chunk_reserve__(__SCOPE_DEFER_CHUNK__* chunk, size_t capaci
   return chunk->size;
 }
 
-size_t __scope_defer_chunk_init__(__SCOPE_DEFER_CHUNK__* chunk) {
+void* __scope_defer_chunk_init__(__SCOPE_DEFER_CHUNK__* chunk) {
   chunk->capacity = 0;
   chunk->size = 0;
   chunk->bias_sum = 0;
   chunk->min_indentation = __UINT64_MAX__;
   __scope_defer_chunk_reserve__(chunk, __SCOPE_DEFER_CHUNK_INITIAL_CAPACITY__);
-  return 0;
+  return chunk;
 }
 
 size_t __scope_defer_chunk_destroy__(__SCOPE_DEFER_CHUNK__* chunk) {
@@ -523,11 +568,13 @@ size_t __scope_defer_chunk_check__(__SCOPE_DEFER_CHUNK__* chunk,
                                    size_t bias_negative) {
   for (size_t i = chunk->size; i > 0; --i) {
     if (__CHECK_DEFER_CHUNK_PREDICATE_N_ARGS__(chunk->predicates[i - 1],
-        chunk->instances[i - 1],
-        chunk->actions[i - 1],
-        chunk->predicate_args[i - 1])) {
+                                               chunk->instances[i - 1],
+                                               chunk->actions[i - 1],
+                                               chunk->predicate_args[i - 1])) {
       chunk->bias_sum += bias_positive;
-      __CALL_ACTION_N_ARGS__(chunk->actions[i - 1], chunk->instances[i - 1], chunk->args[i - 1]);
+      __CALL_ACTION_N_ARGS__(chunk->actions[i - 1],
+                             chunk->instances[i - 1],
+                             chunk->args[i - 1]);
       chunk->size--;
       chunk->actions[i - 1] = chunk->actions[chunk->size];
       chunk->instances[i - 1] = chunk->instances[chunk->size];
@@ -566,7 +613,7 @@ size_t __scope_defer_pool_reserve__(__SCOPE_DEFER_POOL__* pool, size_t capacity)
   return pool->size;
 }
 
-size_t __scope_defer_pool_init__(__SCOPE_DEFER_POOL__* pool) {
+void* __scope_defer_pool_init__(__SCOPE_DEFER_POOL__* pool) {
   pool->active_size = 0;
   pool->size = 0;
   pool->capacity = 0;
@@ -575,7 +622,7 @@ size_t __scope_defer_pool_init__(__SCOPE_DEFER_POOL__* pool) {
   pool->indentation = 0;
   pool->tokens = 0;
   __scope_defer_pool_reserve__(pool, __SCOPE_DEFER_POOL_INITIAL_CAPACITY__);
-  return 0;
+  return pool;
 }
 
 size_t __scope_defer_pool_destroy__(__SCOPE_DEFER_POOL__* pool) {
@@ -663,9 +710,9 @@ size_t __scope_defer_pool_add_token__(__SCOPE_DEFER_POOL__* pool){
 }
 
 
-size_t __scope_object_init__(__SCOPE_OBJECT__* scope,
-                             __SCOPE_STACK__* stack,
-                             __SCOPE_DEFER_POOL__* pool) {
+void* __scope_object_init__(__SCOPE_OBJECT__* scope,
+                            __SCOPE_STACK__* stack,
+                            __SCOPE_DEFER_POOL__* pool) {
   scope->stack = stack;
   scope->defer_pool = pool;
   scope->size = 0;
@@ -673,7 +720,7 @@ size_t __scope_object_init__(__SCOPE_OBJECT__* scope,
   __scope_stack_init__(scope->stack);
   __scope_defer_pool_init__(scope->defer_pool);
   __scope_defer_pool_add_token__(scope->defer_pool);
-  return 0;
+  return scope;
 }
 
 size_t __scope_object_destroy__(__SCOPE_OBJECT__* scope) {
@@ -717,7 +764,7 @@ size_t __scope_object_escape__(__SCOPE_OBJECT__* scope) {
 
 size_t __scope_object_push__(__SCOPE_OBJECT__* scope,
                              void* instance,
-                             method_function_t action,
+                             generic_function_t action,
                              ...) {
   va_list __ARGUMENT_POINTERS__;
   void* __args_stack__[__SCOPE_OBJECT_STACK_ARGUMENT_SIZE__] = {0};
@@ -765,8 +812,8 @@ size_t __scope_object_push__(__SCOPE_OBJECT__* scope,
 
 size_t __scope_object_defer__(__SCOPE_OBJECT__* scope,
                               void* instance,
-                              method_function_t action,
-                              method_function_t predicate,
+                              generic_function_t action,
+                              generic_function_t predicate,
                               ...) {
   va_list __ARGUMENT_POINTERS__;
   void* __args_stack__[__SCOPE_OBJECT_STACK_ARGUMENT_SIZE__] = {0};
@@ -829,7 +876,7 @@ size_t __scope_object_defer__(__SCOPE_OBJECT__* scope,
 
 size_t __scope_object_stage__(__SCOPE_OBJECT__* scope,
                               void* instance,
-                              method_function_t action,
+                              generic_function_t action,
                               ...) {
   BOOL is_staged = FALSE;
   if (instance) {
@@ -924,7 +971,7 @@ size_t __scope_object_stage__(__SCOPE_OBJECT__* scope,
 
 size_t __scope_object_skip__(__SCOPE_OBJECT__* scope,
                              void* instance,
-                             method_function_t action) {
+                             generic_function_t action) {
   if (action && instance) {
     __scope_stack_skip__(scope->stack, action, instance);
   } else if (action) {
@@ -933,11 +980,25 @@ size_t __scope_object_skip__(__SCOPE_OBJECT__* scope,
     __scope_stack_skip_instance__(scope->stack, instance);
   }
   __scope_defer_pool_add_token__(scope->defer_pool);
+  rbFind_dyn_alloc_pool_tree(NULL, NULL);
+  return 0;
+}
+
+size_t __scope_object_force__(__SCOPE_OBJECT__* scope,
+                              void* instance,
+                              generic_function_t action) {
+  return 0;
+}
+
+void* __scope_object_find__(__SCOPE_OBJECT__* scope,
+                            void* instance,
+                            generic_function_t action) {
+  return 0;
 }
 
 size_t __scope_object_change_bias__(__SCOPE_OBJECT__* scope,
-  size_t bias_positive,
-  size_t bias_negative) {
+                                    size_t bias_positive,
+                                    size_t bias_negative) {
   scope->defer_pool->chunk_bias_pos = bias_positive;
   scope->defer_pool->chunk_bias_neg = bias_negative;
   return 0;
@@ -965,5 +1026,66 @@ void* __SCOPE_END__(__SCOPE_OBJECT__* scope) {
     __scope_object_destroy__(scope);
   }
   return NULL;
+}
+
+void* __SCOPE_CALLOC__(__SCOPE_OBJECT__* scope,
+                       size_t size,
+                       size_t type_size,
+                       void* filler,
+                       ...) {
+  void* data;
+  if (filler) {
+    data = malloc(size * type_size);
+    for (size_t i = 0; i < size; ++i) {
+      memcpy(data + type_size * i, filler, type_size);
+    }
+  } else {
+    data = calloc(size, type_size);
+  }
+  SCOPE_PUSH(data, free);
+  return data;
+}
+
+void* __SCOPE_FREE__(__SCOPE_OBJECT__* scope, void* data) {
+  __scope_object_skip__(scope, data, (generic_function_t)free);
+  free(data);
+  return NULL;
+}
+
+void* __SCOPE_FORCED_RELEASE__(__SCOPE_OBJECT__* scope,
+                               void* data,
+                               generic_function_t action,
+                               ...) {
+  __scope_object_force__(scope, data, action);
+  return 0;
+}
+
+typedef struct __SCOPE_OBJECT_TRIPLET__ {
+  __SCOPE_OBJECT__ obj;
+  __SCOPE_STACK__ stack;
+  __SCOPE_DEFER_POOL__ pool;
+} __SCOPE_OBJECT_TRIPLET__;
+
+__SCOPE_OBJECT__* __LOCAL_SCOPE_NEW__() {
+  __SCOPE_OBJECT_TRIPLET__* scope = (__SCOPE_OBJECT_TRIPLET__*)malloc(sizeof(__SCOPE_OBJECT_TRIPLET__));
+  return __scope_object_init__(&(scope->obj), &(scope->stack), &(scope->pool));
+}
+
+void* __LOCAL_SCOPE_FREE__(__SCOPE_OBJECT__* local_scope) {
+  __scope_object_destroy__(local_scope);
+  free(local_scope);
+  return NULL;
+}
+
+void* __DEFAULT_PREDICATE__(void* instance, ...) {
+  return NULL;
+}
+
+void* __TRUE_PREDICATE__(void* instance, ...) {
+  return (void*)TRUE;
+}
+
+void* __FALSE_PREDICATE__(void* instance, ...) {
+  return (void*)FALSE;
 }
 
