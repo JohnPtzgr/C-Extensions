@@ -100,6 +100,7 @@ typedef struct __SCOPE_DEFER_POOL__ {
   size_t capacity;
   size_t tokens;
   size_t indentation;
+  void* tree_root;
   __SCOPE_DEFER_CHUNK__* chunks;
 } __SCOPE_DEFER_POOL__;
 
@@ -167,9 +168,14 @@ size_t __scope_defer_chunk_push__(__SCOPE_DEFER_CHUNK__* chunk,
   generic_function_t predicate,
   void** predicate_args,
   size_t indentation);
+size_t __scope_defer_chunk_find__(__SCOPE_DEFER_CHUNK__* chunk,
+  generic_function_t action,
+  void* instance);
+size_t __scope_defer_chunk_skip__(__SCOPE_DEFER_CHUNK__* chunk,
+  generic_function_t action,
+  void* instance);
 size_t __scope_defer_chunk_check__(__SCOPE_DEFER_CHUNK__* chunk,
-  size_t bias_positive,
-  size_t bias_negative);
+  __SCOPE_DEFER_POOL__* pool);
 size_t __scope_defer_chunk_get_bias_sum__(__SCOPE_DEFER_CHUNK__* chunk);
 
 
@@ -192,6 +198,15 @@ size_t __scope_defer_pool_check__(__SCOPE_DEFER_POOL__* pool);
 size_t __scope_defer_pool_enter__(__SCOPE_DEFER_POOL__* pool);
 size_t __scope_defer_pool_escape__(__SCOPE_DEFER_POOL__* pool);
 size_t __scope_defer_pool_add_token__(__SCOPE_DEFER_POOL__* pool);
+size_t __scope_defer_pool_skip__(__SCOPE_DEFER_POOL__* pool,
+  void* instance,
+  generic_function_t action);
+size_t __scope_defer_pool_force__(__SCOPE_DEFER_POOL__* pool,
+  void* instance,
+  generic_function_t action);
+size_t __scope_defer_pool_find__(__SCOPE_DEFER_POOL__* pool,
+  void* instance,
+  generic_function_t action);
 
 
 #ifndef __SCOPE_OBJECT_MAX_ARGUMENT_COUNT__
@@ -236,9 +251,6 @@ size_t __scope_object_skip__(__SCOPE_OBJECT__* scope,
 size_t __scope_object_force__(__SCOPE_OBJECT__* scope,
   void* instance,
   generic_function_t action);
-void* __scope_object_find__(__SCOPE_OBJECT__* scope,
-  void* instance,
-  generic_function_t action);
 
 
 extern __SCOPE_STACK__ __SCOPE_STACK_INST__;
@@ -260,6 +272,11 @@ void* __SCOPE_CALLOC__(__SCOPE_OBJECT__* scope,
 void* __SCOPE_FREE__(__SCOPE_OBJECT__* scope, void* data);
 
 void* __SCOPE_FORCED_RELEASE__(__SCOPE_OBJECT__* scope,
+  void* data,
+  generic_function_t action,
+  ...);
+
+void* __SCOPE_SKIP__(__SCOPE_OBJECT__* scope,
   void* data,
   generic_function_t action,
   ...);
@@ -303,6 +320,9 @@ void* __FALSE_PREDICATE__(void* instance, ...);
 #define FORCE_RELEASE(INSTANCE...) __SCOPE_FORCED_RELEASE__(&__SCOPE_OBJECT_INST__, \
   ARG1_VA_ARGS(INSTANCE, 0), (generic_function_t)ARG2_VA_ARGS(INSTANCE, 0))
 
+#define SKIP(INSTANCE...) __SCOPE_SKIP__(&__SCOPE_OBJECT_INST__, \
+  ARG1_VA_ARGS(INSTANCE, 0), (generic_function_t)ARG2_VA_ARGS(INSTANCE, 0))
+
 #define ALLOC(SIZE...) (ARG2_VA_ARGS(SIZE, void)*)__SCOPE_CALLOC__(&__SCOPE_OBJECT_INST__, \
   ARG1_VA_ARGS(SIZE), sizeof(ARG2_VA_ARGS(SIZE, (char)0)), ARG2_VA_ARGS_VA(SIZE, 0, 0))
 
@@ -337,6 +357,9 @@ void* __FALSE_PREDICATE__(void* instance, ...);
   (void*)(INSTANCE), (generic_function_t)(ARG1_VA_ARGS(ACTION, 0)), ARG1_VA_ARGS_VA(ACTION, 0))
 
 #define LSFORCE_RELEASE(SCOPE, INSTANCE...) __SCOPE_FORCED_RELEASE__(SCOPE, \
+  ARG1_VA_ARGS(INSTANCE, 0), (generic_function_t)ARG2_VA_ARGS(INSTANCE, 0))
+
+#define LSSKIP(SCOPE, INSTANCE...) __SCOPE_SKIP__(SCOPE, \
   ARG1_VA_ARGS(INSTANCE, 0), (generic_function_t)ARG2_VA_ARGS(INSTANCE, 0))
 
 #define LSALLOC(SCOPE, SIZE...) (ARG2_VA_ARGS(SIZE, void)*)__SCOPE_CALLOC__(SCOPE, \

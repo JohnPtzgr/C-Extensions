@@ -1,17 +1,27 @@
 
+char cmpint(int x, int y) {
+  return x >+ y;
+}
 
+#define __T_ARG_A__ xyz
+#define __T_ARG_B__ int
+#define __T_ARG_C__ cmpint
 
 #include "../src/algorithm/rb_tree.h"
 
-#define __T_ARG_A__
+
+#define __TEMPLATE__
+#define __T_ARG_A__ xyz
 #define __T_ARG_B__ int
+#define __T_ARG_C__ cmpint
+#include "../src/oop/templates.h"
 
 int main() {
   RBNode* root = NULL;
-  int arr[] = {10, 20, 30, 15, 25, 5, 1};
+  int arr[] = {10, 20, 30, 15, 25, 5, 5, 1};
   int n = sizeof(arr)/sizeof(arr[0]);
   for (int i = 0; i < n; ++i) {
-    __TEMPLATE_1(__T_ARG_A__, rbInsert)(arr[i], 0, &root);
+    __TEMPLATE_1(__T_ARG_A__, rbInsert)(arr[i], (void*)i, &root);
   }
   
   printf("Inorder after insertions:\n");
@@ -29,3 +39,5 @@ int main() {
   __TEMPLATE_1(__T_ARG_A__, freeTree)(root);
   return 0;
 }
+
+#include "../src/oop/templates_undef.h"

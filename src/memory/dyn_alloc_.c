@@ -1,8 +1,26 @@
 #include "dyn_alloc_.h"
 
-#define __T_ARG_A__ dyn_alloc_pool_tree
-#define __T_ARG_B__ void*
+typedef struct __DEFER_POOL_NODE__
+{
+  void* instance;
+  generic_function_t action;
+} __DEFER_POOL_NODE__;
+
+char __compare_defer_pool_node__(__DEFER_POOL_NODE__ a, __DEFER_POOL_NODE__ b) {
+  if (!a.action || !b.action) {
+    return a.instance < b.instance;
+  }
+  if (!a.instance || !b.instance) {
+    return a.action < b.action;
+  }
+  return (a.instance < b.instance) || ((a.instance == b.instance) && (a.action < b.action));
+}
+
+#define __T_ARG_A__ defer_pool_tree
+#define __T_ARG_B__ __DEFER_POOL_NODE__
+#define __T_ARG_C__ __compare_defer_pool_node__
 #include "../algorithm/rb_tree.h"
+
 
 
 char* __scope_stack_mask_set_active__(char* mask, BOOL state) {
@@ -20,7 +38,7 @@ BOOL __scope_stack_special_call_predicate__(void* instance, generic_function_t a
 }
 
 BOOL __scope_stack_regular_predicate__(void* instance, generic_function_t action) {
-  return (instance > 0) && (action > 0);
+  return ((size_t)instance > 0) && ((size_t)action > 0);
 }
 
 BOOL __scope_stack_indentation_predicate__(void* instance, generic_function_t action) {
@@ -28,11 +46,11 @@ BOOL __scope_stack_indentation_predicate__(void* instance, generic_function_t ac
 }
 
 BOOL __scope_stack_skip_predicate__(void* instance, generic_function_t action) {
-  return (instance > 0) && (action == 0);
+  return ((size_t)instance > 0) && (action == 0);
 }
 
 BOOL __scope_stack_callable_predicate__(void* instance, generic_function_t action) {
-  return (instance == 0) && (action > 0);
+  return (instance == 0) && ((size_t)action > 0);
 }
 
 
@@ -40,11 +58,19 @@ void* __CALL_ACTION_N_ARGS__(generic_function_t action,
                              void* instance,
                              void** args) {
   if (args == 0) {
+    if (__scope_stack_indentation_predicate__(instance, action)) {
+      return NULL;
+    }
     if (action) {
       return action(instance, 0);
     } else {
       return ((generic_function_t)instance)(0);
     }
+  }
+
+  if (__scope_stack_indentation_predicate__(instance, action)) {
+    free(args);
+    return NULL;
   }
 
   size_t arg_size = 0;
@@ -127,8 +153,16 @@ void* __CHECK_DEFER_CHUNK_PREDICATE_N_ARGS__(generic_function_t predicate,
                                              void* instance,
                                              generic_function_t action,
                                              void** args) {
+
   if (args == 0) {
+    if (__scope_stack_indentation_predicate__(instance, action)) {
+      return (void*)TRUE;
+    }
     return predicate(instance, action);
+  }
+
+  if (__scope_stack_indentation_predicate__(instance, action)) {
+    return (void*)TRUE;
   }
 
   size_t arg_size = 0;
@@ -202,7 +236,6 @@ void* __CHECK_DEFER_CHUNK_PREDICATE_N_ARGS__(generic_function_t predicate,
     result = predicate(instance, action, args);
     break;
   }
-  free(args);
   return result;
 }
 
@@ -267,7 +300,7 @@ size_t __scope_stack_destroy__(__SCOPE_STACK__* stack) {
     free(stack->masks);
     free(stack->args);
   }
-  *stack = (__SCOPE_STACK__){0};
+  *stack = (__SCOPE_STACK__){};
   return 0;
 }
 
@@ -539,9 +572,15 @@ size_t __scope_defer_chunk_destroy__(__SCOPE_DEFER_CHUNK__* chunk) {
   free(chunk->instances);
   free(chunk->args);
   free(chunk->predicate_args);
-  *chunk = (__SCOPE_DEFER_CHUNK__){0};
+  *chunk = (__SCOPE_DEFER_CHUNK__){};
   return 0;
 }
+
+#define __TEMPLATE__
+#define __T_ARG_A__ defer_pool_tree
+#define __T_ARG_B__ __DEFER_POOL_NODE__
+#define __T_ARG_C__ __compare_defer_pool_node__
+#include "../oop/templates.h"
 
 size_t __scope_defer_chunk_push__(__SCOPE_DEFER_CHUNK__* chunk,
                                   generic_function_t action,
@@ -564,25 +603,28 @@ size_t __scope_defer_chunk_push__(__SCOPE_DEFER_CHUNK__* chunk,
 }
 
 size_t __scope_defer_chunk_check__(__SCOPE_DEFER_CHUNK__* chunk,
-                                   size_t bias_positive,
-                                   size_t bias_negative) {
+                                   __SCOPE_DEFER_POOL__* pool) {
   for (size_t i = chunk->size; i > 0; --i) {
     if (__CHECK_DEFER_CHUNK_PREDICATE_N_ARGS__(chunk->predicates[i - 1],
                                                chunk->instances[i - 1],
                                                chunk->actions[i - 1],
                                                chunk->predicate_args[i - 1])) {
-      chunk->bias_sum += bias_positive;
+      chunk->bias_sum += pool->chunk_bias_pos;
       __CALL_ACTION_N_ARGS__(chunk->actions[i - 1],
                              chunk->instances[i - 1],
                              chunk->args[i - 1]);
+      free(chunk->predicate_args[i - 1]);
       chunk->size--;
+      RBNode* root = (RBNode*)pool->tree_root;
+      __TEMPLATE_1(__T_ARG_A__, rbDelete)((__DEFER_POOL_NODE__){.action=chunk->actions[i - 1], .instance=chunk->instances[i - 1]}, &root);
+      pool->tree_root = (void*)root;
       chunk->actions[i - 1] = chunk->actions[chunk->size];
       chunk->instances[i - 1] = chunk->instances[chunk->size];
-      chunk->predicates[i - 1] = chunk->instances[chunk->size];
+      chunk->predicates[i - 1] = chunk->predicates[chunk->size];
       chunk->args[i - 1] = chunk->args[chunk->size];
       chunk->predicate_args[i - 1] = chunk->predicate_args[chunk->size];
     } else {
-      chunk->bias_sum -= bias_negative;
+      chunk->bias_sum -= pool->chunk_bias_neg;
     }
   }
   return chunk->size;
@@ -590,6 +632,41 @@ size_t __scope_defer_chunk_check__(__SCOPE_DEFER_CHUNK__* chunk,
 
 size_t __scope_defer_chunk_get_bias_sum__(__SCOPE_DEFER_CHUNK__* chunk) {
   return chunk->bias_sum;
+}
+
+size_t __scope_defer_chunk_find__(__SCOPE_DEFER_CHUNK__* chunk,
+  generic_function_t action,
+  void* instance) {
+  for (size_t i = chunk->size; i > 0; --i) {
+    if (action && (action == chunk->actions[i - 1])) {
+      if (instance && (instance == chunk->instances[i - 1])) {
+        return i - 1;
+      } else if (!instance) {
+        return i - 1;
+      }
+    } else if (!action && (instance == chunk->instances[i - 1])) {
+      return i - 1;
+    }
+  }
+  return (size_t)-1;
+}
+
+size_t __scope_defer_chunk_skip__(__SCOPE_DEFER_CHUNK__* chunk,
+  generic_function_t action,
+  void* instance) {
+  size_t index = __scope_defer_chunk_find__(chunk, action, instance);
+  if (index > chunk->size) {
+    return (size_t)-1;
+  }
+  chunk->size--;
+  if (chunk->size > 0) {
+    chunk->actions[index] = chunk->actions[chunk->size];
+    chunk->instances[index] = chunk->instances[chunk->size];
+    chunk->args[index] = chunk->args[chunk->size];
+    chunk->predicates[index] = chunk->predicates[chunk->size];
+    chunk->predicate_args[index] = chunk->predicate_args[chunk->size];
+  }
+  return chunk->size;
 }
 
 
@@ -621,6 +698,7 @@ void* __scope_defer_pool_init__(__SCOPE_DEFER_POOL__* pool) {
   pool->chunk_bias_pos = __SCOPE_DEFER_POOL_DEFAULT_POSITIVE_BIAS__;
   pool->indentation = 0;
   pool->tokens = 0;
+  pool->tree_root = NULL;
   __scope_defer_pool_reserve__(pool, __SCOPE_DEFER_POOL_INITIAL_CAPACITY__);
   return pool;
 }
@@ -629,7 +707,8 @@ size_t __scope_defer_pool_destroy__(__SCOPE_DEFER_POOL__* pool) {
   for (size_t i = 0; i < pool->size; ++i) {
     __scope_defer_chunk_destroy__(&(pool->chunks[i]));
   }
-  *pool = (__SCOPE_DEFER_POOL__){0};
+  __TEMPLATE_1(__T_ARG_A__, freeTree)((RBNode*)pool->tree_root);
+  *pool = (__SCOPE_DEFER_POOL__){};
   return 0;
 }
 
@@ -647,6 +726,10 @@ size_t __scope_defer_pool_push__(__SCOPE_DEFER_POOL__* pool,
                                predicate,
                                predicate_args,
                                pool->indentation);
+    RBNode* root = (RBNode*)pool->tree_root;
+    __TEMPLATE_1(__T_ARG_A__, rbInsert)((__DEFER_POOL_NODE__){.action = action, .instance=instance},
+                                        (void*)pool->indentation, &root);
+    pool->tree_root = (void*)root;
   } else {
     if (pool->size + 1 == pool->capacity) {
       __scope_defer_pool_reserve__(pool, pool->capacity * 2);
@@ -659,6 +742,10 @@ size_t __scope_defer_pool_push__(__SCOPE_DEFER_POOL__* pool,
                                predicate,
                                predicate_args,
                                pool->indentation);
+    RBNode* root = (RBNode*)pool->tree_root;
+    __TEMPLATE_1(__T_ARG_A__, rbInsert)((__DEFER_POOL_NODE__){.action = action, .instance=instance},
+                                        (void*)pool->size, &root);
+    pool->tree_root = (void*)root;
     pool->size++;
     pool->active_size++;
   }
@@ -674,8 +761,7 @@ size_t __scope_defer_pool_check__(__SCOPE_DEFER_POOL__* pool) {
       pool->tokens = MIN(pool->tokens - pool->chunks[i - 1].size, 0);
       tmp_size = pool->chunks[i - 1].size;
       count_releases += tmp_size - __scope_defer_chunk_check__(&(pool->chunks[i - 1]),
-        pool->chunk_bias_pos,
-        pool->chunk_bias_neg);
+                                                               pool);
       pool->chunks[i - 1].bias_sum /= 2;
       if (!pool->chunks[i - 1].size) {
         pool->active_size--;
@@ -683,7 +769,7 @@ size_t __scope_defer_pool_check__(__SCOPE_DEFER_POOL__* pool) {
     } else {
       pool->chunks[i - 1].bias_sum /= 2;
       pool->chunks[i - 1].bias_sum += pool->chunk_bias_pos * MIN(pool->tokens,
-        pool->chunks[i - 1].size);
+                                                                 pool->chunks[i - 1].size);
     }
   }
   if ((pool->active_size * 4 < pool->capacity)  &&
@@ -709,6 +795,71 @@ size_t __scope_defer_pool_add_token__(__SCOPE_DEFER_POOL__* pool){
   return pool->size;
 }
 
+size_t __scope_defer_pool_skip__(__SCOPE_DEFER_POOL__* pool,
+  void* instance,
+  generic_function_t action) {
+  RBNode* root = (RBNode*)pool->tree_root;
+  RBNode* node = __TEMPLATE_1(__T_ARG_A__, rbFind)((__DEFER_POOL_NODE__){.action = action,.instance=instance},
+                                                   &root);
+  __TEMPLATE_1(__T_ARG_A__, rbDelete)((__DEFER_POOL_NODE__){.action = action, .instance=instance},
+                                      &root);
+  pool->tree_root = (void*)root;
+  return (size_t)(node > 0);
+}
+
+size_t __scope_defer_pool_force__(__SCOPE_DEFER_POOL__* pool,
+  void* instance,
+  generic_function_t action) {
+
+  size_t chunk = __scope_defer_pool_find__(pool, instance, action);
+
+  if (chunk >= pool->size) {
+    return (size_t)-1;
+  }
+
+  size_t index = __scope_defer_chunk_find__(&(pool->chunks[chunk]), action, instance);
+
+  if (index > pool->chunks[chunk].size) {
+    return (size_t)-1;
+  }
+
+  __CALL_ACTION_N_ARGS__(pool->chunks[chunk].actions[index],
+                         pool->chunks[chunk].instances[index],
+                         pool->chunks[chunk].args[index]);
+  
+  RBNode* root = (RBNode*)pool->tree_root;
+  __TEMPLATE_1(__T_ARG_A__, rbDelete)((__DEFER_POOL_NODE__){.action = action,.instance=instance},
+                                      &root);
+  pool->tree_root = (void*)root;
+
+  pool->chunks[chunk].size--;
+  if (!pool->chunks[chunk].size) {
+    pool->active_size--;
+    return (size_t)-1;
+  }
+
+  pool->chunks[chunk].actions[index] = pool->chunks[chunk].actions[pool->chunks[chunk].size];
+  pool->chunks[chunk].instances[index] = pool->chunks[chunk].instances[pool->chunks[chunk].size];
+  pool->chunks[chunk].args[index] = pool->chunks[chunk].args[pool->chunks[chunk].size];
+  pool->chunks[chunk].predicates[index] = pool->chunks[chunk].predicates[pool->chunks[chunk].size];
+  pool->chunks[chunk].predicate_args[index] = pool->chunks[chunk].predicate_args[pool->chunks[chunk].size];
+
+  return chunk;
+}
+
+size_t __scope_defer_pool_find__(__SCOPE_DEFER_POOL__* pool,
+  void* instance,
+  generic_function_t action) {
+  RBNode* root = (RBNode*)pool->tree_root;
+  RBNode* node = __TEMPLATE_1(__T_ARG_A__, rbFind)((__DEFER_POOL_NODE__){.action = action,.instance=instance},
+                                                   &root);
+  pool->tree_root = (void*)root;
+  if (!node) {
+    return (size_t)-1;
+  }
+  return (size_t)node->data;
+}
+
 
 void* __scope_object_init__(__SCOPE_OBJECT__* scope,
                             __SCOPE_STACK__* stack,
@@ -726,7 +877,7 @@ void* __scope_object_init__(__SCOPE_OBJECT__* scope,
 size_t __scope_object_destroy__(__SCOPE_OBJECT__* scope) {
   __scope_stack_destroy__(scope->stack);
   __scope_defer_pool_destroy__(scope->defer_pool);
-  *scope = (__SCOPE_OBJECT__){0};
+  *scope = (__SCOPE_OBJECT__){};
   return 0;
 }
 
@@ -767,7 +918,7 @@ size_t __scope_object_push__(__SCOPE_OBJECT__* scope,
                              generic_function_t action,
                              ...) {
   va_list __ARGUMENT_POINTERS__;
-  void* __args_stack__[__SCOPE_OBJECT_STACK_ARGUMENT_SIZE__] = {0};
+  void* __args_stack__[__SCOPE_OBJECT_STACK_ARGUMENT_SIZE__] = {};
   void** args = __args_stack__;
   size_t __ARG_CNT__ = 0;
   size_t args_capacity = __SCOPE_OBJECT_STACK_ARGUMENT_SIZE__;
@@ -816,7 +967,7 @@ size_t __scope_object_defer__(__SCOPE_OBJECT__* scope,
                               generic_function_t predicate,
                               ...) {
   va_list __ARGUMENT_POINTERS__;
-  void* __args_stack__[__SCOPE_OBJECT_STACK_ARGUMENT_SIZE__] = {0};
+  void* __args_stack__[__SCOPE_OBJECT_STACK_ARGUMENT_SIZE__] = {};
   void** args = __args_stack__;
   size_t __ARG_CNT__ = 0;
   size_t args_capacity = __SCOPE_OBJECT_STACK_ARGUMENT_SIZE__;
@@ -896,7 +1047,7 @@ size_t __scope_object_stage__(__SCOPE_OBJECT__* scope,
     }
   }
   va_list __ARGUMENT_POINTERS__;
-  void* __args_stack__[__SCOPE_OBJECT_STACK_ARGUMENT_SIZE__] = {0};
+  void* __args_stack__[__SCOPE_OBJECT_STACK_ARGUMENT_SIZE__] = {};
   void** args = __args_stack__;
   size_t __ARG_CNT__ = 0;
   size_t args_capacity = __SCOPE_OBJECT_STACK_ARGUMENT_SIZE__;
@@ -904,7 +1055,7 @@ size_t __scope_object_stage__(__SCOPE_OBJECT__* scope,
   {
     va_start(__ARGUMENT_POINTERS__, action);
     if (is_staged) {
-      predicate = va_arg(__ARGUMENT_POINTERS__, void*);
+      predicate = (generic_function_t)va_arg(__ARGUMENT_POINTERS__, void*);
     }
     for (size_t i = 0;
          (i < __SCOPE_OBJECT_MAX_ARGUMENT_COUNT__) &&
@@ -972,28 +1123,55 @@ size_t __scope_object_stage__(__SCOPE_OBJECT__* scope,
 size_t __scope_object_skip__(__SCOPE_OBJECT__* scope,
                              void* instance,
                              generic_function_t action) {
-  if (action && instance) {
-    __scope_stack_skip__(scope->stack, action, instance);
-  } else if (action) {
-    __scope_stack_skip_action__(scope->stack, action);
+  RBNode* root = (RBNode*)scope->defer_pool->tree_root;
+  RBNode* node = __TEMPLATE_1(__T_ARG_A__, rbFind)((__DEFER_POOL_NODE__){
+                                                   .action=action,
+                                                   .instance=instance},
+                                                   &root);
+  if (node) {
+    __scope_defer_pool_skip__(scope->defer_pool, instance, action);
   } else {
-    __scope_stack_skip_instance__(scope->stack, instance);
+    if (action && instance) {
+      __scope_stack_skip__(scope->stack, action, instance);
+    } else if (action) {
+      __scope_stack_skip_action__(scope->stack, action);
+    } else {
+      __scope_stack_skip_instance__(scope->stack, instance);
+    }
   }
   __scope_defer_pool_add_token__(scope->defer_pool);
-  rbFind_dyn_alloc_pool_tree(NULL, NULL);
   return 0;
 }
 
 size_t __scope_object_force__(__SCOPE_OBJECT__* scope,
                               void* instance,
                               generic_function_t action) {
-  return 0;
-}
-
-void* __scope_object_find__(__SCOPE_OBJECT__* scope,
-                            void* instance,
-                            generic_function_t action) {
-  return 0;
+  RBNode* root = (RBNode*)scope->defer_pool->tree_root;
+  RBNode* node = __TEMPLATE_1(__T_ARG_A__, rbFind)((__DEFER_POOL_NODE__){
+                                                   .action=action,
+                                                   .instance=instance},
+                                                   &root);
+  if (node) {
+    __scope_defer_pool_force__(scope->defer_pool, instance, action);
+  } else {
+    size_t index = 0;
+    if (action && instance) {
+      index = __scope_stack_find__(scope->stack, action, instance);
+    } else if (action) {
+      index = __scope_stack_find_action__(scope->stack, action);
+    } else {
+      index = __scope_stack_find_instance__(scope->stack, instance);
+    }
+    if (index >= scope->stack->size) {
+      return 0;
+    }
+    __CALL_ACTION_N_ARGS__(scope->stack->actions[index],
+                           scope->stack->instances[index],
+                           scope->stack->args[index]);
+    scope->stack->masks[index] = 0;
+  }
+  __scope_defer_pool_add_token__(scope->defer_pool);
+  return 1;
 }
 
 size_t __scope_object_change_bias__(__SCOPE_OBJECT__* scope,
@@ -1004,10 +1182,12 @@ size_t __scope_object_change_bias__(__SCOPE_OBJECT__* scope,
   return 0;
 }
 
+#include "../oop/templates_undef.h"
 
-__SCOPE_STACK__ __SCOPE_STACK_INST__ = (__SCOPE_STACK__){0};
-__SCOPE_DEFER_POOL__ __SCOPE_DEFER_POOL_INST__ = (__SCOPE_DEFER_POOL__){0};
-__SCOPE_OBJECT__ __SCOPE_OBJECT_INST__ = (__SCOPE_OBJECT__){0};
+
+__SCOPE_STACK__ __SCOPE_STACK_INST__ = (__SCOPE_STACK__){};
+__SCOPE_DEFER_POOL__ __SCOPE_DEFER_POOL_INST__ = (__SCOPE_DEFER_POOL__){};
+__SCOPE_OBJECT__ __SCOPE_OBJECT_INST__ = (__SCOPE_OBJECT__){};
 
 
 void* __SCOPE_BEGIN__(__SCOPE_OBJECT__* scope,
@@ -1060,6 +1240,14 @@ void* __SCOPE_FORCED_RELEASE__(__SCOPE_OBJECT__* scope,
   return 0;
 }
 
+void* __SCOPE_SKIP__(__SCOPE_OBJECT__* scope,
+                     void* data,
+                     generic_function_t action,
+                     ...) {
+  __scope_object_skip__(scope, data, action);
+  return 0;
+}
+
 typedef struct __SCOPE_OBJECT_TRIPLET__ {
   __SCOPE_OBJECT__ obj;
   __SCOPE_STACK__ stack;
@@ -1068,7 +1256,7 @@ typedef struct __SCOPE_OBJECT_TRIPLET__ {
 
 __SCOPE_OBJECT__* __LOCAL_SCOPE_NEW__() {
   __SCOPE_OBJECT_TRIPLET__* scope = (__SCOPE_OBJECT_TRIPLET__*)malloc(sizeof(__SCOPE_OBJECT_TRIPLET__));
-  return __scope_object_init__(&(scope->obj), &(scope->stack), &(scope->pool));
+  return (__SCOPE_OBJECT__*)__scope_object_init__(&(scope->obj), &(scope->stack), &(scope->pool));
 }
 
 void* __LOCAL_SCOPE_FREE__(__SCOPE_OBJECT__* local_scope) {

@@ -26,12 +26,15 @@ int test_scope_stack() {
   for (size_t i = 0; i < 16; ++i) {
     printf("I - %d\n", y[i]);
   }
+  FORCE_RELEASE(y);
+  SKIP(y);
   for (size_t i = 0; i < 2; ++i) {
     STAGE(&x, destroyX, 1, 2, 3);
     STAGE(&x, checkX, 4, 5, 6);
     // __scope_object_stage__(&scope, &x, destroyX, 0);
     // __scope_object_stage__(&scope, &x, 0, checkX, 0);
   }
+  SKIP(&x);
   printf("FINISH\n");
   SCOPE_END
   __scope_object_destroy__(&scope);

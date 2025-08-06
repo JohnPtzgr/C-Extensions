@@ -3,9 +3,29 @@
 #define __TEMPLATE__
 #ifndef __T_ARG_A__
 #define __T_ARG_A__
+#endif
+#ifndef __T_ARG_B__
 #define __T_ARG_B__ int
 #endif
+#ifndef __T_ARG_C__
+#define __DEFAULT_KEY_COMPARE__
+#endif
 #include "../oop/templates.h"
+
+
+#ifdef __DEFAULT_KEY_COMPARE__
+char __TEMPLATE_1(__T_ARG_A__, defaultKeyCompare)(__T_ARG_B__ keyA, __T_ARG_B__ keyB) {
+  return keyA < keyB;
+}
+
+#undef __T_ARG_C__
+#define __T_ARG_C__ __TEMPLATE_1(__T_ARG_A__, defaultKeyCompare)
+#endif
+
+char __TEMPLATE_2(__T_ARG_A__, __T_ARG_C__, areKeysEqual)(__T_ARG_B__ keyA, __T_ARG_B__ keyB) {
+  return !(__T_ARG_C__(keyA, keyB) || __T_ARG_C__(keyB, keyA));
+}
+
 
 typedef enum { __RB_TREE_RED__, __RB_TREE_BLACK__ } __RB_TREE_COLOR_T__;
 
@@ -107,7 +127,7 @@ void __TEMPLATE_1(__T_ARG_A__, rbInsert)(__T_ARG_B__ key, void* data, RBNode** r
 
   while (x) {
     y = x;
-    if (z->key < x->key) {
+    if (__T_ARG_C__(z->key, x->key)) {
       x = x->left;
     } else {
       x = x->right;
@@ -116,7 +136,7 @@ void __TEMPLATE_1(__T_ARG_A__, rbInsert)(__T_ARG_B__ key, void* data, RBNode** r
   z->parent = y;
   if (!y) {
     *root = z;
-  } else if (z->key < y->key) {
+  } else if (__T_ARG_C__(z->key, y->key)) {
     y->left = z;
   } else {
     y->right = z;
@@ -127,9 +147,9 @@ void __TEMPLATE_1(__T_ARG_A__, rbInsert)(__T_ARG_B__ key, void* data, RBNode** r
 RBNode* __TEMPLATE_1(__T_ARG_A__, rbFind)(__T_ARG_B__ key, RBNode** root) {
   RBNode* node = *root;
   while (node) {
-    if (key == node->key) {
+    if (__TEMPLATE_2(__T_ARG_A__, __T_ARG_C__, areKeysEqual)(key, node->key)) {
       return node;
-    } else if (key < node->key) {
+    } else if (__T_ARG_C__(key, node->key)) {
       node = node->left;
     } else {
       node = node->right;
