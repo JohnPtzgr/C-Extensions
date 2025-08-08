@@ -1,7 +1,7 @@
 #include "../memory/dyn_alloc_.h"
 
 #define __DEFAULT_VTABLE_SIZE__ 8
-#define __DEFAULT_VTABLE_MLT_OFFSET__ 1
+#define __DEFAULT_VTABLE_MLT_OFFSET__ 8
 #define __VTABLE_SIZE_IS_POWER_OF_2__ TRUE
 
 typedef struct __vTable__ __vTable__;

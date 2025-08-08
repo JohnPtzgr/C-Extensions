@@ -69,7 +69,6 @@ __vTableProbeId__ __vTable_probe__(__vTable__* table, __vTableHash__ hash) {
          (table->data[idx].data &&
           (hash.hashX != table->data[idx].hash.hashX ||
            hash.hashY != table->data[idx].hash.hashY))) {
-    printf("%d\n", pow);
     idx = (idx + cnt) & (table->size - 1);
     cnt *= 2;
     pow++;
@@ -112,18 +111,15 @@ size_t __vTable_reserve__(__vTable__* table, size_t new_size) {
   table->data = (__vTableNode__*)calloc(new_size, sizeof(__vTableNode__));
   size_t tmp_size = table->size;
   table->size = new_size;
-  if (tmp_data = NULL) {
+  if (tmp_data == NULL) {
     return table->size;
   }
   __vTableProbeId__ idx = (__vTableProbeId__){};
   for (size_t i = 0; i < tmp_size; ++i) {
-    printf("%d - %d, %d\n", i, idx.id, idx.pow);
     idx = __vTable_probe__(table, tmp_data[i].hash);
-    printf("%d - %d, %d\n", i, idx.id, idx.pow);
     if (!idx.id) {
-      free(table->data);
-      table->data = tmp_data;
-      return __vTable_reserve__(table, new_size * 2);
+      __vTable_reserve__(table, table->size * 2);
+      idx = __vTable_probe__(table, tmp_data[i].hash);
     }
     table->data[idx.id - 1].data = tmp_data[i].data;
     table->data[idx.id - 1].hash = tmp_data[i].hash;
@@ -166,7 +162,6 @@ void* __vTable_add__(__vTable__* table, char* key, void* value) {
   __vTableProbeId__ idx;
   idx = __vTable_probe__(table, hash);
   if (!idx.id) {
-    printf("EXpand!\n");
     __vTable_reserve__(table, table->size * 2);
     idx = __vTable_probe__(table, hash);
   }
