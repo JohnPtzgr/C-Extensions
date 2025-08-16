@@ -127,6 +127,8 @@ enum {
   __m_rsh__ = 55,
   __m_irsh__ = 56,
   __m_ineg__ = 57,
+  __m_listen__ = 58,
+  __m_shout__ = 59,
 };
 extern char* __BUILT_IN_METHOD_TABLE__[__BUILT_IN_METHOD_TABLE_SIZE__];
 #define __DEFAULT_BUILT_IN_METHOD_TABLE__ { 1, 2 }

@@ -1,43 +1,201 @@
-#include "../src/oop/class.c"
+#include "../src/oop/class.h"
+
+__GENERIC_CLASS_DECLARE_MACRO__(X, __BaseClass__ __base__, int x; int y;, int z)
+
+void* call(void* any) {
+  printf("Call X!\n");
+  return NULL;
+}
+
+__GENERIC_CLASS_DEFINE_MACRO__(X, STATIC,
+  int x = 0;
+  int y = self->z;
+  y += 1;
+  __X_Default_vClassObject__.__call__ = (generic_function_t)call;
+) DEFAULT_DESTROY(X)
+DEF_INIT(X,
+  ;
+)
+
+// BARE_CLASS(Y, ;, ;,int x;)
+
+// int dfsf(Y* i) {
+//   i->x;
+//   return 0;
+// }
+
+DEF_CLASS(Y, generic_function_t show;, char x; size_t y;)
+void* show2(Y* self, void* args) {
+  printf("SHOW:%c\n", self->x);
+}
+CLASS_END(Y, 0,
+  __ON_INIT__(Y,
+    printf("INIT CLASS: %llu\n", self->x);
+  );
+  printf("IS INNER Y: %llu\n", __GET_CLASS_MASK_IS_INNER__(&__CLASS_MASK__(Y)));
+  self->x = 'a';
+  self->__base__.__meta__->vcls->__to_str__ = (generic_function_t)show2;
+  __AUX_SMETHOD__(Y, show, self) = (generic_function_t)show2;
+) DEFAULT_DESTROY(Y)
+void* Y_init(Y* self, ...) {
+  __AUX_INIT_BEGIN__(Y);
+  // printf("META VCLS %d\n", self->__base__.__meta__->vcls);
+  // printf("ACTL VCLS %d\n", &__Y_Default_vClassObject__);
+  // printf("META CLS %d\n", self->__base__.__meta__->vcls->cls);
+  // printf("ACTL CLS %d\n", &__Y_sClassObject__);
+  // printf("VCLS CLS %d\n", __Y_Default_vClassObject__.cls);
+  // printf("DMET CLS %d\n", __Y_Default_MetaData__.vcls->cls);
+  __vTableHash__ hash = __class_vtable_hash__("show");
+  printf("HASH IS %d-%d\n", hash.hashX, hash.hashY);
+  __vTable_add__(self->__base__.__meta__->vcls->vtable, hash, (__vTableNode__){.data=show2});
+  BEGIN
+  X a = (X){};
+  __ClassMetaData__ vbvb;
+  X_init(&a);
+  END
+  __AUX_INIT_END__(Y);
+}
+
+int test1() {
+  BEGIN
+  X a = (X){};
+  Y b = (Y){};
+  X_init(&a);
+  Y_init(&b);
+  SMETHOD(Y, show, &b);
+  b.__base__.__meta__->vcls->__to_str__(&b, 0);
+  printf("Name is %s\n", a.__base__.__meta__->vcls->cls->name);
+  a.z = 0;
+  __vTableHash__ hash = __class_vtable_hash__("show");
+  printf("HASH IS %d-%d\n", hash.hashX, hash.hashY);
+  for (size_t i = 0; i < b.__base__.__meta__->vcls->vtable->size; ++i) {
+    printf("%d - (D) %d - (M) %d\n", i, b.__base__.__meta__->vcls->vtable->data[i].data, b.__base__.__meta__->vcls->vtable->data[i].mask);
+  }
+  printf("show: %d\n", __vTable_get__(b.__base__.__meta__->vcls->vtable, hash)->data);
+  printf("ACTL show: %d\n", show2);
+  ((generic_function_t)(__vTable_get__(b.__base__.__meta__->vcls->vtable, __class_vtable_hash__("show"))->data))(&b, 0);
+  END
+  return 0;
+}
+
+DEF_CLASS(base1, int a, int c)
+CLASS_END(base1, 0,
+  ((__base1_vClassObject__*)((__ClassInstance__*)self)->__meta__->vcls)->a = 100;
+  ((__ClassInstance__*)self)->__meta__->vcls->__call__ = (generic_function_t)100;
+  printf("INIT BASE1!\n");
+)
+DEFAULT_DESTROY(base1)
+void* base1_init(base1* self, ...) {
+  __AUX_INIT_BEGIN__(base1)
+  __vTable_add__(((__ClassInstance__*)self)->__meta__->vtable, __class_vtable_hash__("0"), (__vTableNode__){.data=(void*)90});
+  printf("base1 DYN INIT! %d / %d\n", self, &__base1_Default_Instance__);
+  __AUX_INIT_END__(base1)
+  return self;
+}
+
+DEF_INHERIT(child1, base1, int b, int d)
+INHERIT_END(child1, base1, 0,
+  printf("INIT CHILD1!\n");
+  printf("INHERITED BASE1!\n");
+) DEFAULT_DESTROY(child1)
+void* child1_init(child1* self, ...) {
+  __AUX_INIT_BEGIN__(child1)
+  printf("child1 DYN INIT! %d / %d\n", self, &__child1_Default_Instance__);
+  __AUX_INIT_END__(child1)
+  return self;
+}
+
+int test2() {
+  BEGIN
+  base1 x = (base1){};
+  base1_init(&x);
+  printf("VCLS! %d\n", ((__ClassInstance__*)&x)->__meta__->vcls->cls->default_vcls);
+  printf("CALL! %d\n", ((__ClassInstance__*)&x)->__meta__->vcls->__call__);
+  printf("VT %d\n", __vTable_get__(((__ClassInstance__*)&x)->__meta__->vtable, __class_vtable_hash__("0"))->data);
+  child1 y = (child1){};
+  child1_init(&y);
+  // for (size_t i = 0; i < __VCLASS_METHOD_COUNT__; ++i) {
+  //   printf("- %d -\n", *(&(((__ClassInstance__*)&y)->__meta__->vcls->__init__) + i));
+  // }
+  printf("CALL! %d\n", ((__ClassInstance__*)&y)->__meta__->vcls->__call__);
+  printf("VT %d\n", __vTable_get__(((__ClassInstance__*)&y)->__meta__->vtable, __class_vtable_hash__("0"))->data);
+  END
+  return 0;
+}
+
+DEF_CLASS(base2, int a, int c)
+CLASS_END(base2, 0,
+  self->c = 0;
+  printf("INIT BASE2!\n");
+)
+DEFAULT_DESTROY(base2)
+void* base2add(base2* self, base2* other) {
+  printf("ADD!\n");
+  self->c += other->c + 100;
+  return self;
+}
+void* base2_init(base2* self, ...) {
+  __AUX_INIT_BEGIN__(base2)
+  ((__ClassInstance__*)self)->__meta__->vcls->__add__ = (generic_function_t)base2add;
+  printf("base2 DYN INIT! %d / %d\n", self, &__base2_Default_Instance__);
+  __AUX_INIT_END__(base2)
+  return self;
+}
+
+DEF_INHERIT(child2, base1, int b, base2 __base2__; int d)
+INHERIT_END(child2, base1, 0,
+  printf("INHERITED BASE1!\n");
+  __AUX_ADD_INHERITS__(child2, base2, __base2__);
+  printf("INHERITED BASE2!\n");
+  printf("INIT CHILD2!\n");
+) DEFAULT_DESTROY(child2)
+void* child2_init(child2* self, ...) {
+  __AUX_INIT_BEGIN__(child2)
+  printf("child2 DYN INIT! %d / %d\n", self, &__child2_Default_Instance__);
+  __AUX_INIT_END__(child2)
+  return self;
+}
+
+
+int test3() {
+  BEGIN
+  base2 a = (base2){};
+  base2 b = (base2){};
+  base2_init(&a);
+  base2_init(&b);
+  printf("BFR: %d\n", a.c);
+  ((__ClassInstance__*)&a)->__meta__->vcls->__add__(&a, &b);
+  printf("AFT: %d\n", a.c);
+  child2 c = (child2){};
+  child2 d = (child2){};
+  child2_init(&c);
+  child2_init(&d);
+  printf("ADD: %d\n", c.__base2__.c);
+  ((__ClassInstance__*)&c)->__meta__->vcls->__add__(&c + \
+    ((__ClassInstance__*)&c)->__meta__->vcls->method_shift[__m_add__],
+    &d + ((__ClassInstance__*)&c)->__meta__->vcls->method_shift[__m_add__]);
+  printf("ADD: %d\n", c.__base2__.c);
+  END
+  return 0;
+}
+
+typedef struct c_class {
+  int x;
+} c_class;
+
+DEF_BRIDGE(c_class, int st_x;)
+
+BRIDGE_END(c_class, 0,
+  self->__base__.x = 0;
+) {
+  return 0;
+}
+
 
 int main() {
-  __vTable__ t;
-  __vTable_init__(&t, 0, 0);
-  printf("init\n");
-  int x = 90;
-  int y = 100;
-  __vTable_add__(&t, "a", (void*)x);
-  __vTable_add__(&t, "b", (void*)x);
-  __vTable_add__(&t, "c", (void*)x);
-  __vTable_add__(&t, "d", (void*)x);
-  for (size_t i = 0; i < t.size; ++i) {
-    printf("%d, %d, %d, %d\n", t.data[i].data, t.data[i].hash.hashX, t.data[i].hash.hashY, t.data[i].mask);
-  }
-  __vTable_add__(&t, "e", (void*)x);
-  __vTable_add__(&t, "f", (void*)x);
-  __vTable_add__(&t, "g", (void*)x);
-  __vTable_add__(&t, "h", (void*)x);
-  for (size_t i = 0; i < t.size; ++i) {
-    printf("%d, %d, %d, %d\n", t.data[i].data, t.data[i].hash.hashX, t.data[i].hash.hashY, t.data[i].mask);
-  }
-  __vTable_add__(&t, "i", (void*)x);
-  __vTable_add__(&t, "j", (void*)x);
-  __vTable_add__(&t, "k", (void*)x);
-  __vTable_add__(&t, "l", (void*)x);
-  for (size_t i = 0; i < t.size; ++i) {
-    printf("%d, %d, %d, %d\n", t.data[i].data, t.data[i].hash.hashX, t.data[i].hash.hashY, t.data[i].mask);
-  }
-  __vTable_add__(&t, "m", (void*)x);
-  __vTable_add__(&t, "n", (void*)x);
-  __vTable_add__(&t, "o", (void*)x);
-  __vTable_add__(&t, "p", (void*)x);
-  for (size_t i = 0; i < t.size; ++i) {
-    printf("%d, %d, %d, %d\n", t.data[i].data, t.data[i].hash.hashX, t.data[i].hash.hashY, t.data[i].mask);
-  }
-  printf("\n%d\n", __vTable_check__(&t, "w"));
-  __vTable_destroy__(&t);
-  printf("destroy\n");
-  int z = 90;
-  printf("%u\n", z & (char)(-(char)z));
+  test1();
+  test2();
+  test3();
+  // test4();
   return 0;
-} 
+}

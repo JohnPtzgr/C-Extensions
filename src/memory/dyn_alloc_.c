@@ -57,10 +57,10 @@ BOOL __scope_stack_callable_predicate__(void* instance, generic_function_t actio
 void* __CALL_ACTION_N_ARGS__(generic_function_t action,
                              void* instance,
                              void** args) {
-  if (args == 0) {
-    if (__scope_stack_indentation_predicate__(instance, action)) {
-      return NULL;
-    }
+  if (__scope_stack_indentation_predicate__(instance, action)) {
+    return NULL;
+  }
+  if (!args) {
     if (action) {
       return action(instance, 0);
     } else {
@@ -154,15 +154,12 @@ void* __CHECK_DEFER_CHUNK_PREDICATE_N_ARGS__(generic_function_t predicate,
                                              generic_function_t action,
                                              void** args) {
 
-  if (args == 0) {
-    if (__scope_stack_indentation_predicate__(instance, action)) {
-      return (void*)TRUE;
-    }
-    return predicate(instance, action);
-  }
-
   if (__scope_stack_indentation_predicate__(instance, action)) {
     return (void*)TRUE;
+  }
+  
+  if (args == 0) {
+    return predicate(instance, action);
   }
 
   size_t arg_size = 0;
@@ -515,11 +512,11 @@ size_t __scope_defer_chunk_reserve__(__SCOPE_DEFER_CHUNK__* chunk, size_t capaci
   void** tmp_instances = chunk->instances;
   void*** tmp_args = chunk->args;
   void*** tmp_predicate_args = chunk->predicate_args;
-  chunk->predicates = (generic_function_t*)malloc(sizeof(generic_function_t) * capacity);
-  chunk->actions = (generic_function_t*)malloc(sizeof(generic_function_t) * capacity);
-  chunk->instances = (void**)malloc(sizeof(void*) * capacity);
-  chunk->args = (void***)malloc(sizeof(void**) * capacity);
-  chunk->predicate_args = (void***)malloc(sizeof(void**) * capacity);
+  chunk->predicates = (generic_function_t*)calloc(capacity, sizeof(generic_function_t));
+  chunk->actions = (generic_function_t*)calloc(capacity, sizeof(generic_function_t));
+  chunk->instances = (void**)calloc(capacity, sizeof(void*));
+  chunk->args = (void***)calloc(capacity, sizeof(void**));
+  chunk->predicate_args = (void***)calloc(capacity, sizeof(void**));
   if (chunk->capacity) {
     memcpy(chunk->predicates,
       tmp_predicates,
@@ -672,7 +669,7 @@ size_t __scope_defer_chunk_skip__(__SCOPE_DEFER_CHUNK__* chunk,
 
 size_t __scope_defer_pool_reserve__(__SCOPE_DEFER_POOL__* pool, size_t capacity) {
   __SCOPE_DEFER_CHUNK__* tmp_chunks = pool->chunks;
-  pool->chunks = (__SCOPE_DEFER_CHUNK__*)malloc(sizeof(__SCOPE_DEFER_CHUNK__) * capacity);
+  pool->chunks = (__SCOPE_DEFER_CHUNK__*)calloc(capacity, sizeof(__SCOPE_DEFER_CHUNK__));
   if (pool->capacity) {
     size_t index_shift = 0;
     for (size_t i = 0; i < pool->capacity; ++i) {
@@ -707,6 +704,7 @@ size_t __scope_defer_pool_destroy__(__SCOPE_DEFER_POOL__* pool) {
   for (size_t i = 0; i < pool->size; ++i) {
     __scope_defer_chunk_destroy__(&(pool->chunks[i]));
   }
+  free(pool->chunks);
   __TEMPLATE_1(__T_ARG_A__, freeTree)((RBNode*)pool->tree_root);
   *pool = (__SCOPE_DEFER_POOL__){};
   return 0;
@@ -755,7 +753,7 @@ size_t __scope_defer_pool_push__(__SCOPE_DEFER_POOL__* pool,
 size_t __scope_defer_pool_check__(__SCOPE_DEFER_POOL__* pool) {
   size_t count_releases = 0;
   size_t tmp_size;
-  for(size_t i = pool->size; (pool->tokens > 0) &&
+  for(size_t i = pool->size; (pool->tokens > 0) && (i > 0) &&
       (pool->chunks[i - 1].min_indentation >= pool->indentation - 1); --i) {
     if (pool->chunks[i - 1].bias_sum >= 0) {
       pool->tokens = MIN(pool->tokens - pool->chunks[i - 1].size, 0);
@@ -875,6 +873,9 @@ void* __scope_object_init__(__SCOPE_OBJECT__* scope,
 }
 
 size_t __scope_object_destroy__(__SCOPE_OBJECT__* scope) {
+  if (!scope->stack) {
+    return 0;
+  }
   __scope_stack_destroy__(scope->stack);
   __scope_defer_pool_destroy__(scope->defer_pool);
   *scope = (__SCOPE_OBJECT__){};
@@ -882,6 +883,9 @@ size_t __scope_object_destroy__(__SCOPE_OBJECT__* scope) {
 }
 
 size_t __scope_object_enter__(__SCOPE_OBJECT__* scope) {
+  if (!scope->stack) {
+    return 0;
+  }
   __scope_stack_push__(scope->stack, NULL, NULL, NULL);
   if (scope->mask) {
     __scope_defer_pool_enter__(scope->defer_pool);
@@ -903,6 +907,9 @@ size_t __scope_object_unlock_pool__(__SCOPE_OBJECT__* scope) {
 }
 
 size_t __scope_object_escape__(__SCOPE_OBJECT__* scope) {
+  if (!scope->stack) {
+    return 0;
+  }
   scope->size -= __scope_stack_pop_top__(scope->stack);
   if (scope->mask && 1) {
     scope->size -= __scope_defer_pool_escape__(scope->defer_pool);
@@ -917,6 +924,9 @@ size_t __scope_object_push__(__SCOPE_OBJECT__* scope,
                              void* instance,
                              generic_function_t action,
                              ...) {
+  if (!scope->stack) {
+    return 0;
+  }
   va_list __ARGUMENT_POINTERS__;
   void* __args_stack__[__SCOPE_OBJECT_STACK_ARGUMENT_SIZE__] = {};
   void** args = __args_stack__;
@@ -946,11 +956,14 @@ size_t __scope_object_push__(__SCOPE_OBJECT__* scope,
   }
   if (args_capacity == __SCOPE_OBJECT_STACK_ARGUMENT_SIZE__) {
     if (__ARG_CNT__ > 0) {
-      args = (void**)malloc(sizeof(void*) * __ARG_CNT__);
+      args = (void**)malloc(sizeof(void*) * (__ARG_CNT__ + 1));
       memcpy(args, __args_stack__, args_capacity);
     } else {
       args = 0;
     }
+  }
+  if (args) {
+    args[__ARG_CNT__] = NULL;
   }
   __scope_defer_pool_add_token__(scope->defer_pool);
   __scope_stack_push__(scope->stack, action, instance, args);
@@ -966,6 +979,9 @@ size_t __scope_object_defer__(__SCOPE_OBJECT__* scope,
                               generic_function_t action,
                               generic_function_t predicate,
                               ...) {
+  if (!scope->stack) {
+    return 0;
+  }
   va_list __ARGUMENT_POINTERS__;
   void* __args_stack__[__SCOPE_OBJECT_STACK_ARGUMENT_SIZE__] = {};
   void** args = __args_stack__;
@@ -978,8 +994,8 @@ size_t __scope_object_defer__(__SCOPE_OBJECT__* scope,
          (args[i] = va_arg(__ARGUMENT_POINTERS__, void*));
          ++i) {
       __ARG_CNT__++;
-      if (__ARG_CNT__ == args_capacity) {
-        if (__ARG_CNT__ == __SCOPE_OBJECT_STACK_ARGUMENT_SIZE__) {
+      if (__ARG_CNT__ + 1 == args_capacity) {
+        if (__ARG_CNT__ + 1 == __SCOPE_OBJECT_STACK_ARGUMENT_SIZE__) {
           args = (void**)malloc(sizeof(void*) * args_capacity * 2);
           memcpy(args, __args_stack__, args_capacity);
         } else {
@@ -994,8 +1010,15 @@ size_t __scope_object_defer__(__SCOPE_OBJECT__* scope,
     va_end(__ARGUMENT_POINTERS__);
   }
   if (args_capacity == __SCOPE_OBJECT_STACK_ARGUMENT_SIZE__) {
-    args = (void**)malloc(sizeof(void*) * __ARG_CNT__);
-    memcpy(args, __args_stack__, args_capacity);
+    if (__ARG_CNT__ > 0) {
+      args = (void**)malloc(sizeof(void*) * (__ARG_CNT__ + 1));
+      memcpy(args, __args_stack__, args_capacity);
+    } else {
+      args = 0;
+    }
+  }
+  if (args) {
+    args[__ARG_CNT__] = NULL;
   }
   size_t result;
   if (action && instance) {
@@ -1029,6 +1052,9 @@ size_t __scope_object_stage__(__SCOPE_OBJECT__* scope,
                               void* instance,
                               generic_function_t action,
                               ...) {
+  if (!scope->stack) {
+    return 0;
+  }
   BOOL is_staged = FALSE;
   if (instance) {
     if (action) {
@@ -1062,8 +1088,8 @@ size_t __scope_object_stage__(__SCOPE_OBJECT__* scope,
          (args[i] = va_arg(__ARGUMENT_POINTERS__, void*));
          ++i) {
       __ARG_CNT__++;
-      if (__ARG_CNT__ == args_capacity) {
-        if (__ARG_CNT__ == __SCOPE_OBJECT_STACK_ARGUMENT_SIZE__) {
+      if (__ARG_CNT__ + 1 == args_capacity) {
+        if (__ARG_CNT__ + 1 == __SCOPE_OBJECT_STACK_ARGUMENT_SIZE__) {
           args = (void**)malloc(sizeof(void*) * args_capacity * 2);
           memcpy(args, __args_stack__, args_capacity);
         } else {
@@ -1084,6 +1110,9 @@ size_t __scope_object_stage__(__SCOPE_OBJECT__* scope,
     } else {
       args = 0;
     }
+  }
+  if (args) {
+    args[__ARG_CNT__] = NULL;
   }
   if (is_staged) {
     size_t result;
@@ -1128,6 +1157,9 @@ size_t __scope_object_skip__(__SCOPE_OBJECT__* scope,
                                                    .action=action,
                                                    .instance=instance},
                                                    &root);
+  if (!scope->stack) {
+    return 0;
+  }
   if (node) {
     __scope_defer_pool_skip__(scope->defer_pool, instance, action);
   } else {
@@ -1151,6 +1183,9 @@ size_t __scope_object_force__(__SCOPE_OBJECT__* scope,
                                                    .action=action,
                                                    .instance=instance},
                                                    &root);
+  if (!scope->stack) {
+    return 0;
+  }
   if (node) {
     __scope_defer_pool_force__(scope->defer_pool, instance, action);
   } else {

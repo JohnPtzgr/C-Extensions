@@ -53,6 +53,10 @@
 
 #endif // CHOOSE __VA_ARGS__ ARGUMENT (Up to 8-th)
 
+#ifndef TO_STR_LITERAL
+#define TO_STR_LITERAL(ARG) #ARG
+#endif // !TO_STR_LITERAL
+
 #ifndef BOOL
 typedef char BOOL;
 typedef enum { FALSE = 0, TRUE = 1} BOOL_VALUES;
