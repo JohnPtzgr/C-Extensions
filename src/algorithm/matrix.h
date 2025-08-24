@@ -1,15 +1,16 @@
 #ifndef MATRIX_H
 #define MATRIX_H
 
-#include "../oop/classes.h"
+#include "../oop/class.h"
 #include "vector.h"
 
 
-STATIC_CLASS(binary_matrix_t,
-vector_t container;
-size_t shape_x;
-size_t shape_y,
-10)
+DEF_CLASS(binary_matrix_t,
+  ,
+  vector_t container;
+  size_t shape_x;
+  size_t shape_y;
+)
 void* binary_matrix_add_self(binary_matrix_t*, binary_matrix_t*);
 void* binary_matrix_add(binary_matrix_t*, binary_matrix_t*, binary_matrix_t*);
 void* binary_matrix_sub_self(binary_matrix_t*, binary_matrix_t*);

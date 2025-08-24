@@ -1,16 +1,24 @@
 #include "linked_list.h"
 #include "string.h"
 
-STATIC_CLASS_END(linked_list_node_t, 0, ;) DEFAULT_DESTROY;
+CLASS_END(linked_list_node_t, 0, ;) DEFAULT_DESTROY(linked_list_node_t);
+linked_list_node_t_init(linked_list_node_t* self, ...) {
+  __AUX_INIT_BEGIN__(linked_list_node_t)
+  __M_VA_ARG__(4, 0, 0, 0, 0);
+  __AUX_INIT_END__(linked_list_node_t)
+}
 
-STATIC_CLASS_END(linked_list_t, 0,
-  self->push = (method_function_t)linked_list_push;
-  self->pop = (method_function_t)linked_list_pop;
+CLASS_END(linked_list_t, STATIC,
+  __linked_list_t_Default_vClassObject__.push = (generic_function_t)linked_list_push;
+  __linked_list_t_Default_vClassObject__.pop = (generic_function_t)linked_list_pop;
   self->head = NULL;
   self->size = 0;
-  METHOD_ARGS(1, (void*)sizeof(size_t));
-  self->type_size = ((size_t*)__ARG_LIST__)[0];
-) DEFAULT_DESTROY
+) DEFAULT_DESTROY(linked_list_t);
+linked_list_t_init(linked_list_node_t* self, ...) {
+  __AUX_INIT_BEGIN__(linked_list_node_t)
+  __M_VA_ARG__(4, 0, 0, 0, 0);
+  __AUX_INIT_END__(linked_list_node_t)
+}
 
 void* linked_list_push(linked_list_t* self, void* obj) {
   linked_list_node_t* node = \

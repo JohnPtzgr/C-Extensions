@@ -489,6 +489,21 @@ void __SET_CLASS_MASK_WAS_INIT__(size_t* mask, BOOL new_type);
   } \
   void* __##NAME##_static_destroy__(NAME* self)
 
+#define __M_VA_ARG__( ARGS_COUNT, DEFAULT_ARGS... ) \
+  va_list __RAW_METHOD_ARGS__; \
+  void* __ARG_LIST__[ARGS_COUNT] = {DEFAULT_ARGS}; \
+  size_t __ARG_CNT__ = 0; \
+  do { \
+    va_start(__RAW_METHOD_ARGS__, self); \
+    for (size_t i = 0; \
+      (i < ARGS_COUNT) && \
+      (__ARG_LIST__[i] = va_arg(__RAW_METHOD_ARGS__, void*)); \
+      ++i) { \
+        __ARG_CNT__++; \
+      }; \
+    va_end(__RAW_METHOD_ARGS__); \
+  } while (0);
+
 #define __AUX_INIT_BEGIN__(NAME) \
   if (self != &__##NAME##_Default_Instance__ && \
       !__GET_CLASS_MASK_WAS_INIT__(&(__##NAME##_ClassObject__.mask))) { \
@@ -539,21 +554,6 @@ void __SET_CLASS_MASK_WAS_INIT__(size_t* mask, BOOL new_type);
     EXPR; \
     __AUX_INIT_END__(NAME); \
   } \
-
-#define __M_VA_ARG__( ARGS_COUNT, DEFAULT_ARGS... ) \
-  va_list __RAW_METHOD_ARGS__; \
-  void* __ARG_LIST__[ARGS_COUNT] = {DEFAULT_ARGS}; \
-  size_t __ARG_CNT__ = 0; \
-  do { \
-    va_start(__RAW_METHOD_ARGS__, self); \
-    for (size_t i = 0; \
-      (i < ARGS_COUNT) && \
-      (__ARG_LIST__[i] = va_arg(__RAW_METHOD_ARGS__, void*)); \
-      ++i) { \
-        __ARG_CNT__++; \
-      }; \
-    va_end(__RAW_METHOD_ARGS__); \
-  } while (0);
 
 
 #define __AUX_CLASS__(NAME, STATIC_FIELDS, INSTANCE_FIELDS) \
@@ -729,4 +729,11 @@ void __SET_CLASS_MASK_WAS_INIT__(size_t* mask, BOOL new_type);
   
   #define BRIDGE_END(NAME, MASK, EXPR...) \
     __BRIDGE_CLASS_DEFINE_MACRO__(NAME, MASK, EXPR)
+
+#define __AUX_CLS_INST__(CLASS_NAME,ARGS...) \
+  CLASS_NAME ARG1_VA_ARGS(ARGS) = (CLASS_NAME){}; \
+  CLASS_NAME##_init(&(ARG1_VA_ARGS(ARGS)), ARG1_VA_ARGS_VA(ARGS, 0));
+
+#define INST(CLASS_NAME,OBJ...) __AUX_CLS_INST__(CLASS_NAME, OBJ);
+
 

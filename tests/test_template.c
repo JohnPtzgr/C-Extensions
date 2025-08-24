@@ -31,13 +31,19 @@ int add() {
 #define __T_ARG_B__ float
 #include "test_template_cva.h"
 
+
+#define __TEMPLATE__
+#define __T_VA__ xqc
+#define __T_ARG_A__ int
+#define __T_ARG_B__ float
+#include "../src/oop/templates.h"
+
 int main() {
   int a = 0;
   int b = 1;
   float c = 0;
   float d = 0;
-  __TEMPLATE_2(int, float, cls_t) e;
-  INIT(__TEMPLATE_2(int, float, cls_t), &e);
+  INST(__TEMPLATE_VA(cls_t), e);
   e.b = 90;
   add_int(&a, &b);
   add_float(&c, &d);

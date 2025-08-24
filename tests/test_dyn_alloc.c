@@ -1,4 +1,4 @@
-#include "../src/memory/dyn_alloc_.h"
+#include "../src/memory/dyn_alloc.h"
 
 void* doNothing(void* x, ...) {
   printf("X = %d\n", x);

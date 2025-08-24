@@ -1,21 +1,21 @@
-#include "../src/oop/classes.h"
+#include "../src/oop/class.h"
 #include "../src/oop/types.h"
 #include "string.h"
 
-STATIC_CLASS(cl_t, size_t x;, 0)
-STATIC_CLASS_END(cl_t, 0, ;) DEFAULT_DESTROY
+DEF_CLASS(cl_t, , size_t x;);
+CLASS_END(cl_t, STATIC, ;) DEFAULT_DESTROY(cl_t)
 
-STATIC_CLASS(cl_add_t, size_t x;, 1)
+DEF_CLASS(cl_add_t, , size_t x;);
 void* claddt_func(cl_add_t* a, cl_add_t* b, cl_add_t* c) {
   printf("ADD CLADD\n");
   c->x = a->x + b->x;
   return c;
 }
-STATIC_CLASS_END(cl_add_t, 1,
+CLASS_END(cl_add_t, STATIC,
   self->x = 1;
-  SET_METHOD(cl_add_t, __m_add__, self, claddt_func);
+  ((__ClassMetaData__*)self)->vcls->__add__=claddt_func;
   printf("INIT CLADD!\n");
-) DEFAULT_DESTROY
+) DEFAULT_DESTROY(cl_add_t)
 
 
 void generic_add(var_object_t* a, var_object_t* b, var_object_t* c) {
@@ -35,22 +35,18 @@ int funct() {
   CLASS_INFO(cl_t, y);
   printf("%s\n", y.type_name);
   printf("%llu\n", y.meta.mask);
-  var_object_t a;
   cl_t w;
-  INIT(var_object_t, &a, &y, &w);
+  INST(var_object_t, a, &y, &w);
   printf("%s\n", a.type.type_name);
   printf("%d\n", a.type.meta.mask);
   a.type.meta;
-  var_object_t v_a;
-  var_object_t v_b;
-  var_object_t v_c;
   cl_add_t add_a;
   cl_add_t add_b;
   cl_add_t add_c;
   CLASS_INFO(cl_add_t, addt);
-  INIT(var_object_t, &v_a, &addt, &add_a);
-  INIT(var_object_t, &v_b, &addt, &add_b);
-  INIT(var_object_t, &v_c, &addt, &add_c);
+  INST(var_object_t, v_a, &addt, &add_a);
+  INST(var_object_t, v_b, &addt, &add_b);
+  INST(var_object_t, v_c, &addt, &add_c);
   printf("%s\n", v_a.type.type_name);
   printf("%d\n", v_a.type.meta.mask);
   // void* p = VAR_METHOD(__m_add__, &v_a);

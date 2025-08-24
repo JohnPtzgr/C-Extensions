@@ -1,25 +1,28 @@
 #ifndef VECTOR_H
 #define VECTOR_H
 
-#include "../oop/classes.h"
+#include "../oop/class.h"
 #include "string.h"
-#define UCHAR_MAX (__SCHAR_MAX__*2 + 1)
 
-STATIC_CLASS(generic_container_t,
+DEF_CLASS(generic_container_t,
+  ,
   void* data;
-  size_t size;,
-  2)
+  size_t size;
+)
 void* gen_cont_free(generic_container_t* self);
 void* gen_cont_alloc(generic_container_t* self, size_t size);
 
-STATIC_INHERIT(vector_t, generic_container_t, size_t size; size_t type_size; , 10)
+DEF_INHERIT(vector_t, generic_container_t,
+  ,
+  size_t size;
+  size_t type_size;)
 
 // Dynamic data structure (C vector)
 typedef struct darray_t {
-    void* data;
-    size_t type_size;
-    size_t da_size;
-    size_t da_capacity;
+  void* data;
+  size_t type_size;
+  size_t da_size;
+  size_t da_capacity;
 } darray_t;
 
 // Initialize empty ARRAY for objects of TYPE_SIZE size
@@ -74,9 +77,9 @@ size_t array_split(darray_t* array, const void* value, darray_t* container);
 
 // Iterator for darray_t array
 typedef struct iterator_t {
-    darray_t container[1];
-    size_t index;
-    unsigned char flags;
+  darray_t container[1];
+  size_t index;
+  unsigned char flags;
 } iterator_t;
 
 #define ITERATOR_OVERFLOW_FORWARD 2
@@ -108,7 +111,7 @@ void reset(iterator_t* iterator);
 
 // Dynamic string data structure (C string)
 typedef struct string_t {
-    darray_t container[1];
+  darray_t container[1];
 } string_t;
 
 void string_init(string_t* string);
@@ -160,11 +163,11 @@ void string_destroy(string_t* string);
 
 // Dynamic memory framework
 typedef struct heap_t {
-    darray_t* pointers_on_heap;
-    darray_t* pointers_on_stack;
-    size_t pointers_allocated;
-    size_t pointers_freed;
-    size_t pointers_total;
+  darray_t* pointers_on_heap;
+  darray_t* pointers_on_stack;
+  size_t pointers_allocated;
+  size_t pointers_freed;
+  size_t pointers_total;
 } heap_t;
 
 // Initialize HEAP

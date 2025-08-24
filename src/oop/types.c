@@ -1,11 +1,12 @@
 #include "types.h"
 
 
-STATIC_CLASS_END(class_meta_t, 0, ) DEFAULT_DESTROY
+CLASS_END(class_meta_t, STATIC, ) DEFAULT_DESTROY(class_meta_t)
 
-
-STATIC_CLASS_END(type_object_t, 0,
-  METHOD_ARGS(5);
+CLASS_END(type_object_t, STATIC, )
+DEFAULT_DESTROY(type_object_t);
+DEF_INIT(type_object_t, 
+  __M_VA_ARG__(5);
   self->type_name = (char*)((void**)__ARG_LIST__[0]);
   self->size = (size_t)((void**)__ARG_LIST__[1]);
   self->id = hash_byte_array(self->type_name, strlen(self->type_name));
@@ -14,14 +15,24 @@ STATIC_CLASS_END(type_object_t, 0,
   self->meta.method_table = 0;
   if (__ARG_CNT__ > 2) {
     self->meta.method_table = (size_t*)((void**)__ARG_LIST__[2]);
-    self->meta.meta_table = (method_function_t*)((void**)__ARG_LIST__[3]);
+    self->meta.meta_table = (generic_function_t*)((void**)__ARG_LIST__[3]);
     self->meta.mask = (size_t)((void**)__ARG_LIST__[4]);
   }
-) DEFAULT_DESTROY
+)
 
 
-STATIC_CLASS_END(var_object_t, 0,
-  METHOD_ARGS(10);
+CLASS_END(var_object_t, STATIC, ) { return NULL; }
+void* var_object_t_destroy(var_object_t* self, ...) {
+  if (self->type.meta.meta_table) {
+    self->type.meta.meta_table[__m_destroy__](self->value);
+  }
+  if (self->allocated) {
+    free(self->value);
+  }
+  return self;
+}
+DEF_INIT(var_object_t,
+  __M_VA_ARG__(10);
   self->type = *((type_object_t*)((void**)__ARG_LIST__[0]));
   self->value = ((void**)__ARG_LIST__[1]);
   self->allocated = 0;
@@ -72,15 +83,7 @@ STATIC_CLASS_END(var_object_t, 0,
       break;
     }
   }
-) {
-  if (self->type.meta.meta_table) {
-    self->type.meta.meta_table[__m_destroy__](self->value);
-  }
-  if (self->allocated) {
-    free(self->value);
-  }
-  return self;
-}
+)
 
 
 void* var_object_alloc(var_object_t* self) {

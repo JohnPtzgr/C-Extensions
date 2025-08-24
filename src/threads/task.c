@@ -30,10 +30,6 @@ task_t* task_new(task_function_t t_start,
       t_args = NULL;
     }
   }
-  sizeof(task_t);
-  sizeof(task_worker_t);
-  sizeof(task_manager_t);
-  sizeof(pthread_mutex_t);
   task_t* task = (task_t*)malloc(sizeof(task_t));
   *task = (task_t){.task_start=t_start,
                    .task_stop=t_stop,
