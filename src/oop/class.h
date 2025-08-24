@@ -245,7 +245,7 @@ typedef enum __m_enum__ {
   __m_id__
 } __m_enum__;
 
-const char* __VCLASS_METHOD_UC_NAMES__[__VCLASS_METHOD_COUNT__];
+extern const char* __VCLASS_METHOD_UC_NAMES__[__VCLASS_METHOD_COUNT__];
 
 typedef struct __PRIVATE__
 {

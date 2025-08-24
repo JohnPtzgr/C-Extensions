@@ -30,7 +30,7 @@ void* async_promise_finish(void* args, void* result) {
   return result;
 }
 
-task_t* async_promise_new(task_function_t call,
+async_promise_t* async_promise_new(task_function_t call,
                           void* call_args,
                           task_function_t check,
                           void* check_args,
@@ -45,17 +45,19 @@ task_t* async_promise_new(task_function_t call,
   (*promise).task = (task_t){.task_start=call,
                              .task_stop=NULL,
                              .task_continue=NULL,
-                             .task_finish=async_promise_finish,
+                             .task_finish=(task_function_t)async_promise_finish,
                              .task_args=call_args,
                              .check=check,
                              .check_args=check_args,
-                             .callback=callback,
-                             .callback_args=callback_args,
+                             .callback=(task_function_t)async_promise_callback,
+                             .callback_args=promise,
                              .fd_in=fd_in,
                              .fd_out=fd_out,
                              .fd_exc=fd_exc,
                              .task_timer=timer,
-                             .depends_on=dependency};
+                             .depends_on=&(dependency->task)};
+  promise->callback = callback;
+  promise->callback_args = callback_args;
   pthread_mutex_init(&(promise->task.task_mutex), NULL);
   pthread_mutex_init(&(promise->mutex), NULL);
   pthread_cond_init(&(promise->condition), NULL);

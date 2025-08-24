@@ -1,109 +1,132 @@
 #include "functional.h"
 
-long long __LL_ADD_FUNCTION(long long a, long long b) {
-  return a + b;
-}
 
-long long __LL_SUB_FUNCTION(long long a, long long b) {
-  return a - b;
-}
-
-long long __LL_DIV_FUNCTION(long long a, long long b) {
-  return a / b;
-}
-
-long long __LL_MUL_FUNCTION(long long a, long long b) {
-  return a * b;
-}
-
-long long __LL_MOD_FUNCTION(long long a, long long b) {
-  return a % b;
-}
-
-long long __LL_AND_FUNCTION(long long a, long long b) {
-  return a & b;
-}
-
-long long __LL_OR_FUNCTION(long long a, long long b) {
-  return a | b;
-}
-
-long long __LL_XOR_FUNCTION(long long a, long long b) {
-  return a ^ b;
-}
-
-long long __LL_POW_FUNCTION(long long a, long long b) {
-  if (b < 0) {
-    return 0;
+void* callable_method_call(callable_t* self, ...) {
+  __M_VA_ARG__(16);
+  switch (__ARG_CNT__) {
+    case 0:
+      return self->func_ptr(0);
+    case 1:
+      return self->func_ptr(__ARG_LIST__[0], 0);
+    case 2:
+      return self->func_ptr(__ARG_LIST__[0], __ARG_LIST__[1], 0);
+    case 3:
+      return self->func_ptr(__ARG_LIST__[0], __ARG_LIST__[1], \
+        __ARG_LIST__[2], 0);
+    case 4:
+      return self->func_ptr(__ARG_LIST__[0], __ARG_LIST__[1], \
+        __ARG_LIST__[2], __ARG_LIST__[3], 0);
+    case 5:
+      return self->func_ptr(__ARG_LIST__[0], __ARG_LIST__[1], \
+        __ARG_LIST__[2], __ARG_LIST__[3], __ARG_LIST__[4], 0);
+    case 6:
+      return self->func_ptr(__ARG_LIST__[0], __ARG_LIST__[1], \
+        __ARG_LIST__[2], __ARG_LIST__[3], __ARG_LIST__[4], \
+        __ARG_LIST__[5], 0);
+    case 7:
+      return self->func_ptr(__ARG_LIST__[0], __ARG_LIST__[1], \
+        __ARG_LIST__[2], __ARG_LIST__[3], __ARG_LIST__[4], \
+        __ARG_LIST__[5], __ARG_LIST__[6], 0);
+    case 8:
+      return self->func_ptr(__ARG_LIST__[0], __ARG_LIST__[1], \
+        __ARG_LIST__[2], __ARG_LIST__[3], __ARG_LIST__[4], \
+        __ARG_LIST__[5], __ARG_LIST__[6], __ARG_LIST__[7], 0);
+    case 9:
+      return self->func_ptr(__ARG_LIST__[0], __ARG_LIST__[1], \
+        __ARG_LIST__[2], __ARG_LIST__[3], __ARG_LIST__[4], \
+        __ARG_LIST__[5], __ARG_LIST__[6], __ARG_LIST__[7], \
+        __ARG_LIST__[8], 0);
+    case 10:
+      return self->func_ptr(__ARG_LIST__[0], __ARG_LIST__[1], \
+        __ARG_LIST__[2], __ARG_LIST__[3], __ARG_LIST__[4], \
+        __ARG_LIST__[5], __ARG_LIST__[6], __ARG_LIST__[7], \
+        __ARG_LIST__[8], __ARG_LIST__[9], 0);
+    case 11:
+      return self->func_ptr(__ARG_LIST__[0], __ARG_LIST__[1], \
+        __ARG_LIST__[2], __ARG_LIST__[3], __ARG_LIST__[4], \
+        __ARG_LIST__[5], __ARG_LIST__[6], __ARG_LIST__[7], \
+        __ARG_LIST__[8], __ARG_LIST__[9], __ARG_LIST__[10], 0);
+    case 12:
+      return self->func_ptr(__ARG_LIST__[0], __ARG_LIST__[1], \
+        __ARG_LIST__[2], __ARG_LIST__[3], __ARG_LIST__[4], \
+        __ARG_LIST__[5], __ARG_LIST__[6], __ARG_LIST__[7], \
+        __ARG_LIST__[8], __ARG_LIST__[9], __ARG_LIST__[10], \
+        __ARG_LIST__[11], 0);
+    case 13:
+      return self->func_ptr(__ARG_LIST__[0], __ARG_LIST__[1], \
+        __ARG_LIST__[2], __ARG_LIST__[3], __ARG_LIST__[4], \
+        __ARG_LIST__[5], __ARG_LIST__[6], __ARG_LIST__[7], \
+        __ARG_LIST__[8], __ARG_LIST__[9], __ARG_LIST__[10], \
+        __ARG_LIST__[11], __ARG_LIST__[12], 0);
+    case 14:
+      return self->func_ptr(__ARG_LIST__[0], __ARG_LIST__[1], \
+        __ARG_LIST__[2], __ARG_LIST__[3], __ARG_LIST__[4], \
+        __ARG_LIST__[5], __ARG_LIST__[6], __ARG_LIST__[7], \
+        __ARG_LIST__[8], __ARG_LIST__[9], __ARG_LIST__[10], \
+        __ARG_LIST__[11], __ARG_LIST__[12], __ARG_LIST__[13], 0);
+    case 15:
+      return self->func_ptr(__ARG_LIST__[0], __ARG_LIST__[1], \
+        __ARG_LIST__[2], __ARG_LIST__[3], __ARG_LIST__[4], \
+        __ARG_LIST__[5], __ARG_LIST__[6], __ARG_LIST__[7], \
+        __ARG_LIST__[8], __ARG_LIST__[9], __ARG_LIST__[10], \
+        __ARG_LIST__[11], __ARG_LIST__[12], __ARG_LIST__[13], \
+        __ARG_LIST__[14], 0);
+    case 16:
+      return self->func_ptr(__ARG_LIST__[0], __ARG_LIST__[1], \
+        __ARG_LIST__[2], __ARG_LIST__[3], __ARG_LIST__[4], \
+        __ARG_LIST__[5], __ARG_LIST__[6], __ARG_LIST__[7], \
+        __ARG_LIST__[8], __ARG_LIST__[9], __ARG_LIST__[10], \
+        __ARG_LIST__[11], __ARG_LIST__[12], __ARG_LIST__[13], \
+        __ARG_LIST__[14], __ARG_LIST__[15], 0);
+    
+    default:
+      return NULL;
   }
-  if (b == 0) {
-    return 1;
+}
+
+__ClassObject__ __callable_t_ClassObject__ = (__ClassObject__){.mask=1,
+                                                               .size=sizeof(callable_t),
+                                                               .default_vcls=(__vClassObject__*)&__callable_t_Default_vClassObject__,
+                                                               .default_instance=(__ClassInstance__*)&__callable_t_Default_Instance__,
+                                                               .name="callable_t",
+                                                               .__static_init__=(generic_function_t)__callable_t_static_init__,
+                                                               .__static_destroy__=(generic_function_t)__callable_t_static_destroy__};
+__callable_t_vClassObject__ __callable_t_Default_vClassObject__ = (__callable_t_vClassObject__){.__init__=(generic_function_t)callable_t_init,
+                                                                                                .__destroy__=(generic_function_t)callable_t_destroy,
+                                                                                                .__call__=(generic_function_t)callable_method_call,
+                                                                                                .cls=&__callable_t_ClassObject__};
+callable_t __callable_t_Default_Instance__ = (callable_t){};
+__ClassMetaData__ __callable_t_Default_MetaData__ = (__ClassMetaData__){.vcls=(__vClassObject__*)&__callable_t_Default_vClassObject__};
+void* __callable_t_static_init__(callable_t* self) {
+  if (!__GET_CLASS_MASK_WAS_INIT__(&(__callable_t_ClassObject__.mask))) {
+    *self = (callable_t){};
+    __scope_object_push__(&__SCOPE_OBJECT_INST__,
+                          (void*)(&__callable_t_ClassObject__),
+                          (generic_function_t)(__class_destroy__),
+                          0);
+    __scope_object_defer__(&__SCOPE_OBJECT_INST__,
+                           (void*)(&__callable_t_ClassObject__),
+                           (generic_function_t)(__class_destroy__),
+                           (generic_function_t)(__DEFAULT_PREDICATE__),
+                           0);
   }
-  if (b == 1) {
-    return a;
+  if (!__GET_CLASS_MASK_IS_BARE__(&(__callable_t_ClassObject__.mask))) {
+    ((__ClassInstance__*)self)->__meta__ = &__callable_t_Default_MetaData__;
   }
-  return __LL_POW_FUNCTION(a, b / 2) * __LL_POW_FUNCTION(a, (b + 1) / 2);
-}
-
-long double __LD_ADD_FUNCTION(long double a, long double b) {
-  return a + b;
-}
-
-long double __LD_SUB_FUNCTION(long double a, long double b) {
-  return a - b;
-}
-
-long double __LD_DIV_FUNCTION(long double a, long double b) {
-  return a / b;
-}
-
-long double __LD_MUL_FUNCTION(long double a, long double b) {
-  return a * b;
-}
-
-long double __LD_POW_FUNCTION(long double a, long double b) {
-  if (b < 0) {
-    return 1 / a;
+  if (self != &__callable_t_Default_Instance__) {
+    __scope_object_push__(&__SCOPE_OBJECT_INST__,
+                          (void*)(self), (generic_function_t)(__callable_t_static_destroy__), 0);
   }
-  if (b == 0) {
-    return 1;
+  if (!__GET_CLASS_MASK_WAS_INIT__(&(__callable_t_ClassObject__.mask))) {
+    __callable_t_Default_vClassObject__.__call__ = (generic_function_t)callable_method_call;
   }
-  if (b == 1) {
-    return a;
-  }
-  return __LL_POW_FUNCTION(a, b / 2) * __LL_POW_FUNCTION(a, (b + 1) / 2);
+  return self;
 }
+void* __callable_t_static_destroy__(callable_t* self) DEFAULT_DESTROY(callable_t);
 
-int __LAMBDA_EXPRESSION_GET_TYPE(const __int16_t* mask) {
-  return (*mask) & 7;
+void* callable_t_init(callable_t* self, ...) {
+  __AUX_INIT_BEGIN__(callable_t);
+  __M_VA_ARG__(1, 0);
+  self->func_ptr = __ARG_LIST__[0];
+  __AUX_INIT_END__(callable_t);
 }
-
-void __LAMBDA_EXPRESSION_SET_TYPE(__int16_t* mask, int type) {
-  *mask &= (1 << (sizeof(__int16_t) * __CHAR_BIT__)) - 8;
-}
-
-
-void* __lambda_compile(lambda_t* self, const char* string, ...) {
-  char cur_token[LAMBDA_MAX_TOKEN_LENGTH];
-  size_t cur_token_i = 0;
-  int var_begin = 0;
-  size_t stack_size = 0;
-  size_t stack_capacity = 16;
-  self->data = malloc(stack_capacity * sizeof(void*));
-  ((void**)self->data)[0] = 0;
-  for (size_t i = 0; string[i] != 0; ++i) {
-    if (string[i] != ' ' &&
-        string[i] != ',' &&
-        string[i] != '%') {
-      cur_token[cur_token_i++] = string[i];
-    } else if (string[i] == '%') {
-      var_begin = 1;
-    } else if (string[i] == ' ' || string[i] == ',') {
-      var_begin = 0;
-      //if ()
-    }
-  }
-  int prev = 0;
-  return 0;
-}
-STATIC_CLASS_END(lambda_t, 2, ;) DEFAULT_DESTROY;

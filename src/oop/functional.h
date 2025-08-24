@@ -1,48 +1,20 @@
-#ifndef LAMBDA_H
-#define LAMBDA_H
+#include "class.h"
 
-#include "classes.h"
-#include "math.h"
+DEF_CLASS(callable_t,, generic_function_t func_ptr;)
 
-#pragma once
+#define __AUX_FUNCTIONAL_ARG_MERGE__(ARG) ARG##_f
 
-#define LAMBDA_MAX_TOKEN_LENGTH 256
+#define __AUX_FUNCTIONAL_ARG__(ARG) __AUX_FUNCTIONAL_ARG_MERGE__(ARG)
 
-long long __LL_ADD_FUNCTION(long long a, long long b);
+#undef FUNCTION
+#define DEF_FUNC(RETURNS, FUNCTION_...) \
+  RETURNS ARG1_VA_ARGS(FUNCTION_)(ARG1_VA_ARGS_VA(FUNCTION_, ...)); \
+  extern callable_t __AUX_FUNCTIONAL_ARG__(ARG1_VA_ARGS(FUNCTION_)); \
 
-long long __LL_SUB_FUNCTION(long long a, long long b);
+#define FUNC(RETURNS, FUNCTION_...) \
+  callable_t __AUX_FUNCTIONAL_ARG__(ARG1_VA_ARGS(FUNCTION_)) = \
+    (callable_t){.__base__=(__BaseClass__){.__meta__=&__callable_t_Default_MetaData__}, \
+      .func_ptr=(generic_function_t)ARG1_VA_ARGS(FUNCTION_)}; \
+  RETURNS ARG1_VA_ARGS(FUNCTION_)(ARG1_VA_ARGS_VA(FUNCTION_, ...))
 
-long long __LL_DIV_FUNCTION(long long a, long long b);
-
-long long __LL_MUL_FUNCTION(long long a, long long b);
-
-long long __LL_MOD_FUNCTION(long long a, long long b);
-
-long long __LL_AND_FUNCTION(long long a, long long b);
-
-long long __LL_OR_FUNCTION(long long a, long long b);
-
-long long __LL_XOR_FUNCTION(long long a, long long b);
-
-long long __LL_POW_FUNCTION(long long a, long long b);
-
-long double __LD_ADD_FUNCTION(long double a, long double b);
-
-long double __LD_SUB_FUNCTION(long double a, long double b);
-
-long double __LD_DIV_FUNCTION(long double a, long double b);
-
-long double __LD_MUL_FUNCTION(long double a, long double b);
-
-long double __LD_POW_FUNCTION(long double a, long double b);
-
-int __LAMBDA_EXPRESSION_GET_TYPE(const __int16_t* mask);
-
-void __LAMBDA_EXPRESSION_SET_TYPE(__int16_t* mask, int type);
-
-STATIC_CLASS(lambda_t, void* data; __int16_t* mask; double* fp_vars, 2)
-void* __lambda_compile(lambda_t* self, const char* string, ...);
-
-#define LAMBDA
-
-#endif
+#define CALL(ARGS...) ((__ClassInstance__*)&(ARG1_VA_ARGS(ARGS)))->__meta__->vcls->__call__(&(ARG1_VA_ARGS(ARGS)), ARG1_VA_ARGS_VA(ARGS, NULL));

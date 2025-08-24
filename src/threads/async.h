@@ -15,7 +15,7 @@ int async_promise_callback(async_promise_t* promise);
 
 void* async_promise_await(async_promise_t* promise);
 
-task_t* async_promise_new(task_function_t call,
+async_promise_t* async_promise_new(task_function_t call,
   void* call_args,
   task_function_t check,
   void* check_args,
