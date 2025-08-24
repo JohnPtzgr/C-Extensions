@@ -9,6 +9,7 @@ FUNC(int, x, void* s) {
   return 0;
 }
 
+
 int main() {
   x(0);
   CALL(x_f, 100);
