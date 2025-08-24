@@ -1,4 +1,4 @@
-#include "../memory/dyn_alloc_.h"
+#include "../memory/dyn_alloc.h"
 
 #define __DEFAULT_VTABLE_SIZE__ 8
 #define __DEFAULT_VTABLE_MLT_OFFSET__ 8
@@ -6,7 +6,7 @@
 
 #define __DEFAULT_INHERITANCE_LIST_CAPACITY__ 8
 
-#define __VCLASS_METHOD_COUNT__ 61
+#define __VCLASS_METHOD_COUNT__ 62
 
 typedef struct __vTableHash__
 {
@@ -125,12 +125,13 @@ typedef struct __vClassObject__
   generic_function_t __not__;
   generic_function_t __inot__;
   generic_function_t __contains__;
-  generic_function_t __cmp__;
   generic_function_t __set__;
   generic_function_t __get__;
   generic_function_t __copy__;
   generic_function_t __assign__;
   generic_function_t __new__;
+  generic_function_t __delete__;
+  generic_function_t __cmp__;
   generic_function_t __lt__;
   generic_function_t __gt__;
   generic_function_t __eq__;
@@ -171,77 +172,80 @@ typedef struct __ClassMetaData__ {
 
 void* __class_init__(__vClassObject__* default_vclass);
 void* __class_destroy__(__ClassObject__* class);
-void* __class_init_instance__(__ClassInstance__* instance, \
+void* __class_init_instance__(__ClassInstance__* instance,
   __vClassObject__* default_vclass);
-void* __class_destroy_instance__(__ClassInstance__* instance, \
+void* __class_destroy_instance__(__ClassInstance__* instance,
   generic_function_t destructor);
 void __class_inherit_static__(__ClassObject__* class);
 void __class_inherit__(__ClassObject__* class);
 void __class_inherit_instance__(__ClassInstance__* instance);
 
 typedef enum __m_enum__ {
-  __m_init__ = 0,
-  __m_destroy__ = 1,
-  __m_to_str__ = 2,
-  __m_data__ = 3,
-  __m_iter__ = 4,
-  __m_next__ = 5,
-  __m_call__ = 6,
-  __m_getitem__ = 7,
-  __m_len__ = 8,
-  __m_neg__ = 9,
-  __m_add__ = 10,
-  __m_iadd__ = 11,
-  __m_sub__ = 12,
-  __m_isub__ = 13,
-  __m_mul__ = 14,
-  __m_imul__ = 15,
-  __m_div__ = 16,
-  __m_idiv__ = 17,
-  __m_mod__ = 18,
-  __m_imod__ = 19,
-  __m_and__ = 20,
-  __m_iand__ = 21,
-  __m_or__ = 22,
-  __m_ior__ = 23,
-  __m_xor__ = 24,
-  __m_ixor__ = 25,
-  __m_not__ = 26,
-  __m_inot__ = 27,
-  __m_contains__ = 28,
-  __m_cmp__ = 29,
-  __m_set__ = 30,
-  __m_get__ = 31,
-  __m_copy__ = 32,
-  __m_assign__ = 33,
-  __m_new__ = 34,
-  __m_lt__ = 35,
-  __m_gt__ = 36,
-  __m_eq__ = 37,
-  __m_le__ = 38,
-  __m_ge__ = 39,
-  __m_neq__ = 40,
-  __m_pow__ = 41,
-  __m_cast__ = 42,
-  __m_bitand__ = 43,
-  __m_bitiand__ = 44,
-  __m_bitor__ = 45,
-  __m_bitior__ = 46,
-  __m_bitxor__ = 47,
-  __m_bitixor__ = 48,
-  __m_bitnot__ = 49,
-  __m_bitinot__ = 50,
-  __m_inc__ = 51,
-  __m_dec__ = 52,
-  __m_lsh__ = 53,
-  __m_ilsh__ = 54,
-  __m_rsh__ = 55,
-  __m_irsh__ = 56,
-  __m_ineg__ = 57,
-  __m_listen__ = 58,
-  __m_shout__ = 59,
-  __m_id__ = 60
+  __m_init__,
+  __m_destroy__,
+  __m_to_str__,
+  __m_data__,
+  __m_iter__,
+  __m_next__,
+  __m_call__,
+  __m_getitem__,
+  __m_len__,
+  __m_neg__,
+  __m_add__,
+  __m_iadd__,
+  __m_sub__,
+  __m_isub__,
+  __m_mul__,
+  __m_imul__,
+  __m_div__,
+  __m_idiv__,
+  __m_mod__,
+  __m_imod__,
+  __m_and__,
+  __m_iand__,
+  __m_or__,
+  __m_ior__,
+  __m_xor__,
+  __m_ixor__,
+  __m_not__,
+  __m_inot__,
+  __m_contains__,
+  __m_set__,
+  __m_get__,
+  __m_copy__,
+  __m_assign__,
+  __m_new__,
+  __m_delete__,
+  __m_cmp__,
+  __m_lt__,
+  __m_gt__,
+  __m_eq__,
+  __m_le__,
+  __m_ge__,
+  __m_neq__,
+  __m_pow__,
+  __m_cast__,
+  __m_bitand__,
+  __m_bitiand__,
+  __m_bitor__,
+  __m_bitior__,
+  __m_bitxor__,
+  __m_bitixor__,
+  __m_bitnot__,
+  __m_bitinot__,
+  __m_inc__,
+  __m_dec__,
+  __m_lsh__,
+  __m_ilsh__,
+  __m_rsh__,
+  __m_irsh__,
+  __m_ineg__,
+  __m_listen__,
+  __m_shout__,
+  __m_id__
 } __m_enum__;
+
+const char* __VCLASS_METHOD_UC_NAMES__[__VCLASS_METHOD_COUNT__];
 
 typedef struct __PRIVATE__
 {
@@ -359,6 +363,7 @@ void __SET_CLASS_MASK_WAS_INIT__(size_t* mask, BOOL new_type);
     generic_function_t __copy__; \
     generic_function_t __assign__; \
     generic_function_t __new__; \
+    generic_function_t __delete__; \
     generic_function_t __lt__; \
     generic_function_t __gt__; \
     generic_function_t __eq__; \
@@ -626,6 +631,7 @@ void __SET_CLASS_MASK_WAS_INIT__(size_t* mask, BOOL new_type);
     generic_function_t __copy__; \
     generic_function_t __assign__; \
     generic_function_t __new__; \
+    generic_function_t __delete__; \
     generic_function_t __lt__; \
     generic_function_t __gt__; \
     generic_function_t __eq__; \

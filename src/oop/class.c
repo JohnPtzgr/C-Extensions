@@ -292,9 +292,9 @@ void* __InheritanceList_destroy__(__InheritanceList__* list) {
   return NULL;
 }
 
-void* __InheritanceList_add__(__InheritanceList__* list, \
-                              void* self, \
-                              void* instance, \
+void* __InheritanceList_add__(__InheritanceList__* list,
+                              void* self,
+                              void* instance,
                               __ClassObject__* class) {
   if (list->size + 1 == list->capacity) {
     __InheritanceList_reserve__(list, 2 * list->capacity);
@@ -332,7 +332,7 @@ size_t __InheritanceList_find__(__InheritanceList__* list, __vTableHash__ hash) 
     }
     i++;
   }
-  return (size_t)-1;
+  return (size_t)INVALID;
 }
 
 size_t __InheritanceList_find_built_in__(__InheritanceList__* list, __m_enum__ built_in_no) {
@@ -344,7 +344,7 @@ size_t __InheritanceList_find_built_in__(__InheritanceList__* list, __m_enum__ b
     }
     i++;
   }
-  return (size_t)-1;
+  return (size_t)INVALID;
 }
 
 BOOL __GET_CLASS_MASK_IS_STATIC__(size_t* mask) {
@@ -485,7 +485,7 @@ void* __class_destroy__(__ClassObject__* class) {
   return NULL;
 }
 
-void* __class_init_instance__(__ClassInstance__* instance, \
+void* __class_init_instance__(__ClassInstance__* instance,
                               __vClassObject__* default_vclass) {
   instance->__meta__ = (__ClassMetaData__*)malloc(sizeof(__ClassMetaData__));
   instance->__meta__->vcls = default_vclass;
@@ -494,7 +494,7 @@ void* __class_init_instance__(__ClassInstance__* instance, \
   return instance;
 }
 
-void* __class_destroy_instance__(__ClassInstance__* instance, \
+void* __class_destroy_instance__(__ClassInstance__* instance,
                                  generic_function_t destructor) {
   destructor(instance);
   if (instance->__meta__->vtable && \
@@ -559,3 +559,67 @@ void __class_inherit_instance__(__ClassInstance__* instance) {
   }
 }
 
+
+const char* __VCLASS_METHOD_UC_NAMES__[] = {
+  "INIT",
+  "DESTROY",
+  "TO_STR",
+  "DATA",
+  "ITER",
+  "NEXT",
+  "CALL",
+  "GETITEM",
+  "LEN",
+  "NEG",
+  "ADD",
+  "IADD",
+  "SUB",
+  "ISUB",
+  "MUL",
+  "IMUL",
+  "DIV",
+  "IDIV",
+  "MOD",
+  "IMOD",
+  "AND",
+  "IAND",
+  "OR",
+  "IOR",
+  "XOR",
+  "IXOR",
+  "NOT",
+  "INOT",
+  "CONTAINS",
+  "SET",
+  "GET",
+  "COPY",
+  "ASSIGN",
+  "NEW",
+  "CMP",
+  "LT",
+  "GT",
+  "EQ",
+  "LE",
+  "GE",
+  "NEQ",
+  "POW",
+  "CAST",
+  "BITAND",
+  "BITIAND",
+  "BITOR",
+  "BITIOR",
+  "BITXOR",
+  "BITIXOR",
+  "BITNOT",
+  "BITINOT",
+  "INC",
+  "DEC",
+  "LSH",
+  "ILSH",
+  "RSH",
+  "IRSH",
+  "INEG",
+  "LISTEN",
+  "SHOUT",
+  "ID"
+};
