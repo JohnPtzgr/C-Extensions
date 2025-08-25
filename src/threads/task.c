@@ -89,6 +89,22 @@ void* task_manager_destroy(task_manager_t* manager) {
     pthread_mutex_unlock(&(manager->workers[i].worker_mutex));
     pthread_mutex_destroy(&(manager->workers[i].worker_mutex));
   }
+  for (size_t i = 0; i < __TASK_PRIORITY_CNT__; ++i) {
+    task_t* cur_task = manager->tasks_request_list_head_priority[i];
+    while (cur_task) {
+      if (cur_task->status != TSK_FINISHED) {
+        cur_task->status = TSK_STOPPED;
+      }
+      cur_task = cur_task->next_task;
+    }
+  }
+  for (size_t i = 0; i < __THREAD_POOL_SIZE__; ++i) {
+    if (manager->workers[i].current_task) {
+      if (manager->workers[i].current_task->status != TSK_FINISHED) {
+        manager->workers[i].current_task->status = TSK_STOPPED;
+      }
+    }
+  }
   pthread_mutex_destroy(&(manager->query_mutex));
   return NULL;
 }
