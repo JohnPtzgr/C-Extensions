@@ -1,10 +1,9 @@
-#ifndef DYN_ALLOC_H
-#define DYN_ALLOC_H
-
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
 #include <stdarg.h>
+#include <alloca.h>
+#include "../oop/exception.h"
 #pragma once
 
 
@@ -25,7 +24,7 @@
 #endif
 
 #ifndef INVALID
-#define INVALID ((void*)-1);
+#define INVALID ((void*)-1)
 #endif // !INVALID
 
 #ifndef MIN
@@ -38,6 +37,8 @@
 #endif // !MAX
 
 #ifndef ARG1_VA_ARGS
+#define __AUX_EXP_MACRO_ARG__(MACRO_TO_EXP, ARG) MACRO_TO_EXP(ARG)
+#define ARG0_VA(ARG0...) ARG0
 #define ARG1_VA_ARGS( ARG1, ... ) ARG1
 #define ARG1_VA_ARGS_VA( ARG1, ... ) __VA_ARGS__
 #define ARG2_VA_ARGS( ARG1, ARG2, ... ) ARG2
@@ -60,11 +61,6 @@
 #ifndef TO_STR_LITERAL
 #define TO_STR_LITERAL(ARG) #ARG
 #endif // !TO_STR_LITERAL
-
-#ifndef BOOL
-typedef char BOOL;
-typedef enum { FALSE = 0, TRUE = 1} BOOL_VALUES;
-#endif
 
 #ifndef generic_function_t
 typedef void*(*generic_function_t)(void*, ... );
@@ -373,5 +369,4 @@ void* __FALSE_PREDICATE__(void* instance, ...);
 #define LSALLOC(SCOPE, SIZE...) (ARG2_VA_ARGS(SIZE, void)*)__SCOPE_CALLOC__(SCOPE, \
   ARG1_VA_ARGS(SIZE), sizeof(ARG2_VA_ARGS(SIZE, (char)0)), ARG2_VA_ARGS_VA(SIZE, 0, 0))
 
-#endif
 #endif

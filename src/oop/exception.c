@@ -30,7 +30,7 @@ void* __raise_exception__(exception_t* exception) {
 }
 
 void* __exit_on_exception__(exception_t* exception, void*(*clean_up)(), ...) {
-  if (exception->exception_number == _EXCEPTION.exception_number) {
+  if (exception->exception_number == _EXCEPTION.exception_number && _EXCEPTION.exception_number) {
     if (clean_up) {
       clean_up();
     }

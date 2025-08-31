@@ -559,6 +559,41 @@ void __class_inherit_instance__(__ClassInstance__* instance) {
   }
 }
 
+void* __aux_default_delete_instance__(void* ptr) {
+  free(ptr);
+  return NULL;
+}
+
+void* __aux_class_new_wrapper__(__vClassObject__* vcls, size_t size, __ClassInstance__* template_instance) {
+  void* ptr = NULL;
+  if (vcls->__new__) {
+    ptr = vcls->__new__(vcls, size * vcls->cls->size);
+  } else {
+    ptr = malloc(size * vcls->cls->size);
+  }
+  if (vcls->__delete__) {
+    SCOPE_PUSH(ptr, vcls->__delete__);
+  } else {
+    SCOPE_PUSH(ptr, __aux_default_delete_instance__);
+  }
+  if (vcls->__copy__) {
+    for (size_t i = 0; i < size; ++i) {
+      vcls->__copy__(ptr + i * vcls->cls->size, template_instance);
+    }
+  } else if (vcls->__assign__) {
+    for (size_t i = 0; i < size; ++i) {
+      vcls->__init__(ptr + i * vcls->cls->size, 0);
+      vcls->__assign__(ptr + i * vcls->cls->size, template_instance);
+    }
+  } else {
+    for (size_t i = 0; i < size; ++i) {
+      memcpy(ptr + i * vcls->cls->size, template_instance, vcls->cls->size);
+      SCOPE_PUSH(ptr + i * vcls->cls->size, vcls->cls->__static_destroy__);
+    }
+  }
+  return ptr;
+}
+
 
 const char* __VCLASS_METHOD_UC_NAMES__[] = {
   "INIT",
@@ -595,6 +630,7 @@ const char* __VCLASS_METHOD_UC_NAMES__[] = {
   "COPY",
   "ASSIGN",
   "NEW",
+  "DELETE",
   "CMP",
   "LT",
   "GT",

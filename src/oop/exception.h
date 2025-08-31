@@ -1,5 +1,7 @@
 #include <errno.h>
 
+#pragma once
+
 #ifndef INVALID
 #define INVALID ((void*)-1);
 #endif // !INVALID
@@ -7,6 +9,13 @@
 
 #define __DEFAULT_EXCEPTION_CONTEXT_SIZE__ 4096
 #define __DEFAULT_EXCEPTION_CONTEXT_PREVIEW_SIZE__ 32
+
+
+// The function never causes the program to terminate or exit early
+#define _NoThrow
+
+// The function never raises an exception
+#define _NoExcept
 
 
 typedef struct exception_context_t
@@ -33,14 +42,15 @@ extern exception_t CAUGHT_EXCEPTION;
 extern exception_context_t CAUGHT_EXCEPTION_CONTEXT;
 
 
+#define EASSERTEXC 256
+
+#define __EXCEPTION_EXIT_CALLBACK__ exit
+
+
 #ifndef BOOL
 typedef char BOOL;
 typedef enum { FALSE = 0, TRUE = 1} BOOL_VALUES;
 #endif
-
-#define EASSERTEXC 256
-
-#define __EXCEPTION_EXIT_CALLBACK__ exit
 
 extern BOOL _ERRORB;
 extern void(*_EXC_ASSERT_CALLBACK)();

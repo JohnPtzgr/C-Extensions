@@ -1,9 +1,8 @@
-#ifndef TYPES_H
-#define TYPES_H
-
 #include "class.h"
 #include "../algorithm/hash.h"
 #include <string.h>
+
+#pragma once
 
 
 DEF_CLASS(class_meta_t, , size_t* method_table; generic_function_t* meta_table; size_t mask);
@@ -60,5 +59,3 @@ DEF_CLASS(var_object_t, ,type_object_t type; void* value; char allocated)
 
 
 void* var_object_alloc(var_object_t*);
-
-#endif

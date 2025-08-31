@@ -1,5 +1,6 @@
 #include "../../src/threads/task.h"
 
+#pragma once
 
 typedef struct async_promise_t {
   task_function_t callback;

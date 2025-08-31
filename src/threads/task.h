@@ -3,6 +3,8 @@
 #include <sys/select.h>
 #include <stdint.h>
 
+#pragma once
+
 typedef void*(*task_function_t)(void*, ...);
 
 typedef struct task_timer_t

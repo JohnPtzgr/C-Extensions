@@ -1,5 +1,7 @@
 #include "class.h"
 
+#pragma once
+
 DEF_CLASS(callable_t,, generic_function_t func_ptr;)
 
 #define __AUX_FUNCTIONAL_ARG_MERGE__(ARG) ARG##_f

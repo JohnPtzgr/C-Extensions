@@ -1,5 +1,7 @@
 #include "../memory/dyn_alloc.h"
 
+#pragma once
+
 #define __DEFAULT_VTABLE_SIZE__ 8
 #define __DEFAULT_VTABLE_MLT_OFFSET__ 8
 #define __VTABLE_SIZE_IS_POWER_OF_2__ TRUE
@@ -169,6 +171,7 @@ typedef struct __ClassMetaData__ {
   __vClassObject__* vcls;
   __vTable__* vtable;
 } __ClassMetaData__;
+
 
 void* __class_init__(__vClassObject__* default_vclass);
 void* __class_destroy__(__ClassObject__* class);
@@ -357,13 +360,13 @@ void __SET_CLASS_MASK_WAS_INIT__(size_t* mask, BOOL new_type);
     generic_function_t __not__; \
     generic_function_t __inot__; \
     generic_function_t __contains__; \
-    generic_function_t __cmp__; \
     generic_function_t __set__; \
     generic_function_t __get__; \
     generic_function_t __copy__; \
     generic_function_t __assign__; \
     generic_function_t __new__; \
     generic_function_t __delete__; \
+    generic_function_t __cmp__; \
     generic_function_t __lt__; \
     generic_function_t __gt__; \
     generic_function_t __eq__; \
@@ -730,10 +733,24 @@ void __SET_CLASS_MASK_WAS_INIT__(size_t* mask, BOOL new_type);
   #define BRIDGE_END(NAME, MASK, EXPR...) \
     __BRIDGE_CLASS_DEFINE_MACRO__(NAME, MASK, EXPR)
 
-#define __AUX_CLS_INST__(CLASS_NAME,ARGS...) \
-  CLASS_NAME ARG1_VA_ARGS(ARGS) = (CLASS_NAME){}; \
-  CLASS_NAME##_init(&(ARG1_VA_ARGS(ARGS)), ARG1_VA_ARGS_VA(ARGS, 0));
+#define __AUX_CLS_VCLASS__(CLASS_NAME) (__vClassObject__*)&__##CLASS_NAME##_Default_vClassObject__
+#define __AUX_CLS_CLASS_INIT__(CLASS_NAME) (CLASS_NAME*)CLASS_NAME##_init
 
-#define INST(CLASS_NAME,OBJ...) __AUX_CLS_INST__(CLASS_NAME, OBJ);
+#define __AUX_CLS_VCLASS_EXP__(CLASS_NAME) __AUX_EXP_MACRO_ARG__(__AUX_CLS_VCLASS__, CLASS_NAME)
+#define __AUX_CLS_CLASS_INIT_EXP__(CLASS_NAME) __AUX_EXP_MACRO_ARG__(__AUX_CLS_CLASS_INIT__, CLASS_NAME)
+
+#define __AUX_CLS_ALLOCA__(CLASS_NAME...) \
+  __AUX_CLS_CLASS_INIT_EXP__(ARG1_VA_ARGS(CLASS_NAME))((ARG1_VA_ARGS(CLASS_NAME)*)alloca(sizeof(ARG1_VA_ARGS(CLASS_NAME))), ARG1_VA_ARGS_VA(CLASS_NAME, 0))
+
+
+void* __aux_class_new_wrapper__(__vClassObject__* vcls, size_t size, __ClassInstance__* template_instance);
+
+#define __AUX_CLS_MALLOC__(CLASS_NAME...) \
+  (ARG1_VA_ARGS(CLASS_NAME)*)__aux_class_new_wrapper__(__AUX_CLS_VCLASS_EXP__(ARG1_VA_ARGS(CLASS_NAME)), ARG2_VA_ARGS(CLASS_NAME, 1), (__ClassInstance__*)__AUX_CLS_ALLOCA__(ARG1_VA_ARGS(CLASS_NAME), ARG2_VA_ARGS_VA(CLASS_NAME, 0, 0))) \
+
+
+#define CLS(CLASS_NAME...) __AUX_CLS_ALLOCA__(CLASS_NAME)
+
+#define NEW(CLASS_NAME...) __AUX_CLS_MALLOC__(CLASS_NAME)
 
 
