@@ -1,7 +1,6 @@
 
 #include "SDL2/SDL.h"
-#include "../src/oop/class.h"
-#include "../src/threads/task.h"
+#include "cextras.h"
 
 
 int MAIN_WINDOW_STATE = 0;
@@ -25,6 +24,10 @@ int main() {
   if (!r) {
     printf("Error is: %s\n", SDL_GetError());
   }
+
+  int_t* i = Int(100);
+  // int_t_init(i, 1);
+  printf("i is %d\n", i->value);
 
 
   // SDL_WaitEventTimeout();

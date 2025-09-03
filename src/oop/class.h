@@ -415,10 +415,10 @@ void __SET_CLASS_MASK_WAS_INIT__(size_t* mask, BOOL new_type);
     BASE; \
     CLASS_FIELDS; \
   } NAME; \
-  void* __##NAME##_static_init__(NAME* self); \
-  void* __##NAME##_static_destroy__(NAME* self); \
-  void* NAME##_init(NAME* self , ...); \
-  void* NAME##_destroy(NAME* self, ...); \
+  extern void* __##NAME##_static_init__(NAME* self); \
+  extern void* __##NAME##_static_destroy__(NAME* self); \
+  extern void* NAME##_init(NAME* self , ...); \
+  extern void* NAME##_destroy(NAME* self, ...); \
   extern __ClassObject__ __##NAME##_ClassObject__; \
   extern __##NAME##_vClassObject__ __##NAME##_Default_vClassObject__; \
   extern NAME __##NAME##_Default_Instance__; \
@@ -686,10 +686,10 @@ void __SET_CLASS_MASK_WAS_INIT__(size_t* mask, BOOL new_type);
   { \
     NAME __base__; \
   } NAME##_B; \
-  void* __##NAME##_B_static_init__(NAME##_B* self); \
-  void* __##NAME##_B_static_destroy__(NAME##_B* self); \
-  void* NAME##_B_init(NAME##_B* self , ...); \
-  void* NAME##_B_destroy(NAME##_B* self, ...); \
+  extern void* __##NAME##_B_static_init__(NAME##_B* self); \
+  extern void* __##NAME##_B_static_destroy__(NAME##_B* self); \
+  extern void* NAME##_B_init(NAME##_B* self , ...); \
+  extern void* NAME##_B_destroy(NAME##_B* self, ...); \
   extern __ClassObject__ __##NAME##_B_ClassObject__; \
   extern __##NAME##_B_vClassObject__ __##NAME##_B_Default_vClassObject__; \
   extern NAME __##NAME##_B_Default_Instance__; \
