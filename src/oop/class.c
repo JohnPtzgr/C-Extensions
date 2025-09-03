@@ -455,10 +455,13 @@ void* __class_destroy__(__ClassObject__* class) {
     __class_destroy_instance__(class->default_instance, class->default_vcls->__destroy__);
   }
   class->__static_destroy__(class->default_instance);
-  while (class->vcls && class->vcls[index].cls != 0) {
-    if (class->vcls[index].vtable) {
-      __vTable_destroy__(class->vcls[index].vtable);
-      free(class->vcls[index].vtable);
+  while (class->vcls && index < class->__vclass_cnt) {
+    if (class->vcls[index] != NULL) {
+      if (class->vcls[index]->vtable) {
+        __vTable_destroy__(class->vcls[index]->vtable);
+        free(class->vcls[index]->vtable);
+      }
+      free(class->vcls[index]);
     }
     index++;
   }
@@ -567,9 +570,9 @@ void* __aux_default_delete_instance__(void* ptr) {
 void* __aux_class_new_wrapper__(__vClassObject__* vcls, size_t size, __ClassInstance__* template_instance) {
   void* ptr = NULL;
   if (vcls->__new__) {
-    ptr = vcls->__new__(vcls, size * vcls->cls->size);
+    ptr = vcls->__new__(vcls, size * vcls->cls->instance_size);
   } else {
-    ptr = malloc(size * vcls->cls->size);
+    ptr = malloc(size * vcls->cls->instance_size);
   }
   if (vcls->__delete__) {
     SCOPE_PUSH(ptr, vcls->__delete__);
@@ -578,20 +581,55 @@ void* __aux_class_new_wrapper__(__vClassObject__* vcls, size_t size, __ClassInst
   }
   if (vcls->__copy__) {
     for (size_t i = 0; i < size; ++i) {
-      vcls->__copy__(ptr + i * vcls->cls->size, template_instance);
+      vcls->__copy__(ptr + i * vcls->cls->instance_size, template_instance);
     }
   } else if (vcls->__assign__) {
     for (size_t i = 0; i < size; ++i) {
-      vcls->__init__(ptr + i * vcls->cls->size, 0);
-      vcls->__assign__(ptr + i * vcls->cls->size, template_instance);
+      vcls->__init__(ptr + i * vcls->cls->instance_size, 0);
+      vcls->__assign__(ptr + i * vcls->cls->instance_size, template_instance);
     }
   } else {
     for (size_t i = 0; i < size; ++i) {
-      memcpy(ptr + i * vcls->cls->size, template_instance, vcls->cls->size);
-      SCOPE_PUSH(ptr + i * vcls->cls->size, vcls->cls->__static_destroy__);
+      memcpy(ptr + i * vcls->cls->instance_size, template_instance, vcls->cls->instance_size);
+      SCOPE_PUSH(ptr + i * vcls->cls->instance_size, vcls->cls->__static_destroy__);
     }
   }
   return ptr;
+}
+
+void* __aux_class_new_vclass_check_vclass__(void* vclass, size_t vclass_size) {
+  for (size_t i = 0; i < vclass_size / sizeof(size_t); ++i) {
+    if (((size_t*)vclass)[i]) {
+      return vclass;
+    }
+  }
+  return NULL;
+}
+
+void* __aux_class_new_vclass_reserve__(__ClassObject__* class) {
+  if (!class->vcls) {
+    class->vcls = calloc(DEFAULT_VCLASS_LIST_SIZE, sizeof(void*));
+    class->__vclass_cnt = 0;
+    class->__vclass_capacity = DEFAULT_VCLASS_LIST_SIZE;
+    return class;
+  }
+  __vClassObject__** tmp_vcls = class->vcls;
+  class->__vclass_capacity *= 2;
+  class->vcls = calloc(class->__vclass_capacity, sizeof(void*));
+  memcpy(class->vcls, tmp_vcls, class->__vclass_cnt);
+  free(tmp_vcls);
+  return class;
+}
+
+void* __aux_class_new_vclass__(__ClassObject__* class) {
+  __vClassObject__* new_vclass = (__vClassObject__*)malloc(class->vclass_size);
+  memcpy(new_vclass, class->default_vcls, class->vclass_size);
+  if (!class->vcls || (class->__vclass_cnt + 1 == class->__vclass_capacity)) {
+    __aux_class_new_vclass_reserve__(class);
+  }
+  class->vcls[class->__vclass_cnt++] = new_vclass;
+  printf("%d\n", 0);
+  return new_vclass;
 }
 
 

@@ -1,4 +1,4 @@
-#include "functional.h"
+#include "eval.h"
 
 long long __LL_ADD_FUNCTION(long long a, long long b) {
   return a + b;
@@ -106,4 +106,4 @@ void* __lambda_compile(lambda_t* self, const char* string, ...) {
   int prev = 0;
   return 0;
 }
-STATIC_CLASS_END(lambda_t, 2, ;) DEFAULT_DESTROY;
+CLASS_END(lambda_t, STATIC, ;) DEFAULT_DESTROY(lambda_t);

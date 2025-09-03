@@ -85,7 +85,8 @@ void* callable_method_call(callable_t* self, ...) {
 }
 
 __ClassObject__ __callable_t_ClassObject__ = (__ClassObject__){.mask=1,
-                                                               .size=sizeof(callable_t),
+                                                               .instance_size=sizeof(callable_t),
+                                                               .vclass_size=sizeof(__callable_t_vClassObject__),
                                                                .default_vcls=(__vClassObject__*)&__callable_t_Default_vClassObject__,
                                                                .default_instance=(__ClassInstance__*)&__callable_t_Default_Instance__,
                                                                .name="callable_t",

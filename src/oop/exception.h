@@ -3,7 +3,7 @@
 #pragma once
 
 #ifndef INVALID
-#define INVALID ((void*)-1);
+#define INVALID ((void*)-1)
 #endif // !INVALID
 
 

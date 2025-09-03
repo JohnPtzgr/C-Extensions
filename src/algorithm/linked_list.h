@@ -1,8 +1,6 @@
-#ifndef LINKED_LIST_H
-#define LINKED_LIST_H
 #include "../oop/class.h"
+#pragma once
 
-#ifndef linked_list_t
 DEF_CLASS(linked_list_node_t,
   ,
   struct linked_list_node_t* next;
@@ -20,10 +18,9 @@ DEF_CLASS(linked_list_t,
 
 void* linked_list_push(linked_list_t*, void*);
 void* linked_list_pop(linked_list_t*, void*);
-#endif
 
 #define LinkedList( OBJ, TYPE ) \
-  INST(linked_list_t, OBJ, sizeof(TYPE));
+  CLS(linked_list_t, OBJ, sizeof(TYPE));
 
 // #define __TEMPLATE__
 // #ifndef __T_ARG_A__
@@ -36,5 +33,3 @@ void* linked_list_pop(linked_list_t*, void*);
 //   return self;
 // };
 // #include "../oop/templates_undef.h"
-
-#endif

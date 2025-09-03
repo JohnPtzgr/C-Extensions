@@ -8,7 +8,7 @@
 
 #define __DEFAULT_INHERITANCE_LIST_CAPACITY__ 8
 
-#define __VCLASS_METHOD_COUNT__ 62
+#define __VCLASS_METHOD_COUNT__ 64
 
 typedef struct __vTableHash__
 {
@@ -75,7 +75,10 @@ void* __vTable_join__(__vTable__* table, __vTable__* source);
 typedef struct __ClassObject__
 {
 
-  size_t size;
+  size_t instance_size;
+  size_t vclass_size;
+  size_t __vclass_cnt;
+  size_t __vclass_capacity;
   const char* name;
 
   __vTable__* static_vtable;
@@ -86,7 +89,7 @@ typedef struct __ClassObject__
   __InheritanceList__* inherits_from;
 
   __vClassObject__* default_vcls;
-  __vClassObject__* vcls;
+  __vClassObject__** vcls;
 
   __ClassInstance__* default_instance;
 
@@ -94,6 +97,8 @@ typedef struct __ClassObject__
   generic_function_t __static_destroy__;
 
 } __ClassObject__;
+
+#define DEFAULT_VCLASS_LIST_SIZE 8
 
 typedef struct __vClassObject__
 {
@@ -104,6 +109,8 @@ typedef struct __vClassObject__
   generic_function_t __data__;
   generic_function_t __iter__;
   generic_function_t __next__;
+  generic_function_t __begin__;
+  generic_function_t __end__;
   generic_function_t __call__;
   generic_function_t __getitem__;
   generic_function_t __len__;
@@ -190,6 +197,8 @@ typedef enum __m_enum__ {
   __m_data__,
   __m_iter__,
   __m_next__,
+  __m_begin__,
+  __m_end__,
   __m_call__,
   __m_getitem__,
   __m_len__,
@@ -262,6 +271,8 @@ size_t __InheritanceList_find__(__InheritanceList__* list, __vTableHash__ hash);
 size_t __InheritanceList_find_built_in__(__InheritanceList__* list, __m_enum__ built_in_no);
 void* __InheritanceList_init__(__InheritanceList__* list);
 void* __InheritanceList_destroy__(__InheritanceList__* list);
+
+void* __aux_class_new_vclass__(__ClassObject__* class);
 
 #ifndef __GET_CLASS_MASK_IS_DYNAMIC
 BOOL __GET_CLASS_MASK_IS_STATIC__(size_t* mask);
@@ -337,6 +348,8 @@ void __SET_CLASS_MASK_WAS_INIT__(size_t* mask, BOOL new_type);
     generic_function_t __data__; \
     generic_function_t __iter__; \
     generic_function_t __next__; \
+    generic_function_t __begin__; \
+    generic_function_t __end__; \
     generic_function_t __call__; \
     generic_function_t __getitem__; \
     generic_function_t __len__; \
@@ -415,7 +428,8 @@ void __SET_CLASS_MASK_WAS_INIT__(size_t* mask, BOOL new_type);
 #define __GENERIC_CLASS_DEFINE_MACRO__(NAME, MASK, EXPR...) \
   __ClassObject__ __##NAME##_ClassObject__ = \
     (__ClassObject__){.mask=MASK, \
-                      .size=sizeof(NAME), \
+                      .instance_size=sizeof(NAME), \
+                      .vclass_size=sizeof(__##NAME##_vClassObject__), \
                       .default_vcls=(__vClassObject__*)&__##NAME##_Default_vClassObject__, \
                       .default_instance=(__ClassInstance__*)&__##NAME##_Default_Instance__, \
                       .name=#NAME, \
@@ -448,7 +462,8 @@ void __SET_CLASS_MASK_WAS_INIT__(size_t* mask, BOOL new_type);
 #define __GENERIC_INHERENT_CLASS_DEFINE_MACRO__(NAME, BASE, MASK, EXPR...) \
   __ClassObject__ __##NAME##_ClassObject__ = \
     (__ClassObject__){.mask=MASK|INHERITS, \
-                      .size=sizeof(NAME), \
+                      .instance_size=sizeof(NAME), \
+                      .vclass_size=sizeof(__##NAME##_vClassObject__), \
                       .default_vcls=(__vClassObject__*)&__##NAME##_Default_vClassObject__, \
                       .default_instance=(__ClassInstance__*)&__##NAME##_Default_Instance__, \
                       .name=#NAME, \
@@ -605,6 +620,8 @@ void __SET_CLASS_MASK_WAS_INIT__(size_t* mask, BOOL new_type);
     generic_function_t __data__; \
     generic_function_t __iter__; \
     generic_function_t __next__; \
+    generic_function_t __begin__; \
+    generic_function_t __end__; \
     generic_function_t __call__; \
     generic_function_t __getitem__; \
     generic_function_t __len__; \
@@ -681,7 +698,8 @@ void __SET_CLASS_MASK_WAS_INIT__(size_t* mask, BOOL new_type);
 #define __BRIDGE_CLASS_DEFINE_MACRO__(NAME, MASK, EXPR...) \
   __ClassObject__ __##NAME##_B_ClassObject__ = \
     (__ClassObject__){.mask=MASK|STATIC|BARE, \
-                      .size=sizeof(NAME##_B), \
+                      .instance_size=sizeof(NAME##_B), \
+                      .vclass_size=sizeof(__##NAME##_B_vClassObject__), \
                       .default_vcls=(__vClassObject__*)&__##NAME##_B_Default_vClassObject__, \
                       .default_instance=(__ClassInstance__*)&__##NAME##_B_Default_Instance__, \
                       .name=TO_STR_LITERAL(NAME##_B), \
@@ -752,5 +770,7 @@ void* __aux_class_new_wrapper__(__vClassObject__* vcls, size_t size, __ClassInst
 #define CLS(CLASS_NAME...) __AUX_CLS_ALLOCA__(CLASS_NAME)
 
 #define NEW(CLASS_NAME...) __AUX_CLS_MALLOC__(CLASS_NAME)
+
+#define NEW_VCLASS(CLASS_NAME) __aux_class_new_vclass__(&__##CLASS_NAME##_ClassObject__)
 
 
