@@ -2,7 +2,7 @@
 #pragma once
 
 typedef void*(*alloc_function_t)(size_t);
-typedef void*(*free_function_t)(void);
+typedef void*(*free_function_t)(void*);
 
 DEF_CLASS(allocator_t,
   generic_function_t alloc;

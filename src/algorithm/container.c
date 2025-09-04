@@ -1,17 +1,19 @@
 #include "container.h"
 
-void* smartptr_t_alloc(smartptr_t* self, size_t size) {
+static void* smartptr_t_alloc(smartptr_t* self, size_t size) {
   allocator_t allocator = ((__smartptr_t_vClassObject__*)self->__base__.__meta__->vcls)->allocator;
   self->data = ((__allocator_t_vClassObject__*)(allocator.__base__.__meta__->vcls))->alloc(&allocator, size, 0);
+  PUSH_EXCEPTION(void*);
   return self;
 }
 
-void* smartptr_t_free(smartptr_t* self, size_t size) {
+static void* smartptr_t_free(smartptr_t* self) {
   if (!self->data) {
     return NULL;
   }
   allocator_t allocator = ((__smartptr_t_vClassObject__*)self->__base__.__meta__->vcls)->allocator;
-  ((__allocator_t_vClassObject__*)(allocator.__base__.__meta__->vcls))->free(&allocator, 0);
+  ((__allocator_t_vClassObject__*)(allocator.__base__.__meta__->vcls))->free(&allocator, self->data, 0);
+  PUSH_EXCEPTION(void*);
   return self;
 }
 
@@ -30,7 +32,9 @@ void* smartptr_t_destroy(smartptr_t* self, ...) {
   if (!self->data) {
     return NULL;
   }
-  return ((__smartptr_t_vClassObject__*)(self->__base__.__meta__->vcls))->free(self->data);
+  ((__smartptr_t_vClassObject__*)(self->__base__.__meta__->vcls))->free(self->data);
+  PUSH_EXCEPTION(void*);
+  return NULL;
 }
 
 void* smartptr_t_init(smartptr_t* self, ...) {
@@ -43,15 +47,21 @@ void* smartptr_t_init(smartptr_t* self, ...) {
 }
 
 
-void* generic_container_t_reserve(generic_container_t* self, size_t new_capacity) {
+static void* generic_container_t_reserve(generic_container_t* self, size_t new_capacity) {
+  __smartptr_t_vClassObject__* sp_vcls = (__smartptr_t_vClassObject__*)(self->ptr.__base__.__meta__->vcls);
+  self->capacity = new_capacity;
   if (!self->ptr.data) {
-    ((__smartptr_t_vClassObject__*)(self->ptr.__base__.__meta__->vcls))->alloc(&(self->ptr), self->type_size * new_capacity);
+    sp_vcls->alloc(&(self->ptr), self->type_size * new_capacity);
+    PUSH_EXCEPTION(void*);
+    return self;
   }
   smartptr_t tmp_ptr = self->ptr;
-  self->ptr = *(smartptr_t*)(((__smartptr_t_vClassObject__*)(self->ptr.__base__.__meta__->vcls))->alloc(&(self->ptr),
-                                                                                                        new_capacity));
+  self->ptr = *(smartptr_t*)(sp_vcls->alloc(&(self->ptr), new_capacity));
+  PUSH_EXCEPTION(void*);
+  self->size = MIN(self->size, self->capacity);
   memcpy(self->ptr.data, tmp_ptr.data, self->type_size * self->size);
-  ((__smartptr_t_vClassObject__*)(tmp_ptr.__base__.__meta__->vcls))->free(&(tmp_ptr));
+  sp_vcls->free(&(tmp_ptr));
+  PUSH_EXCEPTION(void*);
   return self;
 }
 
@@ -79,13 +89,18 @@ CLASS_END(generic_container_t, STATIC,
 void* generic_container_t_init(generic_container_t* self, ...) {
   __AUX_INIT_BEGIN__(generic_container_t)
   __M_VA_ARG__(3, (void*)1, 0, 0);
+  __smartptr_t_vClassObject__* sp_vcls = (__smartptr_t_vClassObject__*)(self->ptr.__base__.__meta__->vcls);
   self->type_size = (size_t)__ARG_LIST__[0];
   self->size = (size_t)__ARG_LIST__[1];
   if (__ARG_LIST__[2] && __ARG_LIST__[2] != INVALID) {
     self->ptr.__base__.__meta__->vcls = (__vClassObject__*)__aux_class_new_vclass__( \
       self->ptr.__base__.__meta__->vcls->cls);
-    ((__smartptr_t_vClassObject__*)(self->ptr.__base__.__meta__->vcls))->allocator = \
+    sp_vcls->allocator = \
       *(allocator_t*)__ARG_LIST__[2];
+  }
+  if (self->size) {
+    self->ptr = *(smartptr_t*)(sp_vcls->alloc(&(self->ptr), self->size));
+    PUSH_EXCEPTION(void*);
   }
   __AUX_INIT_END__(generic_container_t)
 }

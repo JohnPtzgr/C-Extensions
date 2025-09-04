@@ -75,7 +75,11 @@ void* __check_uncaught_exception__(exception_t* exception);
   _EXCEPTION = (exception_t){}; \
   _EXCEPTION_CONTEXT = (exception_context_t){}; \
   _ERRORB = _ERRORB || errno || _EXCEPTION.exception_number; \
-  if (errno || CAUGHT_EXCEPTION.exception_number)
+  if (!CAUGHT_EXCEPTION.exception_number) { \
+    CAUGHT_EXCEPTION.exception_number = errno; \
+  } \
+  errno = 0; \
+  if (_ERRORB)
 
 void* __raise_exception__(exception_t* exception);
 
@@ -93,7 +97,8 @@ void* __exit_on_exception__(exception_t* exception, void*(*clean_up)(), ...);
   _EXCEPTION_CONTEXT = (exception_context_t){}; \
   CAUGHT_EXCEPTION = (exception_t){}; \
   CAUGHT_EXCEPTION_CONTEXT = (exception_context_t){}; \
-  _ERRORB = FALSE;
+  _ERRORB = FALSE; \
+  errno = 0;
 
 #define __EXCEPTION_EXPR_TO_STR(expr) #expr
 
@@ -109,7 +114,17 @@ void* __exc_assert_fail__(exception_t* exception, char* description, const char*
 
 #define EXC_ASSERT_CALLBACK ((void*)0)
 
-#define PUSH_EXCEPTION(RETURN_TYPE) if (_ERRORB) { THROW(CAUGHT_EXCEPTION, RETURN_TYPE); }
+#define PUSH_EXCEPTION(RETURN_TYPE) \
+  if (CAUGHT_EXCEPTION.exception_number) { \
+      THROW(CAUGHT_EXCEPTION, RETURN_TYPE); \
+  } else { \
+    if (_ERRORB = (_EXCEPTION.exception_number || errno)) { \
+      if (!_EXCEPTION.exception_number) { \
+        _EXCEPTION.exception_number = errno; \
+      } \
+      THROW(_EXCEPTION, RETURN_TYPE); \
+    } \
+  }
 
 #define EXC_ASSERT(EXPR) ((EXPR) ? ((void*)0) : \
   __exc_assert_fail__(&_EXCEPTION, \

@@ -92,9 +92,10 @@ static inline void __vTableNode_set_mask_bit_f__(__vTableNode__* node, size_t cn
   node->mask = (node->mask |= tmp_val) ^ tmp_val;
 }
 
-size_t __vTable_reserve__(__vTable__* table, size_t new_size) {
+static size_t __vTable_reserve__(__vTable__* table, size_t new_size) {
   __vTableNode__* tmp_data = table->data;
   table->data = (__vTableNode__*)calloc(new_size, sizeof(__vTableNode__));
+  PUSH_EXCEPTION(size_t);
   size_t tmp_size = table->size;
   table->size = new_size;
   if (tmp_data == NULL) {
@@ -105,6 +106,7 @@ size_t __vTable_reserve__(__vTable__* table, size_t new_size) {
     idx = __vTable_probe__(table, tmp_data[i].hash);
     if (!idx.id) {
       __vTable_reserve__(table, table->size * 2);
+      PUSH_EXCEPTION(size_t);
       idx = __vTable_probe__(table, tmp_data[i].hash);
     }
     table->data[idx.id - 1].data = tmp_data[i].data;
@@ -122,6 +124,7 @@ size_t __vTable_reserve__(__vTable__* table, size_t new_size) {
 
   }
   free(tmp_data);
+  PUSH_EXCEPTION(size_t);
   return table->size;
 }
 
@@ -131,12 +134,14 @@ void* __vTable_init__(__vTable__* table, size_t default_size, generic_function_t
     table->hasher = (__vTable_byte_hasher_t__)hasher;
   }
   __vTable_reserve__(table, default_size ? default_size : __DEFAULT_VTABLE_SIZE__);
+  PUSH_EXCEPTION(void*);
   return table;
 }
 
 void* __vTable_destroy__(__vTable__* table) {
   if (table->data) {
     free(table->data);
+    PUSH_EXCEPTION(void*);
   }
   return NULL;
 }
@@ -146,6 +151,7 @@ void* __vTable_add__(__vTable__* table, __vTableHash__ hash, __vTableNode__ node
   idx = __vTable_probe__(table, hash);
   if (!idx.id) {
     __vTable_reserve__(table, table->size * 2);
+    PUSH_EXCEPTION(void*);
     idx = __vTable_probe__(table, hash);
   }
   table->data[idx.id - 1].data = node.data;
@@ -171,6 +177,7 @@ void* __vTable_remove__(__vTable__* table, __vTableHash__ hash) {
     idx = __vTable_probe__(table, hash);
     if (!idx.id) {
       __vTable_reserve__(table, table->size * 2);
+    PUSH_EXCEPTION(void*);
     }
   } while (!idx.id);
   table->data[idx.id - 1] = (__vTableNode__){};
@@ -197,7 +204,6 @@ __vTableNode__* __vTable_get__(__vTable__* table, __vTableHash__ hash) {
     mask ^= primary_bit;
     if (table->data[(hash.hashX + primary_bit / 2) & (table->size - 1)].hash.hashX == hash.hashX &&
         table->data[(hash.hashX + primary_bit / 2) & (table->size - 1)].hash.hashY == hash.hashY) {
-      printf("FOUND!\n");
       return &(table->data[(hash.hashX + primary_bit / 2) & (table->size - 1)]);
     }
   }
@@ -256,10 +262,12 @@ void* __vTable_join__(__vTable__* table, __vTable__* source) {
   }
   if (source->size >= table->size) {
     __vTable_reserve__(table, source->size * 2);
+    PUSH_EXCEPTION(void*);
   }
   for (size_t i = 0; i < source->size; ++i) {
     if (source->data[i].hash.hashX || source->data[i].hash.hashY) {
       __vTable_add__(table, source->data[i].hash, source->data[i]);
+      PUSH_EXCEPTION(void*);
     }
   }
   return table;
@@ -268,12 +276,11 @@ void* __vTable_join__(__vTable__* table, __vTable__* source) {
 void* __InheritanceList_reserve__(__InheritanceList__* list, size_t new_capacity) {
   __InheritanceListNode__* tmp_list = list->list;
   list->list = (__InheritanceListNode__*)malloc(new_capacity * sizeof(__InheritanceListNode__));
-  // if (!list->list) {
-  //   return NULL;
-  // }
+  PUSH_EXCEPTION(void*);
   if (list->capacity) {
     memcpy(list->list, tmp_list, list->capacity * sizeof(__InheritanceListNode__));
     free(tmp_list);
+    PUSH_EXCEPTION(void*);
   }
   list->capacity = new_capacity;
   return list;
@@ -283,11 +290,13 @@ void* __InheritanceList_init__(__InheritanceList__* list) {
   list->size = 0;
   list->capacity = 0;
   __InheritanceList_reserve__(list, __DEFAULT_INHERITANCE_LIST_CAPACITY__);
+  PUSH_EXCEPTION(void*);
   return list;
 }
 
 void* __InheritanceList_destroy__(__InheritanceList__* list) {
   free(list->list);
+  PUSH_EXCEPTION(void*);
   *list = (__InheritanceList__){};
   return NULL;
 }
@@ -298,6 +307,7 @@ void* __InheritanceList_add__(__InheritanceList__* list,
                               __ClassObject__* class) {
   if (list->size + 1 == list->capacity) {
     __InheritanceList_reserve__(list, 2 * list->capacity);
+    PUSH_EXCEPTION(void*);
   }
   list->list[list->size].adress_shift = (size_t)(instance - self);
   list->list[list->size].class = class;
@@ -439,8 +449,10 @@ void __SET_CLASS_MASK_WAS_INIT__(size_t* mask, BOOL new_type) {
 void* __class_init__(__vClassObject__* default_vclass) {
   default_vclass->cls->static_vtable = (__vTable__*)malloc(sizeof(__vTable__));
   default_vclass->vtable = (__vTable__*)malloc(sizeof(__vTable__));
+  PUSH_EXCEPTION(void*);
   __vTable_init__(default_vclass->cls->static_vtable, 0, 0);
   __vTable_init__(default_vclass->vtable, 0, 0);
+  PUSH_EXCEPTION(void*);
   return default_vclass;
 }
 
@@ -454,6 +466,7 @@ void* __class_destroy__(__ClassObject__* class) {
   } else {
     __class_destroy_instance__(class->default_instance, class->default_vcls->__destroy__);
   }
+  PUSH_EXCEPTION(void*);
   class->__static_destroy__(class->default_instance);
   while (class->vcls && index < class->__vclass_cnt) {
     if (class->vcls[index] != NULL) {
@@ -462,6 +475,7 @@ void* __class_destroy__(__ClassObject__* class) {
         free(class->vcls[index]->vtable);
       }
       free(class->vcls[index]);
+      PUSH_EXCEPTION(void*);
     }
     index++;
   }
@@ -484,6 +498,7 @@ void* __class_destroy__(__ClassObject__* class) {
     free(class->static_vtable);
     class->static_vtable = 0;
   }
+  PUSH_EXCEPTION(void*);
   __SET_CLASS_MASK_WAS_INIT__(&(class->mask), FALSE);
   return NULL;
 }
@@ -493,7 +508,9 @@ void* __class_init_instance__(__ClassInstance__* instance,
   instance->__meta__ = (__ClassMetaData__*)malloc(sizeof(__ClassMetaData__));
   instance->__meta__->vcls = default_vclass;
   instance->__meta__->vtable = (__vTable__*)malloc(sizeof(__vTable__));
+  PUSH_EXCEPTION(void*);
   __vTable_init__(instance->__meta__->vtable, 0, 0);
+  PUSH_EXCEPTION(void*);
   return instance;
 }
 
@@ -507,6 +524,7 @@ void* __class_destroy_instance__(__ClassInstance__* instance,
     instance->__meta__->vtable = 0;
     free(instance->__meta__);
     instance->__meta__ = 0;
+    PUSH_EXCEPTION(void*);
   };
   return NULL;
 }
@@ -547,6 +565,7 @@ void __class_inherit__(__ClassObject__* class) {
                       class->inherits_from->list[i - 1].class->static_vtable);
       __vTable_join__(class->default_vcls->vtable, \
                       class->inherits_from->list[i - 1].class->default_vcls->vtable);
+      BREAKPOINT;
     }
   }
 }
@@ -558,12 +577,14 @@ void __class_inherit_instance__(__ClassInstance__* instance) {
         __GET_CLASS_MASK_WAS_INIT__(&(instance->__meta__->vcls->cls->inherits_from->list[i - 1].class->mask))) {
       __vTable_join__(instance->__meta__->vtable, \
                       instance->__meta__->vcls->cls->inherits_from->list[i - 1].class->default_instance->__meta__->vtable);
+      BREAKPOINT;
     }
   }
 }
 
 void* __aux_default_delete_instance__(void* ptr) {
   free(ptr);
+  PUSH_EXCEPTION(void*);
   return NULL;
 }
 
@@ -574,11 +595,13 @@ void* __aux_class_new_wrapper__(__vClassObject__* vcls, size_t size, __ClassInst
   } else {
     ptr = malloc(size * vcls->cls->instance_size);
   }
+  PUSH_EXCEPTION(void*);
   if (vcls->__delete__) {
     SCOPE_PUSH(ptr, vcls->__delete__);
   } else {
     SCOPE_PUSH(ptr, __aux_default_delete_instance__);
   }
+  PUSH_EXCEPTION(void*);
   if (vcls->__copy__) {
     for (size_t i = 0; i < size; ++i) {
       vcls->__copy__(ptr + i * vcls->cls->instance_size, template_instance);
@@ -592,8 +615,10 @@ void* __aux_class_new_wrapper__(__vClassObject__* vcls, size_t size, __ClassInst
     for (size_t i = 0; i < size; ++i) {
       memcpy(ptr + i * vcls->cls->instance_size, template_instance, vcls->cls->instance_size);
       SCOPE_PUSH(ptr + i * vcls->cls->instance_size, vcls->cls->__static_destroy__);
+      BREAKPOINT;
     }
   }
+  PUSH_EXCEPTION(void*);
   return ptr;
 }
 
@@ -616,19 +641,22 @@ void* __aux_class_new_vclass_reserve__(__ClassObject__* class) {
   __vClassObject__** tmp_vcls = class->vcls;
   class->__vclass_capacity *= 2;
   class->vcls = calloc(class->__vclass_capacity, sizeof(void*));
+  PUSH_EXCEPTION(void*);
   memcpy(class->vcls, tmp_vcls, class->__vclass_cnt);
   free(tmp_vcls);
+  PUSH_EXCEPTION(void*);
   return class;
 }
 
 void* __aux_class_new_vclass__(__ClassObject__* class) {
   __vClassObject__* new_vclass = (__vClassObject__*)malloc(class->vclass_size);
+  PUSH_EXCEPTION(void*);
   memcpy(new_vclass, class->default_vcls, class->vclass_size);
   if (!class->vcls || (class->__vclass_cnt + 1 == class->__vclass_capacity)) {
     __aux_class_new_vclass_reserve__(class);
+    PUSH_EXCEPTION(void*);
   }
   class->vcls[class->__vclass_cnt++] = new_vclass;
-  printf("%d\n", 0);
   return new_vclass;
 }
 

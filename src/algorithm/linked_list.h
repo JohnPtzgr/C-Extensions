@@ -16,9 +16,6 @@ DEF_CLASS(linked_list_t,
   size_t type_size;
 )
 
-void* linked_list_push(linked_list_t*, void*);
-void* linked_list_pop(linked_list_t*, void*);
-
 #define LinkedList( OBJ, TYPE ) \
   CLS(linked_list_t, OBJ, sizeof(TYPE));
 

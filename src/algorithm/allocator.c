@@ -1,12 +1,23 @@
 #include "allocator.h"
 
 
-void* allocator_t_alloc(allocator_t* self, size_t size) {
-  return self->alloc_fn(size);
+static void* allocator_t_alloc(allocator_t* self, size_t size) {
+  void* data =  self->alloc_fn(size);
+  if (!data) {
+    if (_EXCEPTION.exception_number) {
+      return NULL;
+    } else {
+      RAISE((exception_t){.exception_number=errno});
+      return NULL;
+    }
+  }
+  return data;
 }
 
-void* allocator_t_free(allocator_t* self) {
-  return self->free_fn();
+static void* allocator_t_free(allocator_t* self, void* data) {
+  self->free_fn(data);
+  PUSH_EXCEPTION(void*);
+  return NULL;
 }
 
 CLASS_END(allocator_t, STATIC,
