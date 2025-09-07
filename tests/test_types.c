@@ -36,6 +36,7 @@ int funct() {
   __cl_add_t_Default_MetaData__;
   type_object_t* clt = CLASS_INFO(cl_add_t);
   var_object_t* var = VAR(clt, 100);
+  INFO_OF(clt);
   printf("vt: %s, %d, %d\n%s, %d, %d",
          vt->type_name,
          vt->type_size,

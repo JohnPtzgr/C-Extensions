@@ -11,7 +11,7 @@ DEF_BARE_CLASS(type_object_t, __ClassMetaData__ type_meta; const char* type_name
 #define CLASS_INFO(CLASS_NAME) \
   CLS(type_object_t, __STRING(CLASS_NAME), sizeof(CLASS_NAME), &__##CLASS_NAME##_Default_MetaData__, NULL)
 
-#define CLASS_OF(CLASS_INSTANCE) \
+#define INFO_OF(CLASS_INSTANCE) \
   CLS(type_object_t, \
       ((__ClassMetaData__*)(CLASS_INSTANCE))->vcls->cls->name, \
       ((__ClassMetaData__*)(CLASS_INSTANCE))->vcls->cls->instance_size, \
