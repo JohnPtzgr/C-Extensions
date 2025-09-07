@@ -304,20 +304,20 @@ void* __InheritanceList_destroy__(__InheritanceList__* list) {
 void* __InheritanceList_add__(__InheritanceList__* list,
                               void* self,
                               void* instance,
-                              __ClassObject__* class) {
+                              __ClassObject__* cls) {
   if (list->size + 1 == list->capacity) {
     __InheritanceList_reserve__(list, 2 * list->capacity);
     PUSH_EXCEPTION(void*);
   }
   list->list[list->size].adress_shift = (size_t)(instance - self);
-  list->list[list->size].class = class;
+  list->list[list->size].cls = cls;
   list->size++;
   return list;
 }
 
 void* __InheritanceList_remove__(__InheritanceList__* list, __ClassInstance__* instance) {
   size_t i = 0;
-  while ((i < list->size) && (list->list[i].class != instance->__meta__->vcls->cls)) { ++i; }
+  while ((i < list->size) && (list->list[i].cls != instance->__meta__->vcls->cls)) { ++i; }
   
   if (i + 1 == list->size) {
     list->size--;
@@ -335,9 +335,9 @@ void* __InheritanceList_remove__(__InheritanceList__* list, __ClassInstance__* i
 size_t __InheritanceList_find__(__InheritanceList__* list, __vTableHash__ hash) {
   size_t i = 0;
   while (i < list->size) {
-    if (__vTable_check__(list->list[i].class->static_vtable, hash)) {
+    if (__vTable_check__(list->list[i].cls->static_vtable, hash)) {
       return i * 2;
-    } else if (__vTable_check__(list->list[i].class->default_vcls->vtable, hash)) {
+    } else if (__vTable_check__(list->list[i].cls->default_vcls->vtable, hash)) {
       return i * 2 + 1;
     }
     i++;
@@ -348,7 +348,7 @@ size_t __InheritanceList_find__(__InheritanceList__* list, __vTableHash__ hash) 
 size_t __InheritanceList_find_built_in__(__InheritanceList__* list, __m_enum__ built_in_no) {
   size_t i = 0;
   while (i < list->size) {
-    if (*(&(list->list[i].class->default_vcls->__init__) + \
+    if (*(&(list->list[i].cls->default_vcls->__init__) + \
         built_in_no)) {
       return i;
     }
@@ -395,6 +395,10 @@ BOOL __GET_CLASS_MASK_IS_BARE__(size_t* mask) {
 
 BOOL __GET_CLASS_MASK_WAS_INIT__(size_t* mask) {
   return (BOOL)((*mask & 512) && 1);
+}
+
+BOOL __GET_CLASS_MASK_WAS_STATIC_INIT__(size_t* mask) {
+  return (BOOL)((*mask & 1024) && 1);
 }
 
 void __SET_CLASS_MASK_STATIC__(size_t* mask, BOOL new_type) {
@@ -446,6 +450,13 @@ void __SET_CLASS_MASK_WAS_INIT__(size_t* mask, BOOL new_type) {
   *mask |= 512;
   *mask ^= !new_type;
 }
+
+void __SET_CLASS_MASK_WAS_STATIC_INIT__(size_t* mask, BOOL new_type) {
+  *mask |= 1024;
+  *mask ^= !new_type;
+}
+
+
 void* __class_init__(__vClassObject__* default_vclass) {
   default_vclass->cls->static_vtable = (__vTable__*)malloc(sizeof(__vTable__));
   default_vclass->vtable = (__vTable__*)malloc(sizeof(__vTable__));
@@ -456,50 +467,53 @@ void* __class_init__(__vClassObject__* default_vclass) {
   return default_vclass;
 }
 
-void* __class_destroy__(__ClassObject__* class) {
-  if (!__GET_CLASS_MASK_WAS_INIT__(&(class->mask))) {
+void* __class_destroy__(__ClassObject__* cls) {
+  if (!__GET_CLASS_MASK_WAS_INIT__(&(cls->mask))) {
     return NULL;
   }
+  if (cls->__class_object_destroy__) {
+    cls->__class_object_destroy__(cls);
+  }
   size_t index = 0;
-  if (__GET_CLASS_MASK_IS_BARE__(&(class->mask))) {
-    class->default_vcls->__destroy__(class->default_instance);
+  if (__GET_CLASS_MASK_IS_BARE__(&(cls->mask))) {
+    cls->default_vcls->__destroy__(cls->default_instance);
   } else {
-    __class_destroy_instance__(class->default_instance, class->default_vcls->__destroy__);
+    __class_destroy_instance__(cls->default_instance, cls->default_vcls->__destroy__);
   }
   PUSH_EXCEPTION(void*);
-  class->__static_destroy__(class->default_instance);
-  while (class->vcls && index < class->__vclass_cnt) {
-    if (class->vcls[index] != NULL) {
-      if (class->vcls[index]->vtable) {
-        __vTable_destroy__(class->vcls[index]->vtable);
-        free(class->vcls[index]->vtable);
+  cls->__static_destroy__(cls->default_instance);
+  while (cls->vcls && index < cls->__vclass_cnt) {
+    if (cls->vcls[index] != NULL) {
+      if (cls->vcls[index]->vtable) {
+        __vTable_destroy__(cls->vcls[index]->vtable);
+        free(cls->vcls[index]->vtable);
       }
-      free(class->vcls[index]);
+      free(cls->vcls[index]);
       PUSH_EXCEPTION(void*);
     }
     index++;
   }
-  if (class->default_vcls->vtable) {
-    __vTable_destroy__(class->default_vcls->vtable);
-    free(class->default_vcls->vtable);
-    class->default_vcls->vtable = 0;
+  if (cls->default_vcls->vtable) {
+    __vTable_destroy__(cls->default_vcls->vtable);
+    free(cls->default_vcls->vtable);
+    cls->default_vcls->vtable = 0;
   }
-  if (class->inherits_from) {
-    __InheritanceList_destroy__(class->inherits_from);
-    free(class->inherits_from);
-    class->inherits_from = 0;
+  if (cls->inherits_from) {
+    __InheritanceList_destroy__(cls->inherits_from);
+    free(cls->inherits_from);
+    cls->inherits_from = 0;
   }
-  if (class->vcls) {
-    free(class->vcls);
-    class->vcls = 0;
+  if (cls->vcls) {
+    free(cls->vcls);
+    cls->vcls = 0;
   }
-  if (class->static_vtable) {
-    __vTable_destroy__(class->static_vtable);
-    free(class->static_vtable);
-    class->static_vtable = 0;
+  if (cls->static_vtable) {
+    __vTable_destroy__(cls->static_vtable);
+    free(cls->static_vtable);
+    cls->static_vtable = 0;
   }
   PUSH_EXCEPTION(void*);
-  __SET_CLASS_MASK_WAS_INIT__(&(class->mask), FALSE);
+  __SET_CLASS_MASK_WAS_INIT__(&(cls->mask), FALSE);
   return NULL;
 }
 
@@ -529,27 +543,27 @@ void* __class_destroy_instance__(__ClassInstance__* instance,
   return NULL;
 }
 
-void __class_inherit_static__(__ClassObject__* class) {
+void __class_inherit_static__(__ClassObject__* cls) {
   size_t static_fill[__VCLASS_METHOD_COUNT__ + 1];
   size_t cnt = 0;
   for (size_t i = 0; i < __VCLASS_METHOD_COUNT__; ++i) {
-    if (!*(&(class->default_vcls->__init__) + i)) {
+    if (!*(&(cls->default_vcls->__init__) + i)) {
       static_fill[cnt++] = 1 + i;
     }
   }
   for (size_t i = cnt; i < __VCLASS_METHOD_COUNT__ + 1; ++i) {
     static_fill[i] = 0;
   }
-  for (size_t i = 0; i < class->inherits_from->size && cnt; ++i) {
+  for (size_t i = 0; i < cls->inherits_from->size && cnt; ++i) {
     size_t shift = 0;
     while (static_fill[shift]) {
-      if (*(&(class->inherits_from->list[i].class->default_vcls->__init__) + \
+      if (*(&(cls->inherits_from->list[i].cls->default_vcls->__init__) + \
           static_fill[shift] - 1)) {
-        *(&(class->default_vcls->__init__) + static_fill[shift] - 1) = \
-          *(&(class->inherits_from->list[i].class->default_vcls->__init__) + \
+        *(&(cls->default_vcls->__init__) + static_fill[shift] - 1) = \
+          *(&(cls->inherits_from->list[i].cls->default_vcls->__init__) + \
           static_fill[shift] - 1);
-        class->default_vcls->method_shift[static_fill[shift] - 1] = class->inherits_from->list[i].adress_shift + \
-          class->inherits_from->list[i].class->default_vcls->method_shift[static_fill[shift] - 1];
+        cls->default_vcls->method_shift[static_fill[shift] - 1] = cls->inherits_from->list[i].adress_shift + \
+          cls->inherits_from->list[i].cls->default_vcls->method_shift[static_fill[shift] - 1];
         static_fill[shift] = static_fill[--cnt];
       } else {
         shift++;
@@ -558,13 +572,13 @@ void __class_inherit_static__(__ClassObject__* class) {
   }
 }
 
-void __class_inherit__(__ClassObject__* class) {
-  for (size_t i = class->inherits_from->size; i > 0; --i) {
-    if (!__GET_CLASS_MASK_IS_BARE__(&(class->inherits_from->list[i - 1].class->mask))) {
-      __vTable_join__(class->static_vtable, \
-                      class->inherits_from->list[i - 1].class->static_vtable);
-      __vTable_join__(class->default_vcls->vtable, \
-                      class->inherits_from->list[i - 1].class->default_vcls->vtable);
+void __class_inherit__(__ClassObject__* cls) {
+  for (size_t i = cls->inherits_from->size; i > 0; --i) {
+    if (!__GET_CLASS_MASK_IS_BARE__(&(cls->inherits_from->list[i - 1].cls->mask))) {
+      __vTable_join__(cls->static_vtable, \
+                      cls->inherits_from->list[i - 1].cls->static_vtable);
+      __vTable_join__(cls->default_vcls->vtable, \
+                      cls->inherits_from->list[i - 1].cls->default_vcls->vtable);
       BREAKPOINT;
     }
   }
@@ -572,11 +586,11 @@ void __class_inherit__(__ClassObject__* class) {
 
 void __class_inherit_instance__(__ClassInstance__* instance) {
   for (size_t i = instance->__meta__->vcls->cls->inherits_from->size; i > 0; --i) {
-    if (!__GET_CLASS_MASK_IS_BARE__(&(instance->__meta__->vcls->cls->inherits_from->list[i - 1].class->mask)) && \
-        !__GET_CLASS_MASK_IS_STATIC__(&(instance->__meta__->vcls->cls->inherits_from->list[i - 1].class->mask)) && \
-        __GET_CLASS_MASK_WAS_INIT__(&(instance->__meta__->vcls->cls->inherits_from->list[i - 1].class->mask))) {
+    if (!__GET_CLASS_MASK_IS_BARE__(&(instance->__meta__->vcls->cls->inherits_from->list[i - 1].cls->mask)) && \
+        !__GET_CLASS_MASK_IS_STATIC__(&(instance->__meta__->vcls->cls->inherits_from->list[i - 1].cls->mask)) && \
+        __GET_CLASS_MASK_WAS_INIT__(&(instance->__meta__->vcls->cls->inherits_from->list[i - 1].cls->mask))) {
       __vTable_join__(instance->__meta__->vtable, \
-                      instance->__meta__->vcls->cls->inherits_from->list[i - 1].class->default_instance->__meta__->vtable);
+                      instance->__meta__->vcls->cls->inherits_from->list[i - 1].cls->default_instance->__meta__->vtable);
       BREAKPOINT;
     }
   }
@@ -631,32 +645,32 @@ void* __aux_class_new_vclass_check_vclass__(void* vclass, size_t vclass_size) {
   return NULL;
 }
 
-void* __aux_class_new_vclass_reserve__(__ClassObject__* class) {
-  if (!class->vcls) {
-    class->vcls = calloc(DEFAULT_VCLASS_LIST_SIZE, sizeof(void*));
-    class->__vclass_cnt = 0;
-    class->__vclass_capacity = DEFAULT_VCLASS_LIST_SIZE;
-    return class;
+void* __aux_class_new_vclass_reserve__(__ClassObject__* cls) {
+  if (!cls->vcls) {
+    cls->vcls = calloc(DEFAULT_VCLASS_LIST_SIZE, sizeof(void*));
+    cls->__vclass_cnt = 0;
+    cls->__vclass_capacity = DEFAULT_VCLASS_LIST_SIZE;
+    return cls;
   }
-  __vClassObject__** tmp_vcls = class->vcls;
-  class->__vclass_capacity *= 2;
-  class->vcls = calloc(class->__vclass_capacity, sizeof(void*));
+  __vClassObject__** tmp_vcls = cls->vcls;
+  cls->__vclass_capacity *= 2;
+  cls->vcls = calloc(cls->__vclass_capacity, sizeof(void*));
   PUSH_EXCEPTION(void*);
-  memcpy(class->vcls, tmp_vcls, class->__vclass_cnt);
+  memcpy(cls->vcls, tmp_vcls, cls->__vclass_cnt);
   free(tmp_vcls);
   PUSH_EXCEPTION(void*);
-  return class;
+  return cls;
 }
 
-void* __aux_class_new_vclass__(__ClassObject__* class) {
-  __vClassObject__* new_vclass = (__vClassObject__*)malloc(class->vclass_size);
+void* __aux_class_new_vclass__(__ClassObject__* cls) {
+  __vClassObject__* new_vclass = (__vClassObject__*)malloc(cls->vclass_size);
   PUSH_EXCEPTION(void*);
-  memcpy(new_vclass, class->default_vcls, class->vclass_size);
-  if (!class->vcls || (class->__vclass_cnt + 1 == class->__vclass_capacity)) {
-    __aux_class_new_vclass_reserve__(class);
+  memcpy(new_vclass, cls->default_vcls, cls->vclass_size);
+  if (!cls->vcls || (cls->__vclass_cnt + 1 == cls->__vclass_capacity)) {
+    __aux_class_new_vclass_reserve__(cls);
     PUSH_EXCEPTION(void*);
   }
-  class->vcls[class->__vclass_cnt++] = new_vclass;
+  cls->vcls[cls->__vclass_cnt++] = new_vclass;
   return new_vclass;
 }
 

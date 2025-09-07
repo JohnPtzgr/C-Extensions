@@ -8,6 +8,7 @@ ar rcs lib/libcextras.a \
   build/memory/dyn_alloc.o \
   build/oop/class.o \
   build/oop/iters.o \
+  build/oop/types.o \
   build/oop/exception.o \
   build/oop/functional.o \
   build/threads/task.o \

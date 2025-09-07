@@ -84,46 +84,11 @@ void* callable_method_call(callable_t* self, ...) {
   }
 }
 
-__ClassObject__ __callable_t_ClassObject__ = (__ClassObject__){.mask=1,
-                                                               .instance_size=sizeof(callable_t),
-                                                               .vclass_size=sizeof(__callable_t_vClassObject__),
-                                                               .default_vcls=(__vClassObject__*)&__callable_t_Default_vClassObject__,
-                                                               .default_instance=(__ClassInstance__*)&__callable_t_Default_Instance__,
-                                                               .name="callable_t",
-                                                               .__static_init__=(generic_function_t)__callable_t_static_init__,
-                                                               .__static_destroy__=(generic_function_t)__callable_t_static_destroy__};
-__callable_t_vClassObject__ __callable_t_Default_vClassObject__ = (__callable_t_vClassObject__){.__init__=(generic_function_t)callable_t_init,
-                                                                                                .__destroy__=(generic_function_t)callable_t_destroy,
-                                                                                                .__call__=(generic_function_t)callable_method_call,
-                                                                                                .cls=&__callable_t_ClassObject__};
-callable_t __callable_t_Default_Instance__ = (callable_t){};
-__ClassMetaData__ __callable_t_Default_MetaData__ = (__ClassMetaData__){.vcls=(__vClassObject__*)&__callable_t_Default_vClassObject__};
-void* __callable_t_static_init__(callable_t* self) {
-  if (!__GET_CLASS_MASK_WAS_INIT__(&(__callable_t_ClassObject__.mask))) {
-    *self = (callable_t){};
-    __scope_object_push__(&__SCOPE_OBJECT_INST__,
-                          (void*)(&__callable_t_ClassObject__),
-                          (generic_function_t)(__class_destroy__),
-                          0);
-    __scope_object_defer__(&__SCOPE_OBJECT_INST__,
-                           (void*)(&__callable_t_ClassObject__),
-                           (generic_function_t)(__class_destroy__),
-                           (generic_function_t)(__DEFAULT_PREDICATE__),
-                           0);
-  }
-  if (!__GET_CLASS_MASK_IS_BARE__(&(__callable_t_ClassObject__.mask))) {
-    ((__ClassInstance__*)self)->__meta__ = &__callable_t_Default_MetaData__;
-  }
-  if (self != &__callable_t_Default_Instance__) {
-    __scope_object_push__(&__SCOPE_OBJECT_INST__,
-                          (void*)(self), (generic_function_t)(__callable_t_static_destroy__), 0);
-  }
-  if (!__GET_CLASS_MASK_WAS_INIT__(&(__callable_t_ClassObject__.mask))) {
-    __callable_t_Default_vClassObject__.__call__ = (generic_function_t)callable_method_call;
-  }
-  return self;
-}
-void* __callable_t_static_destroy__(callable_t* self) DEFAULT_DESTROY(callable_t);
+CLASS_END(callable_t, STATIC,
+  __ON_STATIC_INIT__(callable_t,
+    self->__meta__->vcls->__call__ = (generic_function_t)callable_method_call;
+  )
+) DEFAULT_DESTROY(callable_t)
 
 void* callable_t_init(callable_t* self, ...) {
   __AUX_INIT_BEGIN__(callable_t);

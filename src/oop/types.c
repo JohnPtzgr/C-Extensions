@@ -1,94 +1,34 @@
 #include "types.h"
 
 
-CLASS_END(class_meta_t, STATIC, ) DEFAULT_DESTROY(class_meta_t)
-
-CLASS_END(type_object_t, STATIC, )
+CLASS_END(type_object_t, STATIC | BARE,)
 DEFAULT_DESTROY(type_object_t);
-DEF_INIT(type_object_t, 
-  __M_VA_ARG__(5);
-  self->type_name = (char*)((void**)__ARG_LIST__[0]);
-  self->size = (size_t)((void**)__ARG_LIST__[1]);
-  self->id = hash_byte_array(self->type_name, strlen(self->type_name));
-  self->meta.mask = (size_t)(-1);
-  self->meta.meta_table = 0;
-  self->meta.method_table = 0;
-  if (__ARG_CNT__ > 2) {
-    self->meta.method_table = (size_t*)((void**)__ARG_LIST__[2]);
-    self->meta.meta_table = (generic_function_t*)((void**)__ARG_LIST__[3]);
-    self->meta.mask = (size_t)((void**)__ARG_LIST__[4]);
+
+void* type_object_t_init(type_object_t* self, ...) {
+  __AUX_INIT_BEGIN__(type_object_t)
+  __M_VA_ARG__(3, NULL, NULL, NULL)
+  __ClassMetaData__* meta = __ARG_LIST__[2];
+  self->type_name = (const char*)__ARG_LIST__[0];
+  self->type_size = *((size_t*)&(__ARG_LIST__[1]));
+  self->type_meta = (__ClassMetaData__){};
+  if (meta) {
+    self->type_meta = *meta;
   }
-)
+  __AUX_INIT_END__(type_object_t)
+}
 
 
-CLASS_END(var_object_t, STATIC, ) { return NULL; }
-void* var_object_t_destroy(var_object_t* self, ...) {
-  if (self->type.meta.meta_table) {
-    self->type.meta.meta_table[__m_destroy__](self->value);
-  }
-  if (self->allocated) {
-    free(self->value);
-  }
+CLASS_END(var_object_t, STATIC | BARE,)
+DEFAULT_DESTROY(var_object_t);
+
+void* __aux_default_type_init__(void* self, ...) {
   return self;
 }
-DEF_INIT(var_object_t,
-  __M_VA_ARG__(10);
-  self->type = *((type_object_t*)((void**)__ARG_LIST__[0]));
-  self->value = ((void**)__ARG_LIST__[1]);
-  self->allocated = 0;
-  if (self->type.meta.meta_table && self->value) {
-    switch (__ARG_CNT__ - 2)
-    {
-    case 1:
-      self->type.meta.meta_table[__m_init__](self->value, __ARG_LIST__[2], 0);
-      break;
 
-    case 2:
-      self->type.meta.meta_table[__m_init__](self->value, __ARG_LIST__[2], __ARG_LIST__[3], 0);
-      break;
-
-    case 3:
-      self->type.meta.meta_table[__m_init__](self->value, __ARG_LIST__[2], __ARG_LIST__[3], \
-        __ARG_LIST__[4], 0);
-      break;
-
-    case 4:
-      self->type.meta.meta_table[__m_init__](self->value, __ARG_LIST__[2], __ARG_LIST__[3], \
-        __ARG_LIST__[4], __ARG_LIST__[5], 0);
-      break;
-
-    case 5:
-      self->type.meta.meta_table[__m_init__](self->value, __ARG_LIST__[2], __ARG_LIST__[3], \
-        __ARG_LIST__[4], __ARG_LIST__[5], __ARG_LIST__[6], 0);
-      break;
-
-    case 6:
-      self->type.meta.meta_table[__m_init__](self->value, __ARG_LIST__[2], __ARG_LIST__[3], \
-        __ARG_LIST__[4], __ARG_LIST__[5], __ARG_LIST__[6], __ARG_LIST__[7], 0);
-      break;
-
-    case 7:
-      self->type.meta.meta_table[__m_init__](self->value, __ARG_LIST__[2], __ARG_LIST__[3], \
-        __ARG_LIST__[4], __ARG_LIST__[5], __ARG_LIST__[6], __ARG_LIST__[7], __ARG_LIST__[8], 0);
-      break;
-
-    case 8:
-      self->type.meta.meta_table[__m_init__](self->value, __ARG_LIST__[2], __ARG_LIST__[3], \
-        __ARG_LIST__[4], __ARG_LIST__[5], __ARG_LIST__[6], __ARG_LIST__[7], \
-        __ARG_LIST__[8], __ARG_LIST__[9], 0);
-      break;
-        
-    default:
-      self->type.meta.meta_table[__m_init__](self->value, 0);
-      break;
-    }
-  }
-)
-
-
-void* var_object_alloc(var_object_t* self) {
-  self->value = calloc(1, self->type.size);
-  self->allocated = TRUE;
-  self->type.meta.meta_table[__m_init__](self, 0);
-  return self;
+void* var_object_t_init(var_object_t* self, ...) {
+  __AUX_INIT_BEGIN__(var_object_t)
+  __M_VA_ARG__(3, NULL, NULL, NULL)
+  self->type = (type_object_t*)__ARG_LIST__[0];
+  self->value = __ARG_LIST__[1];
+  __AUX_INIT_END__(var_object_t)
 }

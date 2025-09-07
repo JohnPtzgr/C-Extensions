@@ -37,5 +37,5 @@ int __LAMBDA_EXPRESSION_GET_TYPE(const __int16_t* mask);
 
 void __LAMBDA_EXPRESSION_SET_TYPE(__int16_t* mask, int type);
 
-DEF_CLASS(lambda_t,, void* data; __int16_t* mask; double* fp_vars)
+DEF_CLASS(lambda_t, void* data; __int16_t* mask; double* fp_vars)
 void* __lambda_compile(lambda_t* self, const char* string, ...);

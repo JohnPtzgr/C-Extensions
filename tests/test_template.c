@@ -43,12 +43,12 @@ int main() {
   int b = 1;
   float c = 0;
   float d = 0;
-  INST(__TEMPLATE_VA(cls_t), e);
-  e.b = 90;
+  __TEMPLATE_VA(cls_t)* e = CLS(__TEMPLATE_VA(cls_t));
+  e->b = 90;
   add_int(&a, &b);
   add_float(&c, &d);
   printf("%d\n", a);
   printf("%d\n", add());
-  printf("%d\n", e.a);
+  printf("%d\n", e->a);
   return 0;
 }

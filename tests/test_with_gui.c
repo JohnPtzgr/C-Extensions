@@ -18,7 +18,7 @@ int main() {
   FD_ZERO(&s);
 
   int cnt = 0;
-  cnt += 1;
+  cnt += 1; 
   SDL_Renderer* r = SDL_CreateRenderer(w, -1, 0);
   // printf("R: %d\n", r);
   if (!r) {

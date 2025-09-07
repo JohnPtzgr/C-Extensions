@@ -55,6 +55,8 @@
     "cinttypes": "cpp",
     "typeinfo": "cpp",
     "variant": "cpp",
-    "text_encoding": "cpp"
+    "text_encoding": "cpp",
+    "int.h": "c",
+    "functional.h": "c"
   }
 }

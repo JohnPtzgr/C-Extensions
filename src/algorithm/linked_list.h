@@ -1,23 +1,24 @@
 #include "../oop/class.h"
 #pragma once
 
-DEF_CLASS(linked_list_node_t,
+DEF_CLASS(linked_list_node_t
   ,
   struct linked_list_node_t* next;
   char value;
 )
 
-DEF_CLASS(linked_list_t,
-  generic_function_t push;
-  generic_function_t pop;
+DEF_CLASS(linked_list_t
   ,
   linked_list_node_t* head;
   size_t size;
   size_t type_size;
+  ,
+  generic_function_t push;
+  generic_function_t pop;
 )
 
-#define LinkedList( OBJ, TYPE ) \
-  CLS(linked_list_t, OBJ, sizeof(TYPE));
+#define LinkedList( TYPE ) \
+  CLS(linked_list_t, sizeof(TYPE));
 
 // #define __TEMPLATE__
 // #ifndef __T_ARG_A__

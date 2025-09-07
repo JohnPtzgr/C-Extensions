@@ -4,7 +4,7 @@
 
 int_t* expexc(int_t* self, int_t* other, int_t* result) {
   EXC_ASSERT(other->value >= 0 && "Negative Power is not allowed!");
-  return self->__base__.__meta__->vcls->__pow__(self, other, result);
+  return self->__meta__->vcls->__pow__(self, other, result);
 }
 
 

@@ -12,7 +12,7 @@
 ./build/.build_scripts/compile_single.sh memory/dyn_alloc
 
 ./build/.build_scripts/compile_single.sh oop/class
-# ./build/.build_scripts/compile_single.sh oop/types
+./build/.build_scripts/compile_single.sh oop/types
 ./build/.build_scripts/compile_single.sh oop/exception
 ./build/.build_scripts/compile_single.sh oop/iters
 ./build/.build_scripts/compile_single.sh oop/functional

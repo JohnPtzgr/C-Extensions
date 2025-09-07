@@ -336,14 +336,7 @@ CLASS_END(int_t, STATIC,
     __int_t_Default_vClassObject__.__dec__ = (generic_function_t)int_t_dec;
     __int_t_Default_vClassObject__.__id__ = (generic_function_t)int_t_id;
   )
-) {
-  return 0;
-}
-void* int_t_destroy(int_t* self, ...) {
-  return 0;
-}
-// DEFAULT_DESTROY(int_t)
-
+) DEFAULT_DESTROY(int_t)
 
 void* int_t_init(int_t* self, ...) {
   __AUX_INIT_BEGIN__(int_t)
@@ -351,7 +344,7 @@ void* int_t_init(int_t* self, ...) {
   if (__ARG_CNT__) {
     self->value = *(long*)__ARG_LIST__;
   }
-  self->__base__.__meta__->vcls->__add__;
+  self->__meta__->vcls->__add__;
   __AUX_INIT_END__(int_t)
 }
 
