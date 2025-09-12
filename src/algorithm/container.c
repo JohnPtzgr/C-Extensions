@@ -67,7 +67,11 @@ static void* generic_container_t_reserve(generic_container_t* self, size_t new_c
 
 
 void* generic_container_iter(generic_container_t* self, ...) {
-  return NEW(iterator_t, 1, self->ptr.data, self->type_size, self->ptr.data + self->type_size * self->size);
+  return NEW(iterator_t,
+             1,
+             self->ptr.data,
+             (self->type_size == 0 ? 1 : self->type_size),
+             self->ptr.data + self->type_size * self->size);
 }
 
 CLASS_END(generic_container_t, STATIC,

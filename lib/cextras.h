@@ -8,5 +8,6 @@
 
 #include "../src/oop/functional.h"
 #include "../src/oop/iters.h"
+#include "../src/oop/types.h"
 
 #include "../src/threads/async.h"

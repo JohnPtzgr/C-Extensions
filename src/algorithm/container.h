@@ -12,7 +12,8 @@ DEF_CLASS(smartptr_t
   ,
   generic_function_t alloc;
   generic_function_t free;
-  allocator_t allocator;)
+  allocator_t allocator;
+)
 
 #define Smart_ptr() 
 
@@ -32,5 +33,10 @@ DEF_CLASS(generic_container_t
   generic_function_t insert;
   generic_function_t erase;
   generic_function_t push_back;
-  generic_function_t pop_back)
+  generic_function_t pop_back;
+  generic_function_t append;
+  generic_function_t find;
+  generic_function_t rfind;
+  generic_function_t slice;
+)
 
