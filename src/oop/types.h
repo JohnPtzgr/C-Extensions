@@ -3,7 +3,14 @@
 
 #pragma once
 
-DEF_BARE_CLASS(type_object_t, __ClassMetaData__ type_meta; const char* type_name; size_t type_size; size_t type_mask)
+#undef type_object_t
+
+DEF_BARE_CLASS(type_object_t
+  ,
+  __ClassMetaData__ type_meta;
+  const char* type_name;
+  size_t type_size;
+  size_t type_mask)
 
 #define TYPE_INFO(TYPE_NAME) \
   CLS(type_object_t, __STRING(TYPE_NAME), sizeof(TYPE_NAME), NULL)
@@ -11,7 +18,7 @@ DEF_BARE_CLASS(type_object_t, __ClassMetaData__ type_meta; const char* type_name
 #define CLASS_INFO(CLASS_NAME) \
   CLS(type_object_t, __STRING(CLASS_NAME), sizeof(CLASS_NAME), &__##CLASS_NAME##_Default_MetaData__, NULL)
 
-#define INFO_OF(CLASS_INSTANCE) \
+#define CLASS_INFO_OF(CLASS_INSTANCE) \
   CLS(type_object_t, \
       ((__ClassMetaData__*)(CLASS_INSTANCE))->vcls->cls->name, \
       ((__ClassMetaData__*)(CLASS_INSTANCE))->vcls->cls->instance_size, \

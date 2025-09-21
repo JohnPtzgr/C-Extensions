@@ -1,7 +1,7 @@
 #include "../src/oop/class.h"
 #include "../src/oop/templates.h"
 
-DEF_CLASS(__TEMPLATE_2(__T_ARG_A__, __T_ARG_B__, cls_t),,
+DEF_CLASS(__TEMPLATE_2(__T_ARG_A__, __T_ARG_B__, cls_t),
   __T_ARG_A__ a;
   __T_ARG_B__ b;
 )

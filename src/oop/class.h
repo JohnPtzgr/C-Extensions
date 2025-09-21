@@ -99,9 +99,22 @@ typedef struct __vClassObjectPrt__ {
   void* data;
 } __vClassObjectPrt__;
 
+typedef struct type_object_t {
+  __ClassMetaData__ type_meta;
+  const char* type_name;
+  size_t type_size;
+  size_t type_mask
+} type_object_t;
+
+typedef struct class_field_t
+{
+  size_t field_mask;
+  type_object_t type;
+} class_field_t;
+
+typedef class_field_t* class_structure_t;
 
 typedef struct __vClassObject__ {
-  unsigned int method_shift[__VCLASS_METHOD_COUNT__];
   generic_function_t __init__;
   generic_function_t __destroy__;
   generic_function_t __to_str__;
@@ -167,6 +180,11 @@ typedef struct __vClassObject__ {
   generic_function_t __shout__;
   generic_function_t __id__;
 
+  unsigned int* method_shift;
+
+  class_structure_t fields;
+  class_structure_t static_fields;
+
   __ClassObject__* cls;
   
   __vTable__* vtable;
@@ -179,6 +197,7 @@ typedef struct __ClassMetaData__ {
   __vClassObject__* vcls;
   __vTable__* vtable;
 } __ClassMetaData__;
+
 
 
 void* __class_init__(__vClassObject__* default_vclass);
@@ -349,15 +368,22 @@ void __SET_CLASS_MASK_WAS_STATIC_INIT__(size_t* mask, BOOL new_type);
 #define __GENERIC_CLASS_DECLARE_MACRO__(NAME, \
     CLASS_FIELDS, \
     STATIC_CLASS_FIELDS, \
-    PROTECTED_STATIC_CLASS_FIELDS \
+    PROTECTED_STATIC_CLASS_FIELDS, \
+    CLASS_FIELD_COUNT, \
+    STATIC_CLASS_FIELD_COUNT, \
+    CLASS_DEFINITION_EXPR \
   ) \
+  typedef struct NAME \
+  { \
+    CLASS_FIELDS; \
+  } NAME; \
+  CLASS_DEFINITION_EXPR; \
   typedef struct __##NAME##_vClassObjectPrt__ { \
     __vClassObjectPrt__ default_protected; \
     PROTECTED_STATIC_CLASS_FIELDS; \
   } __##NAME##_vClassObjectPrt__; \
   typedef struct __##NAME##_vClassObject__ \
   { \
-    unsigned int method_shift[__VCLASS_METHOD_COUNT__]; \
     generic_function_t __init__; \
     generic_function_t __destroy__; \
     generic_function_t __to_str__; \
@@ -422,20 +448,24 @@ void __SET_CLASS_MASK_WAS_STATIC_INIT__(size_t* mask, BOOL new_type);
     generic_function_t __listen__; \
     generic_function_t __shout__; \
     generic_function_t __id__; \
+    unsigned int* method_shift; \
+    class_structure_t fields; \
+    class_structure_t static_fields; \
     __ClassObject__* cls; \
     __vTable__* vtable; \
     __vClassObjectPrt__* __protected__; \
     STATIC_CLASS_FIELDS; \
     char __prot_vcls_data__[sizeof(__##NAME##_vClassObjectPrt__)]; \
+    unsigned int __method_shift__[__VCLASS_METHOD_COUNT__ + \
+                                  CLASS_FIELD_COUNT + \
+                                  STATIC_CLASS_FIELD_COUNT]; \
+    class_field_t __fields__[CLASS_FIELD_COUNT]; \
+    class_field_t __static_fields__[STATIC_CLASS_FIELD_COUNT]; \
   } __##NAME##_vClassObject__; \
   typedef struct __##NAME##_ClassMetaData__ { \
     __##NAME##_vClassObject__* vcls; \
     __vTable__* vtable; \
   } __##NAME##_ClassMetaData__; \
-  typedef struct NAME \
-  { \
-    CLASS_FIELDS; \
-  } NAME; \
   extern void* __##NAME##_static_init__(NAME* self); \
   extern void* __##NAME##_static_destroy__(NAME* self); \
   extern void* NAME##_init(NAME* self , ...); \
@@ -443,7 +473,8 @@ void __SET_CLASS_MASK_WAS_STATIC_INIT__(size_t* mask, BOOL new_type);
   extern __ClassObject__ __##NAME##_ClassObject__; \
   extern __##NAME##_vClassObject__ __##NAME##_Default_vClassObject__; \
   extern NAME __##NAME##_Default_Instance__; \
-  extern __##NAME##_ClassMetaData__ __##NAME##_Default_MetaData__;
+  extern __##NAME##_ClassMetaData__ __##NAME##_Default_MetaData__; \
+  extern type_object_t NAME##_type;
 
 #define __GENERIC_CLASS_DEFINE_MACRO__(NAME, MASK, EXPR...) \
   __ClassObject__ __##NAME##_ClassObject__ = \
@@ -463,6 +494,10 @@ void __SET_CLASS_MASK_WAS_STATIC_INIT__(size_t* mask, BOOL new_type);
   NAME __##NAME##_Default_Instance__ = (NAME){}; \
   __##NAME##_ClassMetaData__ __##NAME##_Default_MetaData__ = \
     (__##NAME##_ClassMetaData__){.vcls=(__##NAME##_vClassObject__*)&__##NAME##_Default_vClassObject__}; \
+  type_object_t NAME##_type = (type_object_t){.type_mask=MASK, \
+                                              .type_size=sizeof(NAME), \
+                                              .type_meta=(__ClassMetaData__){.vcls=(__vClassObject__*)&__##NAME##_Default_vClassObject__}, \
+                                              .type_name=#NAME}; \
   void* __##NAME##_static_init__(NAME* self) { \
     __ON_STATIC_INIT__(NAME, \
       if (self != &__##NAME##_Default_Instance__) { \
@@ -508,6 +543,10 @@ void __SET_CLASS_MASK_WAS_STATIC_INIT__(size_t* mask, BOOL new_type);
   NAME __##NAME##_Default_Instance__ = (NAME){}; \
   __##NAME##_ClassMetaData__ __##NAME##_Default_MetaData__ = \
     (__##NAME##_ClassMetaData__){.vcls=(__##NAME##_vClassObject__*)&__##NAME##_Default_vClassObject__}; \
+  type_object_t NAME##_type = (type_object_t){.type_mask=MASK, \
+                                              .type_size=sizeof(NAME), \
+                                              .type_meta=(__ClassMetaData__){.vcls=(__vClassObject__*)&__##NAME##_Default_vClassObject__}, \
+                                              .type_name=#NAME}; \
   void* __##NAME##_static_init__(NAME* self) { \
     __##BASE##_static_init__((BASE*)self); \
     __ON_STATIC_INIT__(NAME, \
@@ -617,18 +656,24 @@ void __SET_CLASS_MASK_WAS_STATIC_INIT__(size_t* mask, BOOL new_type);
 #define __AUX_CLASS__(NAME, FIELDS...) \
   __GENERIC_CLASS_DECLARE_MACRO__(NAME, \
     __##NAME##_ClassMetaData__* __meta__; \
-    ARG1_VA_ARGS(FIELDS, ;, ;), \
-    ARG2_VA_ARGS(FIELDS, ;, ;), \
-    ARG3_VA_ARGS(FIELDS, ;, ;))
+    ARG1_VA_ARGS(FIELDS, ;, ;, 0, 0, ;), \
+    ARG2_VA_ARGS(FIELDS, ;, ;, 0, 0, ;), \
+    ARG3_VA_ARGS(FIELDS, ;, ;, 0, 0, ;), \
+    ARG4_VA_ARGS(FIELDS, 0, 0, 0, 0, ;), \
+    ARG5_VA_ARGS(FIELDS, 0, 0, 0, 0, ;), \
+    ARG6_VA_ARGS(FIELDS, ;, ;, ;, ;, ;))
 
 #define DEF_CLASS(NAME, FIELDS...) \
   __AUX_CLASS__(NAME, FIELDS)
 
 #define __AUX_BARE_CLASS__(NAME, FIELDS...) \
   __GENERIC_CLASS_DECLARE_MACRO__(NAME, \
-    ARG1_VA_ARGS(FIELDS, ;, ;), \
-    ARG2_VA_ARGS(FIELDS, ;, ;), \
-    ARG3_VA_ARGS(FIELDS, ;, ;))
+    ARG1_VA_ARGS(FIELDS, ;, ;, 0, 0, ;), \
+    ARG2_VA_ARGS(FIELDS, ;, ;, 0, 0, ;), \
+    ARG3_VA_ARGS(FIELDS, ;, ;, 0, 0, ;), \
+    ARG4_VA_ARGS(FIELDS, 0, 0, 0, 0, ;), \
+    ARG5_VA_ARGS(FIELDS, 0, 0, 0, 0, ;), \
+    ARG6_VA_ARGS(FIELDS, ;, ;, ;, ;, ;))
 
 #define DEF_BARE_CLASS(NAME, FIELDS...) \
   __AUX_BARE_CLASS__(NAME, FIELDS)
@@ -636,9 +681,12 @@ void __SET_CLASS_MASK_WAS_STATIC_INIT__(size_t* mask, BOOL new_type);
 #define __AUX_INHERIT__(NAME, BASE, FIELDS...) \
   __GENERIC_CLASS_DECLARE_MACRO__(NAME, \
     BASE __base__; \
-    ARG1_VA_ARGS(FIELDS, ;, ;), \
-    ARG2_VA_ARGS(FIELDS, ;, ;), \
-    ARG3_VA_ARGS(FIELDS, ;, ;))
+    ARG1_VA_ARGS(FIELDS, ;, ;, 0, 0, ;), \
+    ARG2_VA_ARGS(FIELDS, ;, ;, 0, 0, ;), \
+    ARG3_VA_ARGS(FIELDS, ;, ;, 0, 0, ;), \
+    ARG4_VA_ARGS(FIELDS, 0, 0, 0, 0, ;), \
+    ARG5_VA_ARGS(FIELDS, 0, 0, 0, 0, ;), \
+    ARG6_VA_ARGS(FIELDS, ;, ;, ;, ;, ;))
 
 #define DEF_INHERIT(NAME, BASE, FIELDS...) \
   __AUX_INHERIT__(NAME, BASE, FIELDS)
@@ -684,6 +732,10 @@ void __SET_CLASS_MASK_WAS_STATIC_INIT__(size_t* mask, BOOL new_type);
   NAME##_B __##NAME##_B_Default_Instance__ = (NAME##_B){}; \
   __##NAME##_B_ClassMetaData__ __##NAME##_B_Default_MetaData__ = \
     (__##NAME##_B_ClassMetaData__){.vcls=(__##NAME##_B_vClassObject__*)&__##NAME##_B_Default_vClassObject__}; \
+  type_object_t NAME##_type = (type_object_t){.type_mask=MASK|STATIC|BARE, \
+                                              .type_size=sizeof(NAME), \
+                                              .type_meta=(__ClassMetaData__){.vcls=(__vClassObject__*)&__##NAME##_B_Default_vClassObject__}, \
+                                              .type_name=#NAME"_B"}; \
   void* __##NAME##_B_static_init__(NAME##_B* self) { \
     __ON_STATIC_INIT__(NAME##_B, \
       if (self != &__##NAME##_B_Default_Instance__) { \
@@ -728,12 +780,10 @@ void __SET_CLASS_MASK_WAS_STATIC_INIT__(size_t* mask, BOOL new_type);
 
 
 #define DEF_BRIDGE(NAME, STATIC_FIELDS) \
-  __GENERIC_CLASS_DECLARE_MACRO__(NAME##_B, NAME __base__;, STATIC_FIELDS, ;)
+  __GENERIC_CLASS_DECLARE_MACRO__(NAME##_B, NAME __base__;, STATIC_FIELDS, ;, 0, 0, ;)
 
-    // __BRIDGE_CLASS_DECLARE_MACRO__(NAME, STATIC_FIELDS)
-  
-  #define BRIDGE_END(NAME, MASK, EXPR...) \
-    __BRIDGE_CLASS_DEFINE_MACRO__(NAME, MASK, EXPR)
+#define BRIDGE_END(NAME, MASK, EXPR...) \
+  __BRIDGE_CLASS_DEFINE_MACRO__(NAME, MASK, EXPR)
 
 #define __AUX_CLS_VCLASS__(CLASS_NAME) (__vClassObject__*)&__##CLASS_NAME##_Default_vClassObject__
 #define __AUX_CLS_CLASS_INIT__(CLASS_NAME) (CLASS_NAME*)CLASS_NAME##_init

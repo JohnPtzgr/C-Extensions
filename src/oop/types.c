@@ -1,6 +1,5 @@
 #include "types.h"
 
-
 CLASS_END(type_object_t, STATIC | BARE,)
 DEFAULT_DESTROY(type_object_t);
 
@@ -11,6 +10,7 @@ void* type_object_t_init(type_object_t* self, ...) {
   self->type_name = (const char*)__ARG_LIST__[0];
   self->type_size = *((size_t*)&(__ARG_LIST__[1]));
   self->type_meta = (__ClassMetaData__){};
+  __type_object_t_Default_vClassObject__;
   if (meta) {
     self->type_meta = *meta;
   }

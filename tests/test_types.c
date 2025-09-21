@@ -44,6 +44,8 @@ int funct() {
          var->type->type_name,
          var->type->type_size,
          ((cl_add_t*)var->value)->x);
+  var_object_t vo = *VAR(&cl_add_t_type);
+  var_object_t vo2 = *VAR(vt);
   return 0;
 }
 

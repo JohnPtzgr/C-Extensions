@@ -1,6 +1,6 @@
 #include "../src/oop/class.h"
 
-__GENERIC_CLASS_DECLARE_MACRO__(X, __BaseClass__ __base__; int z;, int x; int y;, int z);
+__GENERIC_CLASS_DECLARE_MACRO__(X, __BaseClass__ __base__; int z;, int x; int y;, int z, 0, 0, int xxyy = 1);
 
 void* call(void* any) {
   printf("Call X!\n");

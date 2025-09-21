@@ -2,9 +2,9 @@
 
 DEF_CLASS(string_t
   ,
-  smartptr_t data,
-  size_t size,
-  size_t capacity
+  smartptr_t data;
+  size_t size;
+  size_t capacity;
   ,
   generic_function_t reserve;
   generic_function_t size;

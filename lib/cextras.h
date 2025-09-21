@@ -3,6 +3,8 @@
 #include "../src/algorithm/linked_list.h"
 #include "../src/algorithm/allocator.h"
 #include "../src/algorithm/container.h"
+#include "../src/algorithm/vector.h"
+#include "../src/algorithm/string.h"
 
 #include "../src/built-ins/int.h"
 

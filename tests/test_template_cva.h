@@ -2,7 +2,6 @@
 #include "../src/oop/templates.h"
 
 DEF_CLASS(__TEMPLATE_VA(cls_t),
-,
   __T_ARG_A__ a;
   __T_ARG_B__ b;
 )

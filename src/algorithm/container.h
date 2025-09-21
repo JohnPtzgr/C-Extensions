@@ -22,7 +22,6 @@ DEF_CLASS(generic_container_t
   smartptr_t ptr;
   size_t size;
   size_t capacity;
-  size_t type_size;
   ,
   generic_function_t reserve;
   generic_function_t size;
