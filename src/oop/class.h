@@ -37,7 +37,10 @@ typedef struct __ClassObject__ __ClassObject__;
 
 typedef struct __vClassObject__ __vClassObject__;
 
-typedef struct __ClassMetaData__ __ClassMetaData__;
+typedef struct __ClassMetaData__ {
+  __vClassObject__* vcls;
+  __vTable__* vtable;
+} __ClassMetaData__;
 
 typedef struct __BaseClass__ {
   __ClassMetaData__* __meta__;
@@ -103,7 +106,7 @@ typedef struct type_object_t {
   __ClassMetaData__ type_meta;
   const char* type_name;
   size_t type_size;
-  size_t type_mask
+  size_t type_mask;
 } type_object_t;
 
 typedef struct class_field_t
@@ -192,11 +195,6 @@ typedef struct __vClassObject__ {
   __vClassObjectPrt__* protected;
 
 } __vClassObject__;
-
-typedef struct __ClassMetaData__ {
-  __vClassObject__* vcls;
-  __vTable__* vtable;
-} __ClassMetaData__;
 
 
 
@@ -373,6 +371,7 @@ void __SET_CLASS_MASK_WAS_STATIC_INIT__(size_t* mask, BOOL new_type);
     STATIC_CLASS_FIELD_COUNT, \
     CLASS_DEFINITION_EXPR \
   ) \
+  typedef struct __##NAME##_ClassMetaData__ __##NAME##_ClassMetaData__; \
   typedef struct NAME \
   { \
     CLASS_FIELDS; \
@@ -524,6 +523,66 @@ void __SET_CLASS_MASK_WAS_STATIC_INIT__(size_t* mask, BOOL new_type);
     return self; \
   } \
   void* __##NAME##_static_destroy__(NAME* self)
+
+#define __GENERIC_CLASS_SEPARATE_DEFINE_MACRO_EXTERN_CLASS_OBJECT__(NAME, MASK, EXPR...) \
+  __ClassObject__ __##NAME##_ClassObject__ = \
+    (__ClassObject__){.mask=MASK, \
+                      .instance_size=sizeof(NAME), \
+                      .vclass_size=sizeof(__##NAME##_vClassObject__), \
+                      .default_vcls=(__vClassObject__*)&__##NAME##_Default_vClassObject__, \
+                      .default_instance=(__ClassInstance__*)&__##NAME##_Default_Instance__, \
+                      .name=#NAME, \
+                      .__static_init__=(generic_function_t)__##NAME##_static_init__, \
+                      .__static_destroy__=(generic_function_t)__##NAME##_static_destroy__, \
+                      EXPR};
+
+#define __GENERIC_CLASS_SEPARATE_DEFINE_MACRO_EXTERN_DEFAULT_V_CLASS_OBJECT__(NAME, MASK, EXPR...) \
+  __##NAME##_vClassObject__ __##NAME##_Default_vClassObject__ = \
+    (__##NAME##_vClassObject__){.__init__=(generic_function_t)NAME##_init, \
+                                .__destroy__=(generic_function_t)NAME##_destroy, \
+                                .cls=&__##NAME##_ClassObject__, \
+                                .__protected__=(__vClassObjectPrt__*)&(__##NAME##_Default_vClassObject__.__prot_vcls_data__), \
+                                EXPR}; \
+
+#define __GENERIC_CLASS_SEPARATE_DEFINE_MACRO_EXTERN_DEFAULT_INSTANCE__(NAME, MASK, EXPR...) \
+  NAME __##NAME##_Default_Instance__ = (NAME){EXPR}; \
+
+#define __GENERIC_CLASS_SEPARATE_DEFINE_MACRO_EXTERN_DEFAULT_METADATA__(NAME, MASK, EXPR...) \
+  __##NAME##_ClassMetaData__ __##NAME##_Default_MetaData__ = \
+    (__##NAME##_ClassMetaData__){.vcls=(__##NAME##_vClassObject__*)&__##NAME##_Default_vClassObject__, \
+                                 EXPR}; \
+
+#define __GENERIC_CLASS_SEPARATE_DEFINE_MACRO_END__(NAME, MASK, EXPR...) \
+  type_object_t NAME##_type = (type_object_t){.type_mask=MASK, \
+                                              .type_size=sizeof(NAME), \
+                                              .type_meta=(__ClassMetaData__){.vcls=(__vClassObject__*)&__##NAME##_Default_vClassObject__}, \
+                                              .type_name=#NAME}; \
+  void* __##NAME##_static_init__(NAME* self) { \
+    __ON_STATIC_INIT__(NAME, \
+      if (self != &__##NAME##_Default_Instance__) { \
+        __##NAME##_static_init__(&__##NAME##_Default_Instance__); \
+      } else { \
+        *self = (NAME){}; \
+        SCOPE_PUSH(&__##NAME##_ClassObject__, __class_destroy__); \
+        SCOPE_DEFER(&__##NAME##_ClassObject__, __class_destroy__, __DEFAULT_PREDICATE__); \
+      } \
+    ); \
+    if (!__GET_CLASS_MASK_IS_BARE__(&(__##NAME##_ClassObject__.mask))) { \
+      ((__ClassInstance__*)self)->__meta__ = (__ClassMetaData__*)&__##NAME##_Default_MetaData__; \
+    } \
+    if (self != &__##NAME##_Default_Instance__) { \
+      SCOPE_PUSH(self, __##NAME##_static_destroy__); \
+    } \
+    EXPR; \
+    __ON_STATIC_INIT__(NAME, \
+      __SET_CLASS_MASK_WAS_STATIC_INIT__(&(__##NAME##_ClassObject__.mask), TRUE); \
+      if (__##NAME##_ClassObject__.__class_object_init__) { \
+        __##NAME##_ClassObject__.__class_object_init__(&__##NAME##_ClassObject__); \
+      } \
+    ); \
+    return self; \
+  } \
+  void* __##NAME##_static_destroy__(NAME* self)
   
 #define __GENERIC_INHERENT_CLASS_DEFINE_MACRO__(NAME, BASE, MASK, EXPR...) \
   __ClassObject__ __##NAME##_ClassObject__ = \
@@ -543,6 +602,78 @@ void __SET_CLASS_MASK_WAS_STATIC_INIT__(size_t* mask, BOOL new_type);
   NAME __##NAME##_Default_Instance__ = (NAME){}; \
   __##NAME##_ClassMetaData__ __##NAME##_Default_MetaData__ = \
     (__##NAME##_ClassMetaData__){.vcls=(__##NAME##_vClassObject__*)&__##NAME##_Default_vClassObject__}; \
+  type_object_t NAME##_type = (type_object_t){.type_mask=MASK, \
+                                              .type_size=sizeof(NAME), \
+                                              .type_meta=(__ClassMetaData__){.vcls=(__vClassObject__*)&__##NAME##_Default_vClassObject__}, \
+                                              .type_name=#NAME}; \
+  void* __##NAME##_static_init__(NAME* self) { \
+    __##BASE##_static_init__((BASE*)self); \
+    __ON_STATIC_INIT__(NAME, \
+      if (self != &__##NAME##_Default_Instance__) { \
+        __##NAME##_static_init__(&__##NAME##_Default_Instance__); \
+      } else { \
+        *self = (NAME){}; \
+        if (!__##NAME##_ClassObject__.inherits_from) { \
+          __##NAME##_ClassObject__.inherits_from = (__InheritanceList__*)malloc(sizeof(__InheritanceList__)); \
+          __InheritanceList_init__(__##NAME##_ClassObject__.inherits_from); \
+          __InheritanceList_add__(__##NAME##_ClassObject__.inherits_from, \
+                                  (void*)self, \
+                                  (void*)self, \
+                                  &__##BASE##_ClassObject__); \
+        } \
+        SCOPE_PUSH(&__##NAME##_ClassObject__, __class_destroy__); \
+        SCOPE_DEFER(&__##NAME##_ClassObject__, __class_destroy__, __DEFAULT_PREDICATE__); \
+      } \
+    ); \
+    if (!__GET_CLASS_MASK_IS_BARE__(&(__##NAME##_ClassObject__.mask))) { \
+      ((__ClassInstance__*)self)->__meta__ = (__ClassMetaData__*)&__##NAME##_Default_MetaData__; \
+    } \
+    if (self != &__##NAME##_Default_Instance__) { \
+      SCOPE_PUSH(self, __##NAME##_static_destroy__); \
+    } \
+    EXPR; \
+    __ON_STATIC_INIT__(NAME, \
+      __SET_CLASS_MASK_WAS_STATIC_INIT__(&(__##NAME##_ClassObject__.mask), TRUE); \
+      if (__GET_CLASS_MASK_INHERITS__(&(__##NAME##_ClassObject__.mask))) { \
+        __class_inherit_static__(&__##NAME##_ClassObject__); \
+      } \
+      if (__##NAME##_ClassObject__.__class_object_init__) { \
+        __##NAME##_ClassObject__.__class_object_init__(&__##NAME##_ClassObject__); \
+      } \
+    ); \
+    return self; \
+  } \
+  void* __##NAME##_static_destroy__(NAME* self)
+
+#define __GENERIC_INHERENT_CLASS_SEPARATE_DEFINE_MACRO_EXTERN_CLASS_OBJECT__(NAME, BASE, MASK, EXPR...) \
+  __ClassObject__ __##NAME##_ClassObject__ = \
+    (__ClassObject__){.mask=MASK|INHERITS, \
+                      .instance_size=sizeof(NAME), \
+                      .vclass_size=sizeof(__##NAME##_vClassObject__), \
+                      .default_vcls=(__vClassObject__*)&__##NAME##_Default_vClassObject__, \
+                      .default_instance=(__ClassInstance__*)&__##NAME##_Default_Instance__, \
+                      .name=#NAME, \
+                      .__static_init__=(generic_function_t)__##NAME##_static_init__, \
+                      .__static_destroy__=(generic_function_t)__##NAME##_static_destroy__, \
+                      EXPR};
+
+#define __GENERIC_INHERENT_CLASS_SEPARATE_DEFINE_MACRO_EXTERN_DEFAULT_V_CLASS_OBJECT__(NAME, BASE, MASK, EXPR...) \
+  __##NAME##_vClassObject__ __##NAME##_Default_vClassObject__ = \
+    (__##NAME##_vClassObject__){.__init__=(generic_function_t)NAME##_init, \
+                                .__destroy__=(generic_function_t)NAME##_destroy, \
+                                .cls=&__##NAME##_ClassObject__, \
+                                .__protected__=(__vClassObjectPrt__*)&(__##NAME##_Default_vClassObject__.__prot_vcls_data__), \
+                                EXPR}; \
+
+#define __GENERIC_INHERENT_CLASS_SEPARATE_DEFINE_MACRO_EXTERN_DEFAULT_INSTANCE__(NAME, BASE, MASK, EXPR...) \
+  NAME __##NAME##_Default_Instance__ = (NAME){EXPR}; \
+
+#define __GENERIC_INHERENT_CLASS_SEPARATE_DEFINE_MACRO_EXTERN_DEFAULT_METADATA__(NAME, BASE, MASK, EXPR...) \
+  __##NAME##_ClassMetaData__ __##NAME##_Default_MetaData__ = \
+    (__##NAME##_ClassMetaData__){.vcls=(__##NAME##_vClassObject__*)&__##NAME##_Default_vClassObject__, \
+                                 EXPR}; \
+
+#define __GENERIC_INHERENT_CLASS_SEPARATE_DEFINE_MACRO_END__(NAME, BASE, MASK, EXPR...) \
   type_object_t NAME##_type = (type_object_t){.type_mask=MASK, \
                                               .type_size=sizeof(NAME), \
                                               .type_meta=(__ClassMetaData__){.vcls=(__vClassObject__*)&__##NAME##_Default_vClassObject__}, \
@@ -694,11 +825,41 @@ void __SET_CLASS_MASK_WAS_STATIC_INIT__(size_t* mask, BOOL new_type);
 #define __AUX_CLASS_END__(NAME, MASK, EXPR...) \
   __GENERIC_CLASS_DEFINE_MACRO__(NAME, MASK, EXPR)
 
+#define __AUX_CLASS_END_CLASS_OBJ__(NAME, MASK, EXPR...) \
+  __GENERIC_CLASS_SEPARATE_DEFINE_MACRO_EXTERN_CLASS_OBJECT__(NAME, MASK, EXPR)
+
+#define __AUX_CLASS_END_V_CLASS_OBJ__(NAME, MASK, EXPR...) \
+  __GENERIC_CLASS_SEPARATE_DEFINE_MACRO_EXTERN_DEFAULT_V_CLASS_OBJECT__(NAME, MASK, EXPR)
+
+#define __AUX_CLASS_END_INSTANCE__(NAME, MASK, EXPR...) \
+  __GENERIC_CLASS_SEPARATE_DEFINE_MACRO_EXTERN_DEFAULT_INSTANCE__(NAME, MASK, EXPR)
+
+#define __AUX_CLASS_END_META__(NAME, MASK, EXPR...) \
+  __GENERIC_CLASS_SEPARATE_DEFINE_MACRO_EXTERN_DEFAULT_METADATA__(NAME, MASK, EXPR)
+
+#define __AUX_CLASS_END_SEP__(NAME, MASK, EXPR...) \
+  __GENERIC_CLASS_SEPARATE_DEFINE_MACRO_END__(NAME, MASK, EXPR)
+
 #define CLASS_END(NAME, MASK, EXPR...) \
   __AUX_CLASS_END__(NAME, MASK, EXPR)
 
 #define __AUX_INHERIT_END__(NAME, BASE, MASK, EXPR...) \
   __GENERIC_INHERENT_CLASS_DEFINE_MACRO__(NAME, BASE, MASK, EXPR)
+
+#define __AUX_INHERIT_END_CLASS_OBJ__(NAME, MASK, EXPR...) \
+  __GENERIC_INHERENT_CLASS_SEPARATE_DEFINE_MACRO_EXTERN_CLASS_OBJECT__(NAME, MASK, EXPR)
+
+#define __AUX_INHERIT_END_V_CLASS_OBJ__(NAME, MASK, EXPR...) \
+  __GENERIC_INHERENT_CLASS_SEPARATE_DEFINE_MACRO_EXTERN_DEFAULT_V_CLASS_OBJECT__(NAME, MASK, EXPR)
+
+#define __AUX_INHERIT_END_INSTANCE__(NAME, MASK, EXPR...) \
+  __GENERIC_INHERENT_CLASS_SEPARATE_DEFINE_MACRO_EXTERN_DEFAULT_INSTANCE__(NAME, MASK, EXPR)
+
+#define __AUX_INHERIT_END_META__(NAME, MASK, EXPR...) \
+  __GENERIC_INHERENT_CLASS_SEPARATE_DEFINE_MACRO_EXTERN_DEFAULT_METADATA__(NAME, MASK, EXPR)
+
+#define __AUX_INHERIT_END_SEP__(NAME, MASK, EXPR...) \
+  __GENERIC_INHERENT_CLASS_SEPARATE_DEFINE_MACRO_END__(NAME, MASK, EXPR)
 
 #define INHERIT_END(NAME, BASE, MASK, EXPR...) \
   __AUX_INHERIT_END__(NAME, BASE, MASK, EXPR)
@@ -726,12 +887,87 @@ void __SET_CLASS_MASK_WAS_STATIC_INIT__(size_t* mask, BOOL new_type);
                       .__static_destroy__=(generic_function_t)__##NAME##_B_static_destroy__}; \
   __##NAME##_B_vClassObject__ __##NAME##_B_Default_vClassObject__ = \
     (__##NAME##_B_vClassObject__){.__init__=(generic_function_t)NAME##_B_init, \
-                                .__destroy__=(generic_function_t)NAME##_B_destroy, \
-                                .cls=&__##NAME##_B_ClassObject__, \
-                                .__protected__=(__vClassObjectPrt__*)&(__##NAME##_B_Default_vClassObject__.__prot_vcls_data__)}; \
+                                  .__destroy__=(generic_function_t)NAME##_B_destroy, \
+                                  .cls=&__##NAME##_B_ClassObject__, \
+                                  .__protected__=(__vClassObjectPrt__*)&(__##NAME##_B_Default_vClassObject__.__prot_vcls_data__)}; \
   NAME##_B __##NAME##_B_Default_Instance__ = (NAME##_B){}; \
   __##NAME##_B_ClassMetaData__ __##NAME##_B_Default_MetaData__ = \
     (__##NAME##_B_ClassMetaData__){.vcls=(__##NAME##_B_vClassObject__*)&__##NAME##_B_Default_vClassObject__}; \
+  type_object_t NAME##_type = (type_object_t){.type_mask=MASK|STATIC|BARE, \
+                                              .type_size=sizeof(NAME), \
+                                              .type_meta=(__ClassMetaData__){.vcls=(__vClassObject__*)&__##NAME##_B_Default_vClassObject__}, \
+                                              .type_name=#NAME"_B"}; \
+  void* __##NAME##_B_static_init__(NAME##_B* self) { \
+    __ON_STATIC_INIT__(NAME##_B, \
+      if (self != &__##NAME##_B_Default_Instance__) { \
+        __##NAME##_B_static_init__(&__##NAME##_B_Default_Instance__); \
+      } else { \
+        *self = (NAME##_B){}; \
+        SCOPE_PUSH(&__##NAME##_B_ClassObject__, __class_destroy__); \
+        SCOPE_DEFER(&__##NAME##_B_ClassObject__, __class_destroy__, __DEFAULT_PREDICATE__); \
+      } \
+    ); \
+    if (self != &__##NAME##_B_Default_Instance__) { \
+      SCOPE_PUSH(self, __##NAME##_B_static_destroy__); \
+    } \
+    EXPR; \
+    __ON_STATIC_INIT__(NAME##_B, \
+      __SET_CLASS_MASK_WAS_STATIC_INIT__(&(__##NAME##_B_ClassObject__.mask), TRUE); \
+      if (__##NAME##_B_ClassObject__.__class_object_init__) { \
+        __##NAME##_B_ClassObject__.__class_object_init__(&__##NAME##_B_ClassObject__); \
+      } \
+    ); \
+    return self; \
+  } \
+  void* NAME##_B_init(NAME##_B* self, ...) { \
+    if (self != &__##NAME##_B_Default_Instance__ && \
+        !__GET_CLASS_MASK_WAS_INIT__(&(__##NAME##_B_ClassObject__.mask))) { \
+      NAME##_B_init(&__##NAME##_B_Default_Instance__); \
+    } \
+    __##NAME##_B_static_init__(self); \
+    __##NAME##_B_ClassObject__.instance_count++; \
+    __ON_INIT__(NAME##_B, \
+      __SET_CLASS_MASK_WAS_INIT__(&(__##NAME##_B_ClassObject__.mask), TRUE); \
+    ); \
+    if (self != &__##NAME##_B_Default_Instance__) { \
+      SCOPE_PUSH(self, __class_destroy_instance__, NAME##_B_destroy); \
+    } \
+    return self; \
+  } \
+  void* NAME##_B_destroy(NAME##_B* self, ...) { \
+    return NULL; \
+  } \
+  void* __##NAME##_B_static_destroy__(NAME##_B* self)
+
+  #define __GENERIC_BRIDGE_CLASS_SEPARATE_DEFINE_MACRO_EXTERN_CLASS_OBJECT__(NAME, MASK, EXPR...) \
+  __ClassObject__ __##NAME##_B_ClassObject__ = \
+    (__ClassObject__){.mask=MASK|STATIC|BARE, \
+                      .instance_size=sizeof(NAME##_B), \
+                      .vclass_size=sizeof(__##NAME##_B_vClassObject__), \
+                      .default_vcls=(__vClassObject__*)&__##NAME##_B_Default_vClassObject__, \
+                      .default_instance=(__ClassInstance__*)&__##NAME##_B_Default_Instance__, \
+                      .name=TO_STR_LITERAL(NAME##_B), \
+                      .__static_init__=(generic_function_t)__##NAME##_B_static_init__, \
+                      .__static_destroy__=(generic_function_t)__##NAME##_B_static_destroy__, \
+                      EXPR}; \
+
+#define __GENERIC_BRIDGE_CLASS_SEPARATE_DEFINE_MACRO_EXTERN_DEFAULT_V_CLASS_OBJECT__(NAME, MASK, EXPR...) \
+  __##NAME##_B_vClassObject__ __##NAME##_B_Default_vClassObject__ = \
+    (__##NAME##_B_vClassObject__){.__init__=(generic_function_t)NAME##_B_init, \
+                                  .__destroy__=(generic_function_t)NAME##_B_destroy, \
+                                  .cls=&__##NAME##_B_ClassObject__, \
+                                  .__protected__=(__vClassObjectPrt__*)&(__##NAME##_B_Default_vClassObject__.__prot_vcls_data__), \
+                                  EXPR}; \
+
+#define __GENERIC_BRIDGE_CLASS_SEPARATE_DEFINE_MACRO_EXTERN_DEFAULT_INSTANCE__(NAME, MASK, EXPR...) \
+  NAME##_B __##NAME##_B_Default_Instance__ = (NAME##_B){EXPR}; \
+
+#define __GENERIC_BRIDGE_CLASS_SEPARATE_DEFINE_MACRO_EXTERN_DEFAULT_METADATA__(NAME, MASK, EXPR...) \
+  __##NAME##_B_ClassMetaData__ __##NAME##_B_Default_MetaData__ = \
+    (__##NAME##_B_ClassMetaData__){.vcls=(__##NAME##_B_vClassObject__*)&__##NAME##_B_Default_vClassObject__, \
+                                   EXPR}; \
+
+#define __GENERIC_BRIDGE_CLASS_SEPARATE_DEFINE_MACRO_END__(NAME, MASK, EXPR...) \
   type_object_t NAME##_type = (type_object_t){.type_mask=MASK|STATIC|BARE, \
                                               .type_size=sizeof(NAME), \
                                               .type_meta=(__ClassMetaData__){.vcls=(__vClassObject__*)&__##NAME##_B_Default_vClassObject__}, \
@@ -784,6 +1020,22 @@ void __SET_CLASS_MASK_WAS_STATIC_INIT__(size_t* mask, BOOL new_type);
 
 #define BRIDGE_END(NAME, MASK, EXPR...) \
   __BRIDGE_CLASS_DEFINE_MACRO__(NAME, MASK, EXPR)
+
+#define __AUX_BRIDGE_END_CLASS_OBJ__(NAME, MASK, EXPR...) \
+  __GENERIC_BRIDGE_CLASS_SEPARATE_DEFINE_MACRO_EXTERN_CLASS_OBJECT__(NAME, MASK, EXPR)
+
+#define __AUX_BRIDGE_END_V_CLASS_OBJ__(NAME, MASK, EXPR...) \
+  __GENERIC_BRIDGE_CLASS_SEPARATE_DEFINE_MACRO_EXTERN_DEFAULT_V_CLASS_OBJECT__(NAME, MASK, EXPR)
+
+#define __AUX_BRIDGE_END_INSTANCE__(NAME, MASK, EXPR...) \
+  __GENERIC_BRIDGE_CLASS_SEPARATE_DEFINE_MACRO_EXTERN_DEFAULT_INSTANCE__(NAME, MASK, EXPR)
+
+#define __AUX_BRIDGE_END_META__(NAME, MASK, EXPR...) \
+  __GENERIC_BRIDGE_CLASS_SEPARATE_DEFINE_MACRO_EXTERN_DEFAULT_METADATA__(NAME, MASK, EXPR)
+
+#define __AUX_BRIDGE_END_SEP__(NAME, MASK, EXPR...) \
+  __GENERIC_BRIDGE_CLASS_SEPARATE_DEFINE_MACRO_END__(NAME, MASK, EXPR)
+
 
 #define __AUX_CLS_VCLASS__(CLASS_NAME) (__vClassObject__*)&__##CLASS_NAME##_Default_vClassObject__
 #define __AUX_CLS_CLASS_INIT__(CLASS_NAME) (CLASS_NAME*)CLASS_NAME##_init
