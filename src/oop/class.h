@@ -72,21 +72,26 @@ typedef struct __ClassObject__ {
 
   size_t instance_size;
   size_t vclass_size;
+  size_t mask;
+  size_t instance_count;
+
   size_t __vclass_cnt;
   size_t __vclass_capacity;
+  size_t __meta_cnt;
+  size_t __meta_capacity;
+
   const char* name;
 
   __vTable__* static_vtable;
   
-  size_t mask;
-
-  size_t instance_count;
   __InheritanceList__* inherits_from;
 
-  __vClassObject__* default_vcls;
-  __vClassObject__** vcls;
+  __vClassObject__** alloc_vcls;
+  __ClassMetaData__** alloc_meta;
 
+  __vClassObject__* default_vcls;
   __ClassInstance__* default_instance;
+  __ClassMetaData__* default_meta;
 
   generic_function_t __static_init__;
   generic_function_t __static_destroy__;
@@ -294,6 +299,8 @@ void* __InheritanceList_destroy__(__InheritanceList__* list);
 
 void* __aux_class_new_vclass__(__ClassObject__* cls);
 
+void* __aux_class_new_meta__(__ClassObject__* cls);
+
 #ifndef __GET_CLASS_MASK_IS_DYNAMIC
 BOOL __GET_CLASS_MASK_IS_STATIC__(size_t* mask);
 
@@ -482,6 +489,7 @@ void __SET_CLASS_MASK_WAS_STATIC_INIT__(size_t* mask, BOOL new_type);
                       .vclass_size=sizeof(__##NAME##_vClassObject__), \
                       .default_vcls=(__vClassObject__*)&__##NAME##_Default_vClassObject__, \
                       .default_instance=(__ClassInstance__*)&__##NAME##_Default_Instance__, \
+                      .default_meta=(__ClassMetaData__*)&__##NAME##_Default_MetaData__, \
                       .name=#NAME, \
                       .__static_init__=(generic_function_t)__##NAME##_static_init__, \
                       .__static_destroy__=(generic_function_t)__##NAME##_static_destroy__}; \
@@ -531,6 +539,7 @@ void __SET_CLASS_MASK_WAS_STATIC_INIT__(size_t* mask, BOOL new_type);
                       .vclass_size=sizeof(__##NAME##_vClassObject__), \
                       .default_vcls=(__vClassObject__*)&__##NAME##_Default_vClassObject__, \
                       .default_instance=(__ClassInstance__*)&__##NAME##_Default_Instance__, \
+                      .default_meta=(__ClassMetaData__*)&__##NAME##_Default_MetaData__, \
                       .name=#NAME, \
                       .__static_init__=(generic_function_t)__##NAME##_static_init__, \
                       .__static_destroy__=(generic_function_t)__##NAME##_static_destroy__, \
@@ -591,6 +600,7 @@ void __SET_CLASS_MASK_WAS_STATIC_INIT__(size_t* mask, BOOL new_type);
                       .vclass_size=sizeof(__##NAME##_vClassObject__), \
                       .default_vcls=(__vClassObject__*)&__##NAME##_Default_vClassObject__, \
                       .default_instance=(__ClassInstance__*)&__##NAME##_Default_Instance__, \
+                      .default_meta=(__ClassMetaData__*)&__##NAME##_Default_MetaData__, \
                       .name=#NAME, \
                       .__static_init__=(generic_function_t)__##NAME##_static_init__, \
                       .__static_destroy__=(generic_function_t)__##NAME##_static_destroy__}; \
@@ -652,6 +662,7 @@ void __SET_CLASS_MASK_WAS_STATIC_INIT__(size_t* mask, BOOL new_type);
                       .vclass_size=sizeof(__##NAME##_vClassObject__), \
                       .default_vcls=(__vClassObject__*)&__##NAME##_Default_vClassObject__, \
                       .default_instance=(__ClassInstance__*)&__##NAME##_Default_Instance__, \
+                      .default_meta=(__ClassMetaData__*)&__##NAME##_Default_MetaData__, \
                       .name=#NAME, \
                       .__static_init__=(generic_function_t)__##NAME##_static_init__, \
                       .__static_destroy__=(generic_function_t)__##NAME##_static_destroy__, \
@@ -882,6 +893,7 @@ void __SET_CLASS_MASK_WAS_STATIC_INIT__(size_t* mask, BOOL new_type);
                       .vclass_size=sizeof(__##NAME##_B_vClassObject__), \
                       .default_vcls=(__vClassObject__*)&__##NAME##_B_Default_vClassObject__, \
                       .default_instance=(__ClassInstance__*)&__##NAME##_B_Default_Instance__, \
+                      .default_meta=(__ClassMetaData__*)&__##NAME##_B_Default_MetaData__, \
                       .name=TO_STR_LITERAL(NAME##_B), \
                       .__static_init__=(generic_function_t)__##NAME##_B_static_init__, \
                       .__static_destroy__=(generic_function_t)__##NAME##_B_static_destroy__}; \
@@ -946,6 +958,7 @@ void __SET_CLASS_MASK_WAS_STATIC_INIT__(size_t* mask, BOOL new_type);
                       .vclass_size=sizeof(__##NAME##_B_vClassObject__), \
                       .default_vcls=(__vClassObject__*)&__##NAME##_B_Default_vClassObject__, \
                       .default_instance=(__ClassInstance__*)&__##NAME##_B_Default_Instance__, \
+                      .default_meta=(__ClassMetaData__*)&__##NAME##_B_Default_MetaData__, \
                       .name=TO_STR_LITERAL(NAME##_B), \
                       .__static_init__=(generic_function_t)__##NAME##_B_static_init__, \
                       .__static_destroy__=(generic_function_t)__##NAME##_B_static_destroy__, \
@@ -1037,7 +1050,8 @@ void __SET_CLASS_MASK_WAS_STATIC_INIT__(size_t* mask, BOOL new_type);
   __GENERIC_BRIDGE_CLASS_SEPARATE_DEFINE_MACRO_END__(NAME, MASK, EXPR)
 
 
-#define __AUX_CLS_VCLASS__(CLASS_NAME) (__vClassObject__*)&__##CLASS_NAME##_Default_vClassObject__
+#define __AUX_CLS_VCLASS__(CLASS_NAME) (&__##CLASS_NAME##_Default_vClassObject__)
+#define __AUX_CLS_DEF_INST__(CLASS_NAME) (&__##CLASS_NAME##_Default_Instance__)
 #define __AUX_CLS_CLASS_INIT__(CLASS_NAME) (CLASS_NAME*)CLASS_NAME##_init
 
 #define __AUX_CLS_VCLASS_EXP__(CLASS_NAME) __AUX_EXP_MACRO_ARG__(__AUX_CLS_VCLASS__, CLASS_NAME)
@@ -1052,11 +1066,16 @@ void* __aux_class_new_wrapper__(__vClassObject__* vcls, size_t size, __ClassInst
 #define __AUX_CLS_MALLOC__(CLASS_NAME...) \
   (ARG1_VA_ARGS(CLASS_NAME)*)__aux_class_new_wrapper__(__AUX_CLS_VCLASS_EXP__(ARG1_VA_ARGS(CLASS_NAME)), ARG2_VA_ARGS(CLASS_NAME, 1), (__ClassInstance__*)__AUX_CLS_ALLOCA__(ARG1_VA_ARGS(CLASS_NAME), ARG2_VA_ARGS_VA(CLASS_NAME, 0, 0))) \
 
+#define __AUX_CLS_COPY__(CLASS_NAME, ARGS...) ((CLASS_NAME*)__AUX_CLS_VCLASS__(CLASS_NAME)->__copy__(__AUX_CLS_ALLOCA__(CLASS_NAME), ARG1_VA_ARGS_VA(ARGS, __AUX_CLS_DEF_INST__(CLASS_NAME))))
 
 #define CLS(CLASS_NAME...) (__AUX_CLS_ALLOCA__(CLASS_NAME))
+
+#define COPY(CLASS_NAME, ARGS) (__AUX_CLS_COPY__(CLASS_NAME, ARGS))
 
 #define NEW(CLASS_NAME...) (__AUX_CLS_MALLOC__(CLASS_NAME))
 
 #define NEW_VCLASS(CLASS_NAME) __aux_class_new_vclass__(&__##CLASS_NAME##_ClassObject__)
+
+#define NEW_VCLASS(CLASS_NAME) __aux_class_new_meta__(&__##CLASS_NAME##_ClassObject__)
 
 

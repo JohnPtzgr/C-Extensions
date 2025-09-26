@@ -1,4 +1,4 @@
-#include "../memory/dyn_alloc_.h"
+#include "../memory/dyn_alloc.h"
 
 
 typedef struct __H_SIZED_TREE_NODE__ {

@@ -482,13 +482,21 @@ void* __class_destroy__(__ClassObject__* cls) {
   }
   PUSH_EXCEPTION(void*);
   cls->__static_destroy__(cls->default_instance);
-  while (cls->vcls && index < cls->__vclass_cnt) {
-    if (cls->vcls[index] != NULL) {
-      if (cls->vcls[index]->vtable) {
-        __vTable_destroy__(cls->vcls[index]->vtable);
-        free(cls->vcls[index]->vtable);
+  while (cls->alloc_vcls && index < cls->__vclass_cnt) {
+    if (cls->alloc_vcls[index] != NULL) {
+      if (cls->alloc_vcls[index]->vtable) {
+        __vTable_destroy__(cls->alloc_vcls[index]->vtable);
+        free(cls->alloc_vcls[index]->vtable);
       }
-      free(cls->vcls[index]);
+      free(cls->alloc_vcls[index]);
+      PUSH_EXCEPTION(void*);
+    }
+    index++;
+  }
+  index = 0;
+  while (cls->alloc_meta && index < cls->__meta_cnt) {
+    if (cls->alloc_vcls[index] != NULL) {
+      free(cls->alloc_vcls[index]);
       PUSH_EXCEPTION(void*);
     }
     index++;
@@ -503,9 +511,13 @@ void* __class_destroy__(__ClassObject__* cls) {
     free(cls->inherits_from);
     cls->inherits_from = 0;
   }
-  if (cls->vcls) {
-    free(cls->vcls);
-    cls->vcls = 0;
+  if (cls->alloc_vcls) {
+    free(cls->alloc_vcls);
+    cls->alloc_vcls = 0;
+  }
+  if (cls->alloc_meta) {
+    free(cls->alloc_meta);
+    cls->alloc_meta = 0;
   }
   if (cls->static_vtable) {
     __vTable_destroy__(cls->static_vtable);
@@ -646,17 +658,17 @@ void* __aux_class_new_vclass_check_vclass__(void* vclass, size_t vclass_size) {
 }
 
 void* __aux_class_new_vclass_reserve__(__ClassObject__* cls) {
-  if (!cls->vcls) {
-    cls->vcls = calloc(DEFAULT_VCLASS_LIST_SIZE, sizeof(void*));
+  if (!cls->alloc_vcls) {
+    cls->alloc_vcls = calloc(DEFAULT_VCLASS_LIST_SIZE, sizeof(void*));
     cls->__vclass_cnt = 0;
     cls->__vclass_capacity = DEFAULT_VCLASS_LIST_SIZE;
     return cls;
   }
-  __vClassObject__** tmp_vcls = cls->vcls;
+  __vClassObject__** tmp_vcls = cls->alloc_vcls;
   cls->__vclass_capacity *= 2;
-  cls->vcls = calloc(cls->__vclass_capacity, sizeof(void*));
+  cls->alloc_vcls = calloc(cls->__vclass_capacity, sizeof(void*));
   PUSH_EXCEPTION(void*);
-  memcpy(cls->vcls, tmp_vcls, cls->__vclass_cnt);
+  memcpy(cls->alloc_vcls, tmp_vcls, cls->__vclass_cnt);
   free(tmp_vcls);
   PUSH_EXCEPTION(void*);
   return cls;
@@ -666,12 +678,29 @@ void* __aux_class_new_vclass__(__ClassObject__* cls) {
   __vClassObject__* new_vclass = (__vClassObject__*)malloc(cls->vclass_size);
   PUSH_EXCEPTION(void*);
   memcpy(new_vclass, cls->default_vcls, cls->vclass_size);
-  if (!cls->vcls || (cls->__vclass_cnt + 1 == cls->__vclass_capacity)) {
+  if (!cls->alloc_vcls || (cls->__vclass_cnt + 1 == cls->__vclass_capacity)) {
     __aux_class_new_vclass_reserve__(cls);
     PUSH_EXCEPTION(void*);
   }
-  cls->vcls[cls->__vclass_cnt++] = new_vclass;
+  cls->alloc_vcls[cls->__vclass_cnt++] = new_vclass;
   return new_vclass;
+}
+
+void* __aux_class_new_meta__(__ClassObject__* cls) {
+  __ClassMetaData__* new_meta = (__ClassMetaData__*)malloc(sizeof(__ClassMetaData__));
+  PUSH_EXCEPTION(void*);
+  memcpy(new_meta, cls->default_meta, sizeof(__ClassMetaData__));
+  if (!cls->alloc_meta || (cls->__meta_cnt + 1 == cls->__meta_capacity)) {
+    __ClassMetaData__** new_meta_arr = \
+        (__ClassMetaData__**)malloc(sizeof(__ClassMetaData__*) * cls->__meta_capacity * 2);
+    memcpy(new_meta_arr, cls->alloc_meta, cls->__meta_capacity);
+    free(cls->alloc_meta);
+    cls->alloc_meta = new_meta_arr;
+    cls->__meta_capacity *= 2;
+    PUSH_EXCEPTION(void*);
+  }
+  cls->alloc_meta[cls->__meta_cnt++] = new_meta;
+  return new_meta;
 }
 
 
