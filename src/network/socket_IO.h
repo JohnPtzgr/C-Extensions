@@ -16,6 +16,7 @@ DEF_CLASS(socket_t
   int domain;
   int type;
   int protocol;
+  socklen_t address_length;
 
   union socket_address_t
   {

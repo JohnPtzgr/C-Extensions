@@ -1076,6 +1076,6 @@ void* __aux_class_new_wrapper__(__vClassObject__* vcls, size_t size, __ClassInst
 
 #define NEW_VCLASS(CLASS_NAME) __aux_class_new_vclass__(&__##CLASS_NAME##_ClassObject__)
 
-#define NEW_VCLASS(CLASS_NAME) __aux_class_new_meta__(&__##CLASS_NAME##_ClassObject__)
+#define NEW_META(CLASS_NAME) __aux_class_new_meta__(&__##CLASS_NAME##_ClassObject__)
 
 
