@@ -2,6 +2,7 @@
 
 void* socket_t_open(socket_t* self) {
   self->fd = socket(self->domain, self->type, self->protocol);
+
   EXCTH_ASSERT(void*, self->fd != -1 && "Unable to create a new socket!");
   if (bind(self->fd, (struct sockaddr*)&(self->address), sizeof(self->address)) < 0) {
     close(self->fd);

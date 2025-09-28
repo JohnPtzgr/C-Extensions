@@ -93,7 +93,8 @@ void* __raise_exception__(exception_t* exception);
 
 #define THROW_ON(RETURN_TYPE, EXCEPTION_NUMBER) \
   if (EXCEPTION_NUMBER == _EXCEPTION.exception_number) { \
-    return *((RETURN_TYPE*)&(EXCEPTION_RETURNS)); \
+    void* __EXCEPTION_RESULT__ = EXCEPTION_RETURNS; \
+    return *((RETURN_TYPE*)&(__EXCEPTION_RESULT__)); \
   }
 
 void* __exit_on_exception__(exception_t* exception, void*(*clean_up)(), ...);

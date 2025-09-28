@@ -22,7 +22,7 @@ int test_div(int x, int y) {
                                                .context=0,
                                                .status=0,
                                                .exception_description="Division by zero(0) error"};
-    THROW(zero_exception, int);
+    THROW(int, zero_exception);
     // RAISE(zero_exception);
   }
   // assert(x == y);
