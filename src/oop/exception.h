@@ -7,6 +7,9 @@
 #endif // !INVALID
 
 
+#define EXCEPTION_RETURNS INVALID
+
+
 #define __DEFAULT_EXCEPTION_CONTEXT_SIZE__ 4096
 #define __DEFAULT_EXCEPTION_CONTEXT_PREVIEW_SIZE__ 32
 
@@ -57,7 +60,7 @@ extern void(*_EXC_ASSERT_CALLBACK)();
 
 void* __check_uncaught_exception__(exception_t* exception);
 
-#define CHECH_UNCAUGHT __check_uncaught_exception__(&_EXCEPTION);
+#define CHECK_UNCAUGHT __check_uncaught_exception__(&_EXCEPTION);
 
 #define TRY __EXCEPTION_SCOPE_INDENTATION_VAR++; \
   _ERRORB = FALSE; \
@@ -85,8 +88,13 @@ void* __raise_exception__(exception_t* exception);
 
 #define RAISE(EXCEPTION) __raise_exception__(&(EXCEPTION));
 
-#define THROW(EXCEPTION, RETURN_TYPE) void* __EXCEPTION_RESULT__ = RAISE(EXCEPTION); \
+#define THROW(RETURN_TYPE, EXCEPTION) void* __EXCEPTION_RESULT__ = RAISE(EXCEPTION); \
   return *((RETURN_TYPE*)&(__EXCEPTION_RESULT__));
+
+#define THROW_ON(RETURN_TYPE, EXCEPTION_NUMBER) \
+  if (EXCEPTION_NUMBER == _EXCEPTION.exception_number) { \
+    return *((RETURN_TYPE*)&(EXCEPTION_RETURNS)); \
+  }
 
 void* __exit_on_exception__(exception_t* exception, void*(*clean_up)(), ...);
 
@@ -116,19 +124,24 @@ void* __exc_assert_fail__(exception_t* exception, char* description, const char*
 
 #define PUSH_EXCEPTION(RETURN_TYPE) \
   if (CAUGHT_EXCEPTION.exception_number) { \
-      THROW(CAUGHT_EXCEPTION, RETURN_TYPE); \
+      THROW(RETURN_TYPE, CAUGHT_EXCEPTION); \
   } else { \
     if (_ERRORB = (_EXCEPTION.exception_number || errno)) { \
       if (!_EXCEPTION.exception_number) { \
         _EXCEPTION.exception_number = errno; \
       } \
-      THROW(_EXCEPTION, RETURN_TYPE); \
+      THROW(RETURN_TYPE, _EXCEPTION); \
     } \
   }
 
-#define EXC_ASSERT(EXPR) ((EXPR) ? ((void*)0) : \
+#define EXC_ASSERT(EXPR...) ((EXPR) ? ((void*)0) : \
   __exc_assert_fail__(&_EXCEPTION, \
     "Assertion failed! '" #EXPR "' in file " __FILE__ ":" __EXCEPTION_CONSTEXPR_AS_STR(__LINE__), \
     __func__, \
     EXC_ASSERT_CALLBACK) \
   )
+
+#define EXCTH_ASSERT(RETURN_TYPE, EXPR...) \
+  EXC_ASSERT(EXPR); \
+  THROW_ON(RETURN_TYPE, EASSERTEXC);
+
