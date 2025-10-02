@@ -1064,7 +1064,7 @@ void __SET_CLASS_MASK_WAS_STATIC_INIT__(size_t* mask, BOOL new_type);
 void* __aux_class_new_wrapper__(__vClassObject__* vcls, size_t size, __ClassInstance__* template_instance);
 
 #define __AUX_CLS_MALLOC__(CLASS_NAME...) \
-  (ARG1_VA_ARGS(CLASS_NAME)*)__aux_class_new_wrapper__(__AUX_CLS_VCLASS_EXP__(ARG1_VA_ARGS(CLASS_NAME)), ARG2_VA_ARGS(CLASS_NAME, 1), (__ClassInstance__*)__AUX_CLS_ALLOCA__(ARG1_VA_ARGS(CLASS_NAME), ARG2_VA_ARGS_VA(CLASS_NAME, 0, 0))) \
+  (ARG1_VA_ARGS(CLASS_NAME)*)__aux_class_new_wrapper__((__vClassObject__*)__AUX_CLS_VCLASS_EXP__(ARG1_VA_ARGS(CLASS_NAME)), ARG2_VA_ARGS(CLASS_NAME, 1), (__ClassInstance__*)__AUX_CLS_ALLOCA__(ARG1_VA_ARGS(CLASS_NAME), ARG2_VA_ARGS_VA(CLASS_NAME, 0, 0))) \
 
 #define __AUX_CLS_COPY__(CLASS_NAME, ARGS...) ((CLASS_NAME*)__AUX_CLS_VCLASS__(CLASS_NAME)->__copy__(__AUX_CLS_ALLOCA__(CLASS_NAME), ARG1_VA_ARGS_VA(ARGS, __AUX_CLS_DEF_INST__(CLASS_NAME))))
 

@@ -1,4 +1,5 @@
 #include "container.h"
+#pragma once
 
 DEF_CLASS(string_t
   ,

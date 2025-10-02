@@ -1,4 +1,5 @@
 #include "../oop/class.h"
+#pragma once
 
 DEF_CLASS(int_t, long value);
 

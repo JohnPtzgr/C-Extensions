@@ -13,5 +13,6 @@ ar rcs lib/libcextras.a \
   build/oop/functional.o \
   build/threads/task.o \
   build/threads/async.o \
-  build/built-ins/int.o
+  build/built-ins/int.o \
+  build/built-ins/default_types.o \
 

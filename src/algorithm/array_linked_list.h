@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 
+#pragma once
 
 typedef struct ArrayLinkedList {
   void* data;

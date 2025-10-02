@@ -21,6 +21,7 @@
 ./build/.build_scripts/compile_single.sh threads/task
 
 ./build/.build_scripts/compile_single.sh built-ins/int
+./build/.build_scripts/compile_single.sh built-ins/default_types
 
 # ./build/.build_scripts/compile_single.sh 
 

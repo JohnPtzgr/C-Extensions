@@ -10,25 +10,21 @@
   __ClassObject__ __bi_##TYPE_NAME##_Class__ = (__ClassObject__){ \
                                                                  .mask=STATIC|BARE, \
                                                                  .name=#TYPE, \
-                                                                 .default_meta=&__bi_##TYPE_NAME##_vClass__, \
+                                                                 .default_meta=(__ClassMetaData__*)&TYPE_NAME##_type, \
                                                                  .default_vcls=&__bi_##TYPE_NAME##_vClass__, \
                                                                  .instance_size=sizeof(TYPE), \
                                                                  .vclass_size=sizeof(__vClassObject__) \
                                                                 }; \
   __vClassObject__ __bi_##TYPE_NAME##_vClass__ = (__vClassObject__){ \
                                                                     .cls=&__bi_##TYPE_NAME##_Class__, \
-                                                                    .__init__=__bi_##TYPE_NAME##_init \
+                                                                    .__init__=(generic_function_t)__bi_##TYPE_NAME##_init \
                                                                    }; \
-  __ClassMetaData__ __bi_##TYPE_NAME##_MetaData__ = (__ClassMetaData__){ \
-                                                                        .vcls=&__bi_##TYPE_NAME##_vClass__ \
-                                                                       }; \
   type_object_t TYPE_NAME##_type = (type_object_t){ \
                                                    .type_mask=STATIC|BARE|BUILT_IN_TYPE, \
-                                                   .type_meta=&__bi_##TYPE_NAME##_MetaData__, \
+                                                   .type_meta=(__ClassMetaData__){.vcls=&__bi_##TYPE_NAME##_vClass__}, \
                                                    .type_name=#TYPE, \
                                                    .type_size=sizeof(TYPE) \
                                                   };
-
 
 __DEF_BI_TYPE__(int, int);
 __DEF_BI_TYPE__(unsigned int, uint);

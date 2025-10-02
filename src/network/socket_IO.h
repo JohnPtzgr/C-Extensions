@@ -9,6 +9,7 @@
 #include <arpa/inet.h>
 #include "../oop/class.h"
 
+#pragma once
 
 DEF_CLASS(socket_t
   ,

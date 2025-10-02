@@ -1,6 +1,8 @@
 #include "container.h"
 #include "../oop/types.h"
 
+#pragma once
+
 DEF_CLASS(
   vector_t
   ,
