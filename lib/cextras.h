@@ -7,6 +7,7 @@
 #include "../src/algorithm/string.h"
 
 #include "../src/built-ins/int.h"
+#include "../src/built-ins/default_types.h"
 
 #include "../src/oop/functional.h"
 #include "../src/oop/iters.h"

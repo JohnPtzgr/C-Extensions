@@ -1,7 +1,7 @@
 #include "server.h"
 
 #define PORT 8080
-#define BACKLOG 10
+#define BACKLOG 3
 
 #define __AS_STR_EXP(EXPR) __STRING(EXPR)
 
@@ -10,7 +10,7 @@ int main() {
   struct sockaddr_in client_addr;
   socklen_t client_len = sizeof(client_addr);
   char buffer[1024];
-  socket_t* server_s = CLS(socket_t, AF_INET, SOCK_STREAM, 0, INADDR_ANY, 8080, AF_INET);
+  socket_t* server_s = CLS(socket_t, AF_INET, SOCK_STREAM, 0, INADDR_ANY, PORT, AF_INET);
   
   // server_fd = socket(AF_INET, SOCK_STREAM, 0);
   // if (server_fd == -1) {
