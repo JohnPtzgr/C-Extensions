@@ -1,21 +1,6 @@
-#include "allocator.h"
-#include "../oop/iters.h"
+#include "smart_ptr.h"
 #pragma once
 
-#ifndef UCHAR_MAX
-#define UCHAR_MAX (__SCHAR_MAX__ * 2 + 1)
-#endif // !UCHAR_MAX
-
-DEF_CLASS(smartptr_t
-  ,
-  void* data
-  ,
-  generic_function_t alloc;
-  generic_function_t free;
-  allocator_t allocator;
-)
-
-#define Smart_ptr() 
 
 DEF_CLASS(generic_container_t
   ,
@@ -38,4 +23,9 @@ DEF_CLASS(generic_container_t
   generic_function_t rfind;
   generic_function_t slice;
 )
+
+DEF_METHODS(reserve, size, release, empty, max_size, clear, insert, erase, \
+  push_back, pop_back, append, find, rfind, slice, \
+  __move__, __copy__, __assign__, __init__, __destroy__, \
+  __iter__, __next__, __contains__, __begin__, __end__)
 

@@ -1,33 +1,10 @@
-#include "vector.h"
+#include "DEPRECATED_vector.h"
 
 
-STATIC_CLASS_END(generic_container_t, 2,
-  self->data = 0;
-  self->size = 0;
-  SET_METHOD(generic_container_t, 0, self, gen_cont_alloc);
-  SET_METHOD(generic_container_t, 1, self, gen_cont_free);
-) {
-  if (self->data != 0) {
-    gen_cont_free(self);
-  }
-  return self;
-}
+#ifndef UCHAR_MAX
+#define UCHAR_MAX (__SCHAR_MAX__ * 2 + 1)
+#endif // !UCHAR_MAX
 
-void* gen_cont_free(generic_container_t* self) {
-  free(self->data);
-  self->data = 0;
-  self->size = 0;
-  return self;
-}
-void* gen_cont_alloc(generic_container_t* self,
-  size_t size) {
-  if (self->data != 0) {
-    gen_cont_free((generic_container_t*)self->data);
-  }
-  self->data = malloc(size);
-  self->size = size;
-  return self;
-}
 
 // Initialize empty ARRAY for objects of TYPE_SIZE size
 void array_init(darray_t* array, size_t type_size) {
@@ -479,12 +456,4 @@ void collect_garbage(heap_t* heap, void* reference_address) {
 }
 //
 
-STATIC_INHERIT_END(vector_t, generic_container_t, 10,
-  self->size = 0;
-  self->type_size = 0;
-) {
-  self->size = 0;
-  self->type_size = 0;
-  //arr
-  return self;
-}
+

@@ -17,6 +17,9 @@ DEF_CLASS(linked_list_t
   generic_function_t pop;
 )
 
+DEF_METHODS(push, pop, __move__, __copy__, __assign__, __init__, __destroy__, \
+  __iter__, __next__, __contains__, __begin__, __end__)
+
 #define LinkedList( TYPE ) \
   CLS(linked_list_t, sizeof(TYPE));
 

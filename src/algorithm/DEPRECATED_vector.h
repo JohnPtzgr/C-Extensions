@@ -9,6 +9,7 @@ DEF_CLASS(generic_container_t,
   void* data;
   size_t size;
 )
+
 void* gen_cont_free(generic_container_t* self);
 void* gen_cont_alloc(generic_container_t* self, size_t size);
 

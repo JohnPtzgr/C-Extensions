@@ -1,7 +1,7 @@
 #include "allocator.h"
 
 
-static void* allocator_t_alloc(allocator_t* self, size_t size) {
+static void* allocator_t_new(allocator_t* self, size_t size) {
   void* data =  self->alloc_fn(size);
   if (!data) {
     if (_EXCEPTION.exception_number) {
@@ -14,7 +14,7 @@ static void* allocator_t_alloc(allocator_t* self, size_t size) {
   return data;
 }
 
-static void* allocator_t_free(allocator_t* self, void* data) {
+static void* allocator_t_delete(allocator_t* self, void* data) {
   self->free_fn(data);
   PUSH_EXCEPTION(void*);
   return NULL;
@@ -22,8 +22,8 @@ static void* allocator_t_free(allocator_t* self, void* data) {
 
 CLASS_END(allocator_t, STATIC,
   __ON_INIT__(allocator_t,
-    __allocator_t_Default_vClassObject__.alloc = (generic_function_t)allocator_t_alloc;
-    __allocator_t_Default_vClassObject__.free = (generic_function_t)allocator_t_free;
+    __allocator_t_Default_vClassObject__.__new__ = (generic_function_t)allocator_t_new;
+    __allocator_t_Default_vClassObject__.__delete__ = (generic_function_t)allocator_t_delete;
   )
 ) DEFAULT_DESTROY(allocator_t)
 

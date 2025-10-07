@@ -28,4 +28,9 @@ DEF_CLASS(
   generic_function_t emplace_back;
 )
 
+DEF_METHODS(reserve, size, release, empty, max_size, clear, insert, erase, \
+  push_back, pop_back, append, find, rfind, slice, emplace_back, \
+  __move__, __copy__, __assign__, __init__, __destroy__, \
+  __iter__, __next__, __contains__, __begin__, __end__)
+
 #define Vector(TYPE...) CLS(vector_t, TYPE)

@@ -58,6 +58,7 @@
     "text_encoding": "cpp",
     "int.h": "c",
     "functional.h": "c",
-    "socket_io.h": "c"
+    "socket_io.h": "c",
+    "allocator.h": "c"
   }
 }

@@ -19,6 +19,8 @@ DEF_CLASS(eval_proc_t,
   eval_proc_op_t* compiled_expr;
 );
 
+DEF_METHODS()
+
 void* eval_compile(eval_proc_t* self, const char* string, ...);
 
 void* eval_run(eval_proc_t* self, ...);

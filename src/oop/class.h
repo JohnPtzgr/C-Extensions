@@ -125,7 +125,7 @@ typedef class_field_t* class_structure_t;
 typedef struct __vClassObject__ {
   generic_function_t __init__;
   generic_function_t __destroy__;
-  generic_function_t __to_str__;
+  generic_function_t __move__;
   generic_function_t __data__;
   generic_function_t __iter__;
   generic_function_t __next__;
@@ -216,7 +216,7 @@ void __class_inherit_instance__(__ClassInstance__* instance);
 typedef enum __m_enum__ {
   __m_init__,
   __m_destroy__,
-  __m_to_str__,
+  __m_move__,
   __m_data__,
   __m_iter__,
   __m_next__,
@@ -370,6 +370,8 @@ void __SET_CLASS_MASK_WAS_STATIC_INIT__(size_t* mask, BOOL new_type);
 
 #define __CLASS_MASK__(NAME) __##NAME##_ClassObject__.mask
 
+#define DEF_METHODS(...)
+
 #define __GENERIC_CLASS_DECLARE_MACRO__(NAME, \
     CLASS_FIELDS, \
     STATIC_CLASS_FIELDS, \
@@ -392,7 +394,7 @@ void __SET_CLASS_MASK_WAS_STATIC_INIT__(size_t* mask, BOOL new_type);
   { \
     generic_function_t __init__; \
     generic_function_t __destroy__; \
-    generic_function_t __to_str__; \
+    generic_function_t __move__; \
     generic_function_t __data__; \
     generic_function_t __iter__; \
     generic_function_t __next__; \

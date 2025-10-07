@@ -1,5 +1,6 @@
 #include "int.h"
 #include "../oop/iters.h"
+#include "types.h"
 
 void* int_t_add(int_t* self, int_t* other, int_t* result){
   result->value = self->value + other->value;
@@ -162,11 +163,6 @@ void* int_t_irsh(int_t* self, int_t* other){
   return self;
 }
 
-void* int_t_tostr(int_t* self, char* result){
-  sprintf(result, "%lld", self->value);
-  return result;
-}
-
 void* int_t_data(int_t* self, void** result){
   *result = &(self->value);
   return result;
@@ -263,8 +259,8 @@ void* int_t_pow(int_t* self, int_t* other, int_t* result) {
   return result;
 }
 
-void* int_t_cast(int_t* self, __ClassObject__* type, void* result){
-  return type->default_vcls->__init__(result, self);
+void* int_t_cast(int_t* self, type_object_t* type, void* result){
+  return type->type_meta.vcls->__init__(result, self);
 }
 
 void* int_t_inc(int_t* self) {
@@ -318,7 +314,6 @@ CLASS_END(int_t, STATIC,
     __int_t_Default_vClassObject__.__ilsh__ = (generic_function_t)int_t_ilsh;
     __int_t_Default_vClassObject__.__rsh__ = (generic_function_t)int_t_rsh;
     __int_t_Default_vClassObject__.__irsh__ = (generic_function_t)int_t_irsh;
-    __int_t_Default_vClassObject__.__to_str__ = (generic_function_t)int_t_tostr;
     __int_t_Default_vClassObject__.__data__ = (generic_function_t)int_t_data;
     __int_t_Default_vClassObject__.__copy__ = (generic_function_t)int_t_copy;
     __int_t_Default_vClassObject__.__new__ = (generic_function_t)int_t_new;

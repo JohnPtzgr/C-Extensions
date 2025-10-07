@@ -23,3 +23,8 @@ DEF_CLASS(string_t
   generic_function_t slice;
   generic_function_t substr;
 )
+
+DEF_METHODS(reserve, size, release, empty, max_size, clear, insert, erase, \
+  push_back, pop_back, append, find, rfind, slice, substr, \
+  __move__, __copy__, __assign__, __init__, __destroy__, \
+  __iter__, __next__, __contains__, __begin__, __end__)
