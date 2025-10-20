@@ -10,6 +10,10 @@
 
 #define __VCLASS_METHOD_COUNT__ 64
 
+#define __CLASS_NAME_MAX_LENGTH__ 256
+
+#define __STATIC_INHERITANCE_LIST_NODES__ 8
+
 typedef struct __vTableHash__ {
   size_t hashX;
   size_t hashY;
@@ -57,6 +61,7 @@ typedef struct __InheritanceListNode__ {
 
 typedef struct __InheritanceList__ {
   __InheritanceListNode__* list;
+  __InheritanceListNode__* static_list;
   size_t capacity;
   size_t size;
 } __InheritanceList__;
@@ -294,7 +299,7 @@ void* __InheritanceList_add__(__InheritanceList__* list, void* self,
 void* __InheritanceList_remove__(__InheritanceList__* list, __ClassInstance__* instance);
 size_t __InheritanceList_find__(__InheritanceList__* list, __vTableHash__ hash);
 size_t __InheritanceList_find_built_in__(__InheritanceList__* list, __m_enum__ built_in_no);
-void* __InheritanceList_init__(__InheritanceList__* list);
+void* __InheritanceList_init__(__InheritanceList__* list, __InheritanceListNode__* default_nodes);
 void* __InheritanceList_destroy__(__InheritanceList__* list);
 
 void* __aux_class_new_vclass__(__ClassObject__* cls);
@@ -482,7 +487,9 @@ void __SET_CLASS_MASK_WAS_STATIC_INIT__(size_t* mask, BOOL new_type);
   extern __##NAME##_vClassObject__ __##NAME##_Default_vClassObject__; \
   extern NAME __##NAME##_Default_Instance__; \
   extern __##NAME##_ClassMetaData__ __##NAME##_Default_MetaData__; \
-  extern type_object_t NAME##_type;
+  extern type_object_t NAME##_type; \
+  extern __InheritanceList__ __##NAME##__InheritanceList__; \
+  extern __InheritanceListNode__ __##NAME##__InheritanceListNodes__[__STATIC_INHERITANCE_LIST_NODES__];
 
 #define __GENERIC_CLASS_DEFINE_MACRO__(NAME, MASK, EXPR...) \
   __ClassObject__ __##NAME##_ClassObject__ = \
@@ -619,18 +626,18 @@ void __SET_CLASS_MASK_WAS_STATIC_INIT__(size_t* mask, BOOL new_type);
                                               .type_meta=(__ClassMetaData__){.vcls=(__vClassObject__*)&__##NAME##_Default_vClassObject__}, \
                                               .type_name=#NAME}; \
   void* __##NAME##_static_init__(NAME* self) { \
-    __##BASE##_static_init__((BASE*)self); \
+    __##BASE##_ClassObject__.__static_init__((void*)self + sizeof(void*)); \
     __ON_STATIC_INIT__(NAME, \
       if (self != &__##NAME##_Default_Instance__) { \
         __##NAME##_static_init__(&__##NAME##_Default_Instance__); \
       } else { \
         *self = (NAME){}; \
         if (!__##NAME##_ClassObject__.inherits_from) { \
-          __##NAME##_ClassObject__.inherits_from = (__InheritanceList__*)malloc(sizeof(__InheritanceList__)); \
-          __InheritanceList_init__(__##NAME##_ClassObject__.inherits_from); \
+          __##NAME##_ClassObject__.inherits_from = &__##NAME##__InheritanceList__; \
+          __InheritanceList_init__(__##NAME##_ClassObject__.inherits_from, __##NAME##__InheritanceListNodes__); \
           __InheritanceList_add__(__##NAME##_ClassObject__.inherits_from, \
                                   (void*)self, \
-                                  (void*)self, \
+                                  (void*)self + sizeof(void*), \
                                   &__##BASE##_ClassObject__); \
         } \
         SCOPE_PUSH(&__##NAME##_ClassObject__, __class_destroy__); \
@@ -692,18 +699,18 @@ void __SET_CLASS_MASK_WAS_STATIC_INIT__(size_t* mask, BOOL new_type);
                                               .type_meta=(__ClassMetaData__){.vcls=(__vClassObject__*)&__##NAME##_Default_vClassObject__}, \
                                               .type_name=#NAME}; \
   void* __##NAME##_static_init__(NAME* self) { \
-    __##BASE##_static_init__((BASE*)self); \
+    __##BASE##_ClassObject__.__static_init__((void*)self + sizeof(void*)); \
     __ON_STATIC_INIT__(NAME, \
       if (self != &__##NAME##_Default_Instance__) { \
         __##NAME##_static_init__(&__##NAME##_Default_Instance__); \
       } else { \
         *self = (NAME){}; \
         if (!__##NAME##_ClassObject__.inherits_from) { \
-          __##NAME##_ClassObject__.inherits_from = (__InheritanceList__*)malloc(sizeof(__InheritanceList__)); \
-          __InheritanceList_init__(__##NAME##_ClassObject__.inherits_from); \
+          __##NAME##_ClassObject__.inherits_from = &__##NAME##__InheritanceList__; \
+          __InheritanceList_init__(__##NAME##_ClassObject__.inherits_from, __##NAME##__InheritanceListNodes__); \
           __InheritanceList_add__(__##NAME##_ClassObject__.inherits_from, \
                                   (void*)self, \
-                                  (void*)self, \
+                                  (void*)self + sizeof(void*), \
                                   &__##BASE##_ClassObject__); \
         } \
         SCOPE_PUSH(&__##NAME##_ClassObject__, __class_destroy__); \
@@ -769,7 +776,7 @@ void __SET_CLASS_MASK_WAS_STATIC_INIT__(size_t* mask, BOOL new_type);
   } \
 
 #define __AUX_ADD_INHERITS__(NAME, BASE, FIELD_NAME) { \
-    __##BASE##_static_init__((BASE*)(&(self->FIELD_NAME))); \
+    __##BASE##_ClassObject__.__static_init__((void*)(&(self->FIELD_NAME))); \
     __ON_INIT__(NAME, \
       __InheritanceList_add__(__##NAME##_ClassObject__.inherits_from, \
                               (void*)self, \
@@ -824,13 +831,18 @@ void __SET_CLASS_MASK_WAS_STATIC_INIT__(size_t* mask, BOOL new_type);
 
 #define __AUX_INHERIT__(NAME, BASE, FIELDS...) \
   __GENERIC_CLASS_DECLARE_MACRO__(NAME, \
+    __##NAME##_ClassMetaData__* __meta__; \
     BASE __base__; \
     ARG1_VA_ARGS(FIELDS, ;, ;, 0, 0, ;), \
+    __##BASE##_vClassObject__* __base__; \
     ARG2_VA_ARGS(FIELDS, ;, ;, 0, 0, ;), \
     ARG3_VA_ARGS(FIELDS, ;, ;, 0, 0, ;), \
     ARG4_VA_ARGS(FIELDS, 0, 0, 0, 0, ;), \
     ARG5_VA_ARGS(FIELDS, 0, 0, 0, 0, ;), \
     ARG6_VA_ARGS(FIELDS, ;, ;, ;, ;, ;))
+
+// __AUX_CLASS__(intt, int a)
+// __AUX_INHERIT__(inttt, intt, float a, float b, float c)
 
 #define DEF_INHERIT(NAME, BASE, FIELDS...) \
   __AUX_INHERIT__(NAME, BASE, FIELDS)
@@ -886,6 +898,11 @@ void __SET_CLASS_MASK_WAS_STATIC_INIT__(size_t* mask, BOOL new_type);
 #define IMETHOD(CLASS, METHOD, INSTANCE...) __AUX_IMETHOD__(CLASS, METHOD, INSTANCE)(INSTANCE, 0)
 
 #define DEFAULT_DESTROY(NAME) { return NULL; } void* NAME##_destroy(NAME* self, ...) { return NULL; }
+
+#define DEFAULT_INIT(NAME) void* NAME##_init(NAME* self, ...) { \
+  __AUX_INIT_BEGIN__(NAME); \
+  __AUX_INIT_END__(NAME); \
+}
 
 
 #define __BRIDGE_CLASS_DEFINE_MACRO__(NAME, MASK, EXPR...) \
@@ -1080,4 +1097,8 @@ void* __aux_class_new_wrapper__(__vClassObject__* vcls, size_t size, __ClassInst
 
 #define NEW_META(CLASS_NAME) __aux_class_new_meta__(&__##CLASS_NAME##_ClassObject__)
 
+#define STATIC_CAST(TARGET_TYPE, EXPR...) (*(TARGET_TYPE*)(&(EXPR)))
 
+void* __aux_type_cast__(void* expr, __ClassMetaData__* src_type, __ClassMetaData__* trg_type, void* allocated_memory);
+
+#define DYNAMIC_CAST(TARGET_TYPE, SOURCE_TYPE, EXPR...) ((TARGET_TYPE*)__aux_type_cast__((EXPR), &SOURCE_TYPE##_type, &TARGET_TYPE##_type, alloca(sizeof(TARGET_TYPE))))

@@ -4,6 +4,12 @@
 
 #define BUILT_IN_TYPE 512
 
+typedef void* pointer;
+typedef unsigned int uint;
+typedef unsigned long ulong;
+typedef unsigned char uchar;
+typedef unsigned short ushort;
+
 extern type_object_t int_type;
 extern __ClassObject__ __bi_int_Class__;
 extern __vClassObject__ __bi_int_vClass__;
@@ -28,31 +34,31 @@ extern __vClassObject__ __bi_short_vClass__;
 extern type_object_t ushort_type;
 extern __ClassObject__ __bi_ushort_Class__;
 extern __vClassObject__ __bi_ushort_vClass__;
-extern type_object_t int8_type;
-extern __ClassObject__ __bi_int8_Class__;
-extern __vClassObject__ __bi_int8_vClass__;
-extern type_object_t uint8_type;
-extern __ClassObject__ __bi_uint8_Class__;
-extern __vClassObject__ __bi_uint8_vClass__;
-extern type_object_t int16_type;
-extern __ClassObject__ __bi_int16_Class__;
-extern __vClassObject__ __bi_int16_vClass__;
-extern type_object_t uint16_type;
-extern __ClassObject__ __bi_uint16_Class__;
-extern __vClassObject__ __bi_uint16_vClass__;
-extern type_object_t int32_type;
-extern __ClassObject__ __bi_int32_Class__;
-extern __vClassObject__ __bi_int32_vClass__;
-extern type_object_t uint32_type;
-extern __ClassObject__ __bi_uint32_Class__;
-extern __vClassObject__ __bi_uint32_vClass__;
+extern type_object_t int8_t_type;
+extern __ClassObject__ __bi_int8_t_Class__;
+extern __vClassObject__ __bi_int8_t_vClass__;
+extern type_object_t uint8_t_type;
+extern __ClassObject__ __bi_uint8_t_Class__;
+extern __vClassObject__ __bi_uint8_t_vClass__;
+extern type_object_t int16_t_type;
+extern __ClassObject__ __bi_int16_t_Class__;
+extern __vClassObject__ __bi_int16_t_vClass__;
+extern type_object_t uint16_t_type;
+extern __ClassObject__ __bi_uint16_t_Class__;
+extern __vClassObject__ __bi_uint16_t_vClass__;
+extern type_object_t int32_t_type;
+extern __ClassObject__ __bi_int32_t_Class__;
+extern __vClassObject__ __bi_int32_t_vClass__;
+extern type_object_t uint32_t_type;
+extern __ClassObject__ __bi_uint32_t_Class__;
+extern __vClassObject__ __bi_uint32_t_vClass__;
 #ifdef INT64_MAX
-  extern type_object_t int64_type;
-  extern __ClassObject__ __bi_int64_Class__;
-  extern __vClassObject__ __bi_int64_vClass__;
-  extern type_object_t uint64_type;
-  extern __ClassObject__ __bi_uint64_Class__;
-  extern __vClassObject__ __bi_uint64_vClass__;
+  extern type_object_t int64_t_type;
+  extern __ClassObject__ __bi_int64_t_Class__;
+  extern __vClassObject__ __bi_int64_t_vClass__;
+  extern type_object_t uint64_t_type;
+  extern __ClassObject__ __bi_uint64_t_Class__;
+  extern __vClassObject__ __bi_uint64_t_vClass__;
 #endif
 extern type_object_t float_type;
 extern __ClassObject__ __bi_float_Class__;

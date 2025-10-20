@@ -274,22 +274,30 @@ void* __vTable_join__(__vTable__* table, __vTable__* source) {
 }
 
 void* __InheritanceList_reserve__(__InheritanceList__* list, size_t new_capacity) {
-  __InheritanceListNode__* tmp_list = list->list;
+  __InheritanceListNode__* tmp_list = (list->list ? list->list : list->static_list);
   list->list = (__InheritanceListNode__*)malloc(new_capacity * sizeof(__InheritanceListNode__));
   PUSH_EXCEPTION(void*);
   if (list->capacity) {
     memcpy(list->list, tmp_list, list->capacity * sizeof(__InheritanceListNode__));
-    free(tmp_list);
+    if (tmp_list != list->static_list) {
+      free(tmp_list);
+    }
     PUSH_EXCEPTION(void*);
   }
   list->capacity = new_capacity;
   return list;
 }
 
-void* __InheritanceList_init__(__InheritanceList__* list) {
+void* __InheritanceList_init__(__InheritanceList__* list, __InheritanceListNode__* default_nodes) {
   list->size = 0;
   list->capacity = 0;
-  __InheritanceList_reserve__(list, __DEFAULT_INHERITANCE_LIST_CAPACITY__);
+  if (!default_nodes) {
+    __InheritanceList_reserve__(list, __DEFAULT_INHERITANCE_LIST_CAPACITY__);
+  } else {
+    list->list = 0;
+    list->static_list = default_nodes;
+    list->capacity = __STATIC_INHERITANCE_LIST_NODES__;
+  }
   PUSH_EXCEPTION(void*);
   return list;
 }
@@ -701,6 +709,29 @@ void* __aux_class_new_meta__(__ClassObject__* cls) {
   }
   cls->alloc_meta[cls->__meta_cnt++] = new_meta;
   return new_meta;
+}
+
+void* __aux_type_cast__(void* expr, __ClassMetaData__* src_type, __ClassMetaData__* trg_type, void* allocated_memory) {
+  void* result = NULL;
+  if (src_type && src_type->vcls) {
+    if (trg_type && trg_type->vcls && \
+        (strncmp(src_type->vcls->cls->name, trg_type->vcls->cls->name, __CLASS_NAME_MAX_LENGTH__) == 0)) {
+      return expr;
+    }
+    if (src_type->vcls->cls->mask & INHERITS) {
+      __InheritanceList__* list = src_type->vcls->cls->inherits_from;
+      for (size_t i = 0; i < list->size; ++i) {
+        if (strncmp(trg_type->vcls->cls->name, list->list->cls->name, __CLASS_NAME_MAX_LENGTH__) == 0) {
+          return expr + list->list[i].adress_shift;
+        }
+      }
+    }
+    result = src_type->vcls->__cast__(expr, src_type, trg_type, allocated_memory, 0);
+  }
+  if (trg_type && trg_type->vcls && !result) {
+    result = trg_type->vcls->__cast__(trg_type->vcls->cls->__static_init__(allocated_memory, 0), src_type, trg_type, expr, 0);
+  }
+  return result;
 }
 
 

@@ -42,7 +42,7 @@ CLASS_END(Y, 0,
   );
   printf("IS INNER Y: %llu\n", __GET_CLASS_MASK_IS_INNER__(&__CLASS_MASK__(Y)));
   self->x = 'a';
-  self->__meta__->vcls->__to_str__ = (generic_function_t)show2;
+  self->__meta__->vcls->__cast__ = (generic_function_t)show2;
   __AUX_SMETHOD__(Y, show, self) = (generic_function_t)show2;
 ) DEFAULT_DESTROY(Y)
 void* Y_init(Y* self, ...) {
@@ -71,7 +71,7 @@ int test1() {
   X_init(&a);
   Y_init(&b);
   SMETHOD(Y, show, &b);
-  b.__meta__->vcls->__to_str__(&b, 0);
+  b.__meta__->vcls->__cast__(&b, 0);
   printf("Name is %s\n", a.__base__.__meta__->vcls->cls->name);
   a.z = 0;
   __vTableHash__ hash = __class_vtable_hash__("show");
@@ -131,7 +131,20 @@ int test2() {
   return 0;
 }
 
-DEF_CLASS(base2, int c, int a, int c)
+struct pp {
+  int _;
+  long __;
+  double ___;
+};
+
+int aaa = sizeof(struct pp);
+
+
+DEF_CLASS(base2, int c; PRIVATE(pp, dsa), int a; PRIVATE(pp, asd), int c)
+//
+struct pp {
+  int a;
+};
 CLASS_END(base2, 0,
   self->c = 0;
   printf("INIT BASE2!\n");
@@ -139,6 +152,14 @@ CLASS_END(base2, 0,
 DEFAULT_DESTROY(base2)
 void* base2add(base2* self, base2* other) {
   printf("ADD!\n");
+  // Protected
+  ((__base2_vClassObjectPrt__*)self->__meta__->vcls->__protected__->data)->c;
+  // Private
+  self->__p_dsa->a;
+  self->__meta__->vcls->__p_asd->a;
+  STATIC_CAST(int, self->c);
+  STATIC_CAST(float, self);
+  DYNAMIC_CAST(base1, base2, self);
   self->c += other->c + 100;
   return self;
 }
@@ -150,7 +171,26 @@ void* base2_init(base2* self, ...) {
   return self;
 }
 
-DEF_INHERIT(child2, base1, base2 __base2__; int d, int b)
+// DEF_BARE_CLASS(b1, int a);
+// DEF_BARE_CLASS(b2, int b);
+
+// DEF_CLASS(child2, int c);
+// void* child2_init(child2* self, ...) {
+//   __AUX_INIT_BEGIN__(child2)
+//   sizeof(child2);
+//   (char[9]){0};
+//   sizeof(child2_type);
+//   sizeof(__child2__InheritanceList__);
+//   sizeof(__child2__InheritanceListNodes__);
+//   sizeof(__child2_ClassObject__);
+//   sizeof(__child2_Default_Instance__);
+//   sizeof(__child2_Default_MetaData__);
+//   sizeof(__child2_Default_vClassObject__);
+//   __AUX_INIT_END__(child2)
+//   return self;
+// }
+
+DEF_INHERIT(child2, base1, base2 __base2__; int d, __base2_vClassObject__* __base2__; int b, int c)
 INHERIT_END(child2, base1, 0,
   printf("INHERITED BASE1!\n");
   __AUX_ADD_INHERITS__(child2, base2, __base2__);
@@ -159,6 +199,16 @@ INHERIT_END(child2, base1, 0,
 ) DEFAULT_DESTROY(child2)
 void* child2_init(child2* self, ...) {
   __AUX_INIT_BEGIN__(child2)
+  self->__meta__->vcls->__base__->a;
+  DYNAMIC_CAST(base1, child2, self);
+  sizeof(child2);
+  sizeof(child2_type);
+  sizeof(__child2__InheritanceList__);
+  sizeof(__child2__InheritanceListNodes__);
+  sizeof(__child2_ClassObject__);
+  sizeof(__child2_Default_Instance__);
+  sizeof(__child2_Default_MetaData__);
+  sizeof(__child2_Default_vClassObject__);
   printf("child2 DYN INIT! %d / %d\n", self, &__child2_Default_Instance__);
   __AUX_INIT_END__(child2)
   return self;
