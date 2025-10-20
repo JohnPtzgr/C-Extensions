@@ -9,29 +9,28 @@ typedef struct __vTableProbeId__
 static inline size_t defaultVTableHasher(const char* key, char id) {
 
   size_t lookup_primes[16] = {
-    428565993458070227,
-    254122516461927209,
-    532695996088977289,
-    313290182662825307,
-    860946449948972521,
-    319264523107532111,
-    202986391655519623,
-    275182499288387473,
-    962987202532100107,
-    733765330246036859,
-    147307587625942813,
-    613405566694294111,
-    769693398094706011,
-    398091924081499261,
-    727872227099913139,
-    400052032524586027
+    428565993458070227llu,
+    254122516461927209llu,
+    532695996088977289llu,
+    313290182662825307llu,
+    860946449948972521llu,
+    319264523107532111llu,
+    202986391655519623llu,
+    275182499288387473llu,
+    962987202532100107llu,
+    733765330246036859llu,
+    147307587625942813llu,
+    613405566694294111llu,
+    769693398094706011llu,
+    398091924081499261llu,
+    727872227099913139llu,
+    400052032524586027llu
   };
   size_t hash = (size_t)(defaultVTableHasher);
 
   while (*key)
   {
     hash += lookup_primes[(*(key) + id) & 15] ^ *((unsigned char*)key);
-    hash ^= lookup_primes[(*(key) + id) & 15];
     key++;
   }
 
@@ -292,9 +291,10 @@ void* __InheritanceList_init__(__InheritanceList__* list, __InheritanceListNode_
   list->size = 0;
   list->capacity = 0;
   if (!default_nodes) {
+    list->list = 0;
     __InheritanceList_reserve__(list, __DEFAULT_INHERITANCE_LIST_CAPACITY__);
   } else {
-    list->list = 0;
+    list->list = default_nodes;
     list->static_list = default_nodes;
     list->capacity = __STATIC_INHERITANCE_LIST_NODES__;
   }
@@ -303,8 +303,10 @@ void* __InheritanceList_init__(__InheritanceList__* list, __InheritanceListNode_
 }
 
 void* __InheritanceList_destroy__(__InheritanceList__* list) {
-  free(list->list);
-  PUSH_EXCEPTION(void*);
+  if (list->list != list->static_list) {
+    free(list->list);
+    PUSH_EXCEPTION(void*);
+  }
   *list = (__InheritanceList__){};
   return NULL;
 }
@@ -320,12 +322,13 @@ void* __InheritanceList_add__(__InheritanceList__* list,
   list->list[list->size].adress_shift = (size_t)(instance - self);
   list->list[list->size].cls = cls;
   list->size++;
+  __SET_CLASS_MASK_SUPER__(&cls->mask, TRUE); \
   return list;
 }
 
 void* __InheritanceList_remove__(__InheritanceList__* list, __ClassInstance__* instance) {
   size_t i = 0;
-  while ((i < list->size) && (list->list[i].cls != instance->__meta__->vcls->cls)) { ++i; }
+  while ((i < list->size) && (list->list[i].cls != instance->__meta__->cls)) { ++i; }
   
   if (i + 1 == list->size) {
     list->size--;
@@ -465,6 +468,29 @@ void __SET_CLASS_MASK_WAS_STATIC_INIT__(size_t* mask, BOOL new_type) {
 }
 
 
+
+__ClassObject__ ____ClassInstance___ClassObject__ = \
+    (__ClassObject__){.mask=BARE|STATIC|ABSTRACT,
+                      .instance_size=sizeof(__ClassInstance__),
+                      .vclass_size=sizeof(__vClassObject__),
+                      .default_vcls=(__vClassObject__*)&____ClassInstance___Default_vClassObject__,
+                      .default_instance=(__ClassInstance__*)&____ClassInstance___Default_Instance__,
+                      .name="__ClassInstance__",
+                      .__static_init__=(generic_function_t)____ClassInstance___static_init__,
+                      .__static_destroy__=(generic_function_t)____ClassInstance___static_destroy__,
+                      };
+__vClassObject__ ____ClassInstance___Default_vClassObject__ = (__vClassObject__){.cls=&____ClassInstance___ClassObject__};
+__ClassInstance__ ____ClassInstance___Default_Instance__ = (__ClassInstance__){};
+
+void* ____ClassInstance___static_init__(__ClassInstance__* self) {
+  return self;
+}
+
+void* ____ClassInstance___static_destroy__(__ClassInstance__* self) {
+  return NULL;
+}
+
+
 void* __class_init__(__vClassObject__* default_vclass) {
   default_vclass->cls->static_vtable = (__vTable__*)malloc(sizeof(__vTable__));
   default_vclass->vtable = (__vTable__*)malloc(sizeof(__vTable__));
@@ -501,14 +527,6 @@ void* __class_destroy__(__ClassObject__* cls) {
     }
     index++;
   }
-  index = 0;
-  while (cls->alloc_meta && index < cls->__meta_cnt) {
-    if (cls->alloc_vcls[index] != NULL) {
-      free(cls->alloc_vcls[index]);
-      PUSH_EXCEPTION(void*);
-    }
-    index++;
-  }
   if (cls->default_vcls->vtable) {
     __vTable_destroy__(cls->default_vcls->vtable);
     free(cls->default_vcls->vtable);
@@ -516,16 +534,11 @@ void* __class_destroy__(__ClassObject__* cls) {
   }
   if (cls->inherits_from) {
     __InheritanceList_destroy__(cls->inherits_from);
-    free(cls->inherits_from);
     cls->inherits_from = 0;
   }
   if (cls->alloc_vcls) {
     free(cls->alloc_vcls);
     cls->alloc_vcls = 0;
-  }
-  if (cls->alloc_meta) {
-    free(cls->alloc_meta);
-    cls->alloc_meta = 0;
   }
   if (cls->static_vtable) {
     __vTable_destroy__(cls->static_vtable);
@@ -537,29 +550,10 @@ void* __class_destroy__(__ClassObject__* cls) {
   return NULL;
 }
 
-void* __class_init_instance__(__ClassInstance__* instance,
-                              __vClassObject__* default_vclass) {
-  instance->__meta__ = (__ClassMetaData__*)malloc(sizeof(__ClassMetaData__));
-  instance->__meta__->vcls = default_vclass;
-  instance->__meta__->vtable = (__vTable__*)malloc(sizeof(__vTable__));
-  PUSH_EXCEPTION(void*);
-  __vTable_init__(instance->__meta__->vtable, 0, 0);
-  PUSH_EXCEPTION(void*);
-  return instance;
-}
-
 void* __class_destroy_instance__(__ClassInstance__* instance,
                                  generic_function_t destructor) {
   destructor(instance);
-  if (instance->__meta__->vtable && \
-      !__GET_CLASS_MASK_IS_STATIC__(&instance->__meta__->vcls->cls->mask)) {
-    __vTable_destroy__(instance->__meta__->vtable);
-    free(instance->__meta__->vtable);
-    instance->__meta__->vtable = 0;
-    free(instance->__meta__);
-    instance->__meta__ = 0;
-    PUSH_EXCEPTION(void*);
-  };
+  PUSH_EXCEPTION(void*);
   return NULL;
 }
 
@@ -599,18 +593,6 @@ void __class_inherit__(__ClassObject__* cls) {
                       cls->inherits_from->list[i - 1].cls->static_vtable);
       __vTable_join__(cls->default_vcls->vtable, \
                       cls->inherits_from->list[i - 1].cls->default_vcls->vtable);
-      BREAKPOINT;
-    }
-  }
-}
-
-void __class_inherit_instance__(__ClassInstance__* instance) {
-  for (size_t i = instance->__meta__->vcls->cls->inherits_from->size; i > 0; --i) {
-    if (!__GET_CLASS_MASK_IS_BARE__(&(instance->__meta__->vcls->cls->inherits_from->list[i - 1].cls->mask)) && \
-        !__GET_CLASS_MASK_IS_STATIC__(&(instance->__meta__->vcls->cls->inherits_from->list[i - 1].cls->mask)) && \
-        __GET_CLASS_MASK_WAS_INIT__(&(instance->__meta__->vcls->cls->inherits_from->list[i - 1].cls->mask))) {
-      __vTable_join__(instance->__meta__->vtable, \
-                      instance->__meta__->vcls->cls->inherits_from->list[i - 1].cls->default_instance->__meta__->vtable);
       BREAKPOINT;
     }
   }
@@ -694,42 +676,71 @@ void* __aux_class_new_vclass__(__ClassObject__* cls) {
   return new_vclass;
 }
 
-void* __aux_class_new_meta__(__ClassObject__* cls) {
-  __ClassMetaData__* new_meta = (__ClassMetaData__*)malloc(sizeof(__ClassMetaData__));
-  PUSH_EXCEPTION(void*);
-  memcpy(new_meta, cls->default_meta, sizeof(__ClassMetaData__));
-  if (!cls->alloc_meta || (cls->__meta_cnt + 1 == cls->__meta_capacity)) {
-    __ClassMetaData__** new_meta_arr = \
-        (__ClassMetaData__**)malloc(sizeof(__ClassMetaData__*) * cls->__meta_capacity * 2);
-    memcpy(new_meta_arr, cls->alloc_meta, cls->__meta_capacity);
-    free(cls->alloc_meta);
-    cls->alloc_meta = new_meta_arr;
-    cls->__meta_capacity *= 2;
-    PUSH_EXCEPTION(void*);
+void* __aux_type_cast__(void* expr, type_object_t* src_type, type_object_t* trg_type, void* allocated_memory) {
+  void* result = NULL;
+  if (src_type && src_type->type_meta) {
+    if (trg_type && trg_type->type_meta) {
+      if (src_type->type_meta->cls && trg_type->type_meta->cls) {
+        return __aux_class_cast__(expr,
+                                  src_type->type_meta,
+                                  trg_type->type_meta,
+                                  allocated_memory);
+      }
+      if (src_type == trg_type || \
+          (strncmp(src_type->type_name,
+                    trg_type->type_name,
+                    __CLASS_NAME_MAX_LENGTH__) == 0)) {
+        return expr;
+      }
+    }
+    if (src_type->type_meta->__cast__) {
+      result = src_type->type_meta->__cast__(expr,
+                                             src_type,
+                                             trg_type,
+                                             allocated_memory,
+                                             0);
+    }
   }
-  cls->alloc_meta[cls->__meta_cnt++] = new_meta;
-  return new_meta;
+  if (trg_type && !result && trg_type->type_meta->__cast__) {
+    result = trg_type->type_meta->__cast__(trg_type->type_meta->__init__(allocated_memory,
+                                                                         0),
+                                           src_type,
+                                           trg_type,
+                                           expr,
+                                           0);
+  }
+  return result;
 }
 
-void* __aux_type_cast__(void* expr, __ClassMetaData__* src_type, __ClassMetaData__* trg_type, void* allocated_memory) {
+void* __aux_class_cast__(void* expr, __ClassMetaObject__* src_class, __ClassMetaObject__* trg_class, void* allocated_memory) {
   void* result = NULL;
-  if (src_type && src_type->vcls) {
-    if (trg_type && trg_type->vcls && \
-        (strncmp(src_type->vcls->cls->name, trg_type->vcls->cls->name, __CLASS_NAME_MAX_LENGTH__) == 0)) {
+  if (src_class) {
+    if (trg_class && \
+        (src_class == trg_class || \
+         (strncmp(src_class->cls->name,
+                  trg_class->cls->name,
+                  __CLASS_NAME_MAX_LENGTH__) == 0))) {
       return expr;
     }
-    if (src_type->vcls->cls->mask & INHERITS) {
-      __InheritanceList__* list = src_type->vcls->cls->inherits_from;
+    if (src_class->cls->mask & INHERITS) {
+      __InheritanceList__* list = src_class->cls->inherits_from;
       for (size_t i = 0; i < list->size; ++i) {
-        if (strncmp(trg_type->vcls->cls->name, list->list->cls->name, __CLASS_NAME_MAX_LENGTH__) == 0) {
+        if (strncmp(trg_class->cls->name, list->list->cls->name, __CLASS_NAME_MAX_LENGTH__) == 0) {
           return expr + list->list[i].adress_shift;
         }
       }
     }
-    result = src_type->vcls->__cast__(expr, src_type, trg_type, allocated_memory, 0);
+    if (src_class->__cast__) {
+      result = src_class->__cast__(expr, src_class, trg_class, allocated_memory, 0);
+    }
   }
-  if (trg_type && trg_type->vcls && !result) {
-    result = trg_type->vcls->__cast__(trg_type->vcls->cls->__static_init__(allocated_memory, 0), src_type, trg_type, expr, 0);
+  if (trg_class && !result && trg_class->__cast__) {
+    result = trg_class->__cast__(trg_class->__init__(allocated_memory,
+                                                     0),
+                                 src_class,
+                                 trg_class,
+                                 expr,
+                                 0);
   }
   return result;
 }

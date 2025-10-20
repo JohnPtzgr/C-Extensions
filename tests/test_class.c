@@ -1,19 +1,18 @@
 #include "../src/oop/class.h"
-
-__GENERIC_CLASS_DECLARE_MACRO__(X, __BaseClass__ __base__; int z;, int x; int y;, int z, 0, 0, int xxyy = 1);
+#include "stdio.h"
 
 void* call(void* any) {
   printf("Call X!\n");
   return NULL;
 }
-
-__GENERIC_CLASS_DEFINE_MACRO__(X, STATIC,
+Class(DefaultBase, X, int z);
+DefClass(DefaultBase, X, STATIC,
   int x = 0;
   int y = self->z;
   y += 1;
   __X_Default_vClassObject__.__call__ = (generic_function_t)call;
 ) DEFAULT_DESTROY(X)
-DEF_INIT(X,
+DefInit(X,
   ;
 )
 
@@ -24,26 +23,26 @@ DEF_INIT(X,
 //   return 0;
 // }
 
-DEF_CLASS(Y,
+Class(DefaultBase,
+  Y,
   PRIVATE(int_t, x);
   char x;
   size_t y;,  
   generic_function_t show;
-)
+);
 // #include "../src/built-ins/int.h"
 void* show2(Y* self, void* args) {
   printf("SHOW:%c\n", self->x);
   // self->__p_x->value;
   return NULL;
 }
-CLASS_END(Y, 0,
+DefClass(DefaultBase, Y, 0,
   __ON_INIT__(Y,
     printf("INIT CLASS: %llu\n", self->x);
   );
   printf("IS INNER Y: %llu\n", __GET_CLASS_MASK_IS_INNER__(&__CLASS_MASK__(Y)));
   self->x = 'a';
   self->__meta__->vcls->__cast__ = (generic_function_t)show2;
-  __AUX_SMETHOD__(Y, show, self) = (generic_function_t)show2;
 ) DEFAULT_DESTROY(Y)
 void* Y_init(Y* self, ...) {
   __AUX_INIT_BEGIN__(Y);
@@ -55,10 +54,10 @@ void* Y_init(Y* self, ...) {
   // printf("DMET CLS %d\n", __Y_Default_MetaData__.vcls->cls);
   __vTableHash__ hash = __class_vtable_hash__("show");
   printf("HASH IS %d-%d\n", hash.hashX, hash.hashY);
-  __vTable_add__(self->__meta__->vcls->vtable, hash, (__vTableNode__){.data=show2});
+  __vTable_add__(self->__meta__->vtable, hash, (__vTableNode__){.data=show2});
   BEGIN
   X a = (X){};
-  __ClassMetaData__ vbvb;
+  __ClassMetaObject__ vbvb;
   X_init(&a);
   END
   __AUX_INIT_END__(Y);
@@ -71,25 +70,25 @@ int test1() {
   X_init(&a);
   Y_init(&b);
   SMETHOD(Y, show, &b);
-  b.__meta__->vcls->__cast__(&b, 0);
-  printf("Name is %s\n", a.__base__.__meta__->vcls->cls->name);
+  b.__meta__->__cast__(&b, 0);
+  printf("Name is %s\n", a.__meta__->cls->name);
   a.z = 0;
   __vTableHash__ hash = __class_vtable_hash__("show");
   printf("HASH IS %d-%d\n", hash.hashX, hash.hashY);
-  for (size_t i = 0; i < b.__meta__->vcls->vtable->size; ++i) {
-    printf("%d - (D) %d - (M) %d\n", i, b.__meta__->vcls->vtable->data[i].data, b.__meta__->vcls->vtable->data[i].mask);
+  for (size_t i = 0; i < b.__meta__->vtable->size; ++i) {
+    printf("%d - (D) %d - (M) %d\n", i, b.__meta__->vtable->data[i].data, b.__meta__->vtable->data[i].mask);
   }
-  printf("show: %d\n", __vTable_get__(b.__meta__->vcls->vtable, hash)->data);
+  printf("show: %d\n", __vTable_get__(b.__meta__->vtable, hash)->data);
   printf("ACTL show: %d\n", show2);
-  ((generic_function_t)(__vTable_get__(b.__meta__->vcls->vtable, __class_vtable_hash__("show"))->data))(&b, 0);
+  ((generic_function_t)(__vTable_get__(b.__meta__->vtable, __class_vtable_hash__("show"))->data))(&b, 0);
   END
   return 0;
 }
 
-DEF_CLASS(base1, int c, int a, int c)
-CLASS_END(base1, 0,
-  ((__base1_vClassObject__*)((__ClassInstance__*)self)->__meta__->vcls)->a = 100;
-  ((__ClassInstance__*)self)->__meta__->vcls->__call__ = (generic_function_t)100;
+Class(DefaultBase, base1, int c, int a, int c)
+DefClass(base1, 0,
+  ((__base1_vClassObject__*)((__ClassInstance__*)self)->__meta__)->a = 100;
+  ((__ClassInstance__*)self)->__meta__->__call__ = (generic_function_t)100;
   printf("INIT BASE1!\n");
 )
 DEFAULT_DESTROY(base1)
@@ -101,8 +100,8 @@ void* base1_init(base1* self, ...) {
   return self;
 }
 
-DEF_INHERIT(child1, base1, int d, int b, int d)
-INHERIT_END(child1, base1, 0,
+Class(child1, base1, int d, int b, int d)
+DefClass(child1, base1, 0,
   printf("INIT CHILD1!\n");
   printf("INHERITED BASE1!\n");
 ) DEFAULT_DESTROY(child1)
