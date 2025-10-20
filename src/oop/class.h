@@ -210,7 +210,7 @@ typedef struct __InheritanceList__ {
 
 typedef struct __ClassInstance__ __ClassInstance__;
 
-typedef struct __RawClassInstance__ __RawClassInstance__;
+typedef struct __ClassInstance_R__ __ClassInstance_R__;
 
 
 void* __InheritanceList_add__(__InheritanceList__* list, void* self,
@@ -413,9 +413,12 @@ typedef struct __ClassInterface__ {
   __ClassInstance__* self;
 } __ClassInterface__;
 
+typedef __vClassObject__ ____ClassInstance___vClassObject__;
+
 extern __ClassObject__ ____ClassInstance___ClassObject__;
 extern __ClassInstance__ ____ClassInstance___Default_Instance__;
 extern __vClassObject__ ____ClassInstance___Default_vClassObject__;
+extern type_object_t __ClassInstance___type;
 extern void* ____ClassInstance___static_init__(__ClassInstance__* self);
 extern void* ____ClassInstance___static_destroy__(__ClassInstance__* self);
 
@@ -688,7 +691,8 @@ void __SET_CLASS_MASK_WAS_STATIC_INIT__(size_t* mask, BOOL new_type);
     (__##NAME##_vClassObject__){.__init__=(generic_function_t)NAME##_init, \
                                 .__destroy__=(generic_function_t)NAME##_destroy, \
                                 .cls=&__##NAME##_ClassObject__, \
-                                .__protected__=(__vClassObjectPrt__*)&(__##NAME##_Default_vClassObject__.__prot_vcls_data__)}; \
+                                .__protected__=(__vClassObjectPrt__*)&(__##NAME##_Default_vClassObject__.__prot_vcls_data__), \
+                                .__base__=&__##BASE##_Default_vClassObject__}; \
   NAME __##NAME##_Default_Instance__ = (NAME){}; \
   type_object_t __##NAME##_type__ = (type_object_t){.type_mask=MASK, \
                                                     .type_size=sizeof(NAME), \
@@ -750,12 +754,13 @@ void __SET_CLASS_MASK_WAS_STATIC_INIT__(size_t* mask, BOOL new_type);
                       .__static_destroy__=(generic_function_t)__##NAME##_static_destroy__, \
                       EXPR};
 
-#define __GENERIC_CLASS_SEPARATE_DEFINE_MACRO_EXTERN_DEFAULT_V_CLASS_OBJECT__(NAME, MASK, EXPR...) \
+#define __GENERIC_CLASS_SEPARATE_DEFINE_MACRO_EXTERN_DEFAULT_V_CLASS_OBJECT__(NAME, BASE, MASK, EXPR...) \
   __##NAME##_vClassObject__ __##NAME##_Default_vClassObject__ = \
     (__##NAME##_vClassObject__){.__init__=(generic_function_t)NAME##_init, \
                                 .__destroy__=(generic_function_t)NAME##_destroy, \
                                 .cls=&__##NAME##_ClassObject__, \
                                 .__protected__=(__vClassObjectPrt__*)&(__##NAME##_Default_vClassObject__.__prot_vcls_data__), \
+                                .__base__=&__##BASE##_Default_vClassObject__, \
                                 EXPR}; \
 
 #define __GENERIC_CLASS_SEPARATE_DEFINE_MACRO_EXTERN_DEFAULT_INSTANCE__(NAME, MASK, EXPR...) \
@@ -827,35 +832,50 @@ void __SET_CLASS_MASK_WAS_STATIC_INIT__(size_t* mask, BOOL new_type);
 #define __AUX_CLASS_DECL__(BASE, NAME, ARGS...) \
   __AUX_CLASS_DECL_EXP__(NAME, \
                          BASE __base__; \
-                         ARG2_VA_ARGS(ARGS, ;, ;, ;, 0, 0, ;); \
+                         ARG2_VA_ARGS(ARGS, ;, ;, ;, ;, ;, ;); \
                          __AUX_CLASS_VCLASS_T__(NAME)* __meta__, \
                          BASE __base__; \
-                         ARG2_VA_ARGS(ARGS, ;, ;, ;, 0, 0, ;), \
-                         ARG3_VA_ARGS(ARGS, ;, ;, ;, 0, 0, ;), \
-                         ARG4_VA_ARGS(ARGS, ;, ;, ;, 0, 0, ;), \
-                         ARG5_VA_ARGS(ARGS, ;, 0, 0, 0, 0, ;), \
-                         ARG6_VA_ARGS(ARGS, ;, 0, 0, 0, 0, ;), \
+                         ARG2_VA_ARGS(ARGS, ;, ;, ;, ;, ;, ;), \
+                         __AUX_CLASS_VCLASS_T__(BASE)* __base__; \
+                         ARG3_VA_ARGS(ARGS, ;, ;, ;, ;, ;, ;), \
+                         ARG4_VA_ARGS(ARGS, ;, ;, ;, ;, ;, ;), \
+                         ARG5_VA_ARGS(ARGS, 0, 0, 0, 0, 0, 0), \
+                         ARG6_VA_ARGS(ARGS, 0, 0, 0, 0, 0, 0), \
                          ARG7_VA_ARGS(ARGS, ;, ;, ;, ;, ;, ;) \
                          ) \
 
 #define __AUX_CLASS_DECL_BARE__(BASE, NAME, ARGS...) \
   __AUX_CLASS_DECL_EXP__(NAME, \
                          BASE __base__; \
-                         ARG2_VA_ARGS(ARGS, ;, ;, ;, 0, 0, ;); \
+                         ARG2_VA_ARGS(ARGS, ;, ;, ;, ;, ;, ;); \
                          __vClassObject__ __meta__[0], \
-                         ARG2_VA_ARGS(ARGS, ;, ;, ;, 0, 0, ;), \
-                         ARG3_VA_ARGS(ARGS, ;, ;, ;, 0, 0, ;), \
-                         ARG4_VA_ARGS(ARGS, ;, ;, ;, 0, 0, ;), \
-                         ARG5_VA_ARGS(ARGS, ;, 0, 0, 0, 0, ;), \
-                         ARG6_VA_ARGS(ARGS, ;, 0, 0, 0, 0, ;), \
+                         BASE __base__; \
+                         ARG2_VA_ARGS(ARGS, ;, ;, ;, ;, ;, ;), \
+                         __AUX_CLASS_VCLASS_T__(BASE)* __base__; \
+                         ARG3_VA_ARGS(ARGS, ;, ;, ;, ;, ;, ;), \
+                         ARG4_VA_ARGS(ARGS, ;, ;, ;, ;, ;, ;), \
+                         ARG5_VA_ARGS(ARGS, 0, 0, 0, 0, 0, 0), \
+                         ARG6_VA_ARGS(ARGS, 0, 0, 0, 0, 0, 0), \
                          ARG7_VA_ARGS(ARGS, ;, ;, ;, ;, ;, ;) \
+                         ) \
+
+#define __AUX_CLASS_DECL_BRIDGE__(BASE, ARGS...) \
+  __AUX_CLASS_DECL_EXP__(BASE##_B, \
+                         BASE __base__; \
+                         __vClassObject__ __meta__[0], \
+                         BASE __base__;, \
+                         ARG2_VA_ARGS(ARGS, ;, ;, ;, ;, ;, ;), \
+                         ARG3_VA_ARGS(ARGS, ;, ;, ;, ;, ;, ;), \
+                         ARG4_VA_ARGS(ARGS, 0, 0, 0, 0, 0, 0), \
+                         ARG5_VA_ARGS(ARGS, 0, 0, 0, 0, 0, 0), \
+                         ARG6_VA_ARGS(ARGS, ;, ;, ;, ;, ;, ;) \
                          ) \
 
 #define __AUX_CLASS_END_CLASS_OBJ__(NAME, MASK, EXPR...) \
   __GENERIC_CLASS_SEPARATE_DEFINE_MACRO_EXTERN_CLASS_OBJECT__(NAME, MASK, EXPR)
 
-#define __AUX_CLASS_END_V_CLASS_OBJ__(NAME, MASK, EXPR...) \
-  __GENERIC_CLASS_SEPARATE_DEFINE_MACRO_EXTERN_DEFAULT_V_CLASS_OBJECT__(NAME, MASK, EXPR)
+#define __AUX_CLASS_END_V_CLASS_OBJ__(NAME, BASE, MASK, EXPR...) \
+  __GENERIC_CLASS_SEPARATE_DEFINE_MACRO_EXTERN_DEFAULT_V_CLASS_OBJECT__(NAME, BASE, MASK, EXPR)
 
 #define __AUX_CLASS_END_INSTANCE__(NAME, MASK, EXPR...) \
   __GENERIC_CLASS_SEPARATE_DEFINE_MACRO_EXTERN_DEFAULT_INSTANCE__(NAME, MASK, EXPR)
@@ -865,9 +885,13 @@ void __SET_CLASS_MASK_WAS_STATIC_INIT__(size_t* mask, BOOL new_type);
 
 
 #define __BRIDGE_CLASS_DEFINE_MACRO__(NAME, MASK, EXPR...) \
-  __GENERIC_CLASS_SEPARATE_DEFINE_MACRO_EXTERN_CLASS_OBJECT__(NAME##_B, MASK | BARE | STATIC | BRIDGE); \
-  __GENERIC_CLASS_SEPARATE_DEFINE_MACRO_EXTERN_DEFAULT_INSTANCE__(NAME##_B); \
-  __GENERIC_CLASS_SEPARATE_DEFINE_MACRO_EXTERN_DEFAULT_V_CLASS_OBJECT__(NAME##_B, BARE | STATIC | BRIDGE); \
+  __AUX_CLASS_END_CLASS_OBJ__(NAME##_B, MASK | BARE | STATIC | BRIDGE); \
+  __AUX_CLASS_END_INSTANCE__(NAME##_B, 0, 0); \
+  __##NAME##_B_vClassObject__ __##NAME##_B_Default_vClassObject__ = \
+    (__##NAME##_B_vClassObject__){.__init__=(generic_function_t)NAME##_B_init, \
+                                  .__destroy__=(generic_function_t)NAME##_B_destroy, \
+                                  .cls=&__##NAME##_B_ClassObject__, \
+                                  .__protected__=(__vClassObjectPrt__*)&(__##NAME##_B_Default_vClassObject__.__prot_vcls_data__)}; \
   type_object_t NAME##_B_type = (type_object_t){.type_mask=MASK|STATIC|BARE|BRIDGE, \
                                                 .type_size=sizeof(NAME), \
                                                 .type_meta=(__ClassMetaObject__*)&__##NAME##_B_Default_vClassObject__, \
@@ -900,7 +924,7 @@ void __SET_CLASS_MASK_WAS_STATIC_INIT__(size_t* mask, BOOL new_type);
       NAME##_B_init(&__##NAME##_B_Default_Instance__); \
     } \
     __##NAME##_B_static_init__(self); \
-    EXC_ASSERT(((__##NAME##_ClassObject__.mask & ABSTRACT) == 0) && "Abstract class is not instantiable!"); \
+    EXC_ASSERT(((__##NAME##_B_ClassObject__.mask & ABSTRACT) == 0) && "Abstract class is not instantiable!"); \
     __##NAME##_B_ClassObject__.instance_count++; \
     __ON_INIT__(NAME##_B, \
       __SET_CLASS_MASK_WAS_INIT__(&(__##NAME##_B_ClassObject__.mask), TRUE); \
@@ -914,6 +938,14 @@ void __SET_CLASS_MASK_WAS_STATIC_INIT__(size_t* mask, BOOL new_type);
     return NULL; \
   } \
   void* __##NAME##_B_static_destroy__(NAME##_B* self)
+
+#define __BRIDGE_CLASS_SEPARATE_DEFINE_MACRO_EXTERN_DEFAULT_V_CLASS_OBJECT__(NAME, MASK, EXPR...) \
+  __##NAME##_B_vClassObject__ __##NAME##_B_Default_vClassObject__ = \
+    (__##NAME##_B_vClassObject__){.__init__=(generic_function_t)NAME##_B_init, \
+                                  .__destroy__=(generic_function_t)NAME##_B_destroy, \
+                                  .cls=&__##NAME##_B_ClassObject__, \
+                                  .__protected__=(__vClassObjectPrt__*)&(__##NAME##_B_Default_vClassObject__.__prot_vcls_data__), \
+                                  EXPR}; \
 
 #define __AUX_CLS_VCLASS__(CLASS_NAME) (&__##CLASS_NAME##_Default_vClassObject__)
 #define __AUX_CLS_DEF_INST__(CLASS_NAME) (&__##CLASS_NAME##_Default_Instance__)
@@ -1050,10 +1082,10 @@ void* __aux_class_new_wrapper__(__vClassObject__* vcls, size_t size, __ClassInst
 // Base, Name, Fields, Static Fields, Protected Fields, Field Cnt, Static Field Cnt, EXPR
 #define BareClass(BASE, NAME...) __AUX_CLASS_DECL_BARE__(BASE, ARG1_VA_ARGS(NAME), NAME)
 
-#define __AUX_BRIDGE_CLASS_DECL__(NAME, STATIC_FIELDS) \
-  __AUX_CLASS_DECL_BARE__(NAME, NAME##_B, ;, STATIC_FIELDS) \
+#define __AUX_BRIDGE_CLASS_DECL__(NAME, STATIC_FIELDS...) \
+  __AUX_CLASS_DECL_BRIDGE__(NAME, STATIC_FIELDS) \
 
-#define __AUX_BRIDGE_CLASS_DECL_EXP__(NAME, STATIC_FIELDS) \
+#define __AUX_BRIDGE_CLASS_DECL_EXP__(NAME, STATIC_FIELDS...) \
   __AUX_BRIDGE_CLASS_DECL__(NAME, STATIC_FIELDS) \
 
 // Name, Static Fields

@@ -479,6 +479,10 @@ __ClassObject__ ____ClassInstance___ClassObject__ = \
                       .__static_init__=(generic_function_t)____ClassInstance___static_init__,
                       .__static_destroy__=(generic_function_t)____ClassInstance___static_destroy__,
                       };
+type_object_t __ClassInstance___type = (type_object_t){.type_mask=BARE|STATIC|ABSTRACT,
+                                                       .type_meta=(__ClassMetaObject__*)&____ClassInstance___Default_vClassObject__,
+                                                       .type_name="__ClassInstance__",
+                                                       .type_size=sizeof(__ClassInstance__)};
 __vClassObject__ ____ClassInstance___Default_vClassObject__ = (__vClassObject__){.cls=&____ClassInstance___ClassObject__};
 __ClassInstance__ ____ClassInstance___Default_Instance__ = (__ClassInstance__){};
 
