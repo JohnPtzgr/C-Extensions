@@ -1,5 +1,5 @@
-#include "../src/memory/dyn_alloc.h"
-#include "../src/algorithm/hash.h"
+#include "../memory/dyn_alloc.h"
+#include "../algorithm/hash.h"
 
 #pragma once
 
@@ -767,10 +767,15 @@ void __SET_CLASS_MASK_WAS_STATIC_INIT__(size_t* mask, BOOL new_type);
   NAME __##NAME##_Default_Instance__ = (NAME){EXPR}; \
 
 #define __GENERIC_CLASS_SEPARATE_DEFINE_MACRO_END__(NAME, MASK, EXPR...) \
-  type_object_t NAME##_type = (type_object_t){.type_mask=MASK, \
-                                              .type_size=sizeof(NAME), \
-                                              .type_meta=(__ClassMetaObject__*)&__##NAME##_Default_vClassObject__, \
-                                              .type_name=#NAME}; \
+  type_object_t __##NAME##_type__ = (type_object_t){.type_mask=MASK, \
+                                                    .type_size=sizeof(NAME), \
+                                                    .type_meta=(__ClassMetaObject__*)&__##NAME##_Default_vClassObject__, \
+                                                    .type_name=#NAME}; \
+  type_object_t* NAME##_type = &__##NAME##_type__; \
+  __InheritanceList__ __##NAME##__InheritanceList__ = (__InheritanceList__){}; \
+  __InheritanceListNode__ __##NAME##__InheritanceListNodes__[__STATIC_INHERITANCE_LIST_NODES__] = {}; \
+  class_field_t __##NAME##_fields__[sizeof(__##NAME##_fields__)] = {}; \
+  class_field_t __##NAME##_static_fields__[sizeof(__##NAME##_static_fields__)] = {}; \
   void* __##NAME##_static_init__(NAME* self) { \
     __##BASE##_ClassObject__.__static_init__((void*)self); \
     __ON_STATIC_INIT__(NAME, \
@@ -892,10 +897,15 @@ void __SET_CLASS_MASK_WAS_STATIC_INIT__(size_t* mask, BOOL new_type);
                                   .__destroy__=(generic_function_t)NAME##_B_destroy, \
                                   .cls=&__##NAME##_B_ClassObject__, \
                                   .__protected__=(__vClassObjectPrt__*)&(__##NAME##_B_Default_vClassObject__.__prot_vcls_data__)}; \
-  type_object_t NAME##_B_type = (type_object_t){.type_mask=MASK|STATIC|BARE|BRIDGE, \
-                                                .type_size=sizeof(NAME), \
-                                                .type_meta=(__ClassMetaObject__*)&__##NAME##_B_Default_vClassObject__, \
-                                                .type_name=#NAME"_B"}; \
+  type_object_t __##NAME##_B_type__ = (type_object_t){.type_mask=MASK | BARE | STATIC | BRIDGE, \
+                                                      .type_size=sizeof(NAME), \
+                                                      .type_meta=(__ClassMetaObject__*)&__##NAME##_B_Default_vClassObject__, \
+                                                      .type_name=#NAME"_B"}; \
+  type_object_t* NAME##_B_type = &__##NAME##_B_type__; \
+  __InheritanceList__ __##NAME##_B__InheritanceList__ = (__InheritanceList__){}; \
+  __InheritanceListNode__ __##NAME##_B__InheritanceListNodes__[__STATIC_INHERITANCE_LIST_NODES__] = {}; \
+  class_field_t __##NAME##_B_fields__[sizeof(__##NAME##_B_fields__)] = {}; \
+  class_field_t __##NAME##_B_static_fields__[sizeof(__##NAME##_B_static_fields__)] = {}; \
   void* __##NAME##_B_static_init__(NAME##_B* self) { \
     __ON_STATIC_INIT__(NAME##_B, \
       if (self != &__##NAME##_B_Default_Instance__) { \
@@ -946,6 +956,59 @@ void __SET_CLASS_MASK_WAS_STATIC_INIT__(size_t* mask, BOOL new_type);
                                   .cls=&__##NAME##_B_ClassObject__, \
                                   .__protected__=(__vClassObjectPrt__*)&(__##NAME##_B_Default_vClassObject__.__prot_vcls_data__), \
                                   EXPR}; \
+
+#define __BRIDGE_CLASS_SEPARATE_DEFINE_MACRO_EXTERN_END__(NAME, MASK, EXPR...) \
+  type_object_t __##NAME##_B_type__ = (type_object_t){.type_mask=MASK | BARE | STATIC | BRIDGE, \
+                                                      .type_size=sizeof(NAME), \
+                                                      .type_meta=(__ClassMetaObject__*)&__##NAME##_B_Default_vClassObject__, \
+                                                      .type_name=#NAME"_B"}; \
+  __InheritanceList__ __##NAME##_B__InheritanceList__ = (__InheritanceList__){}; \
+  __InheritanceListNode__ __##NAME##_B__InheritanceListNodes__[__STATIC_INHERITANCE_LIST_NODES__] = {}; \
+  class_field_t __##NAME##_B_fields__[sizeof(__##NAME##_B_fields__)] = {}; \
+  class_field_t __##NAME##_B_static_fields__[sizeof(__##NAME##_B_static_fields__)] = {}; \
+  type_object_t* NAME##_B_type = &__##NAME##_B_type__; \
+  void* __##NAME##_B_static_init__(NAME##_B* self) { \
+    __ON_STATIC_INIT__(NAME##_B, \
+      if (self != &__##NAME##_B_Default_Instance__) { \
+        __##NAME##_B_static_init__(&__##NAME##_B_Default_Instance__); \
+      } else { \
+        *self = (NAME##_B){}; \
+        SCOPE_PUSH(&__##NAME##_B_ClassObject__, __class_destroy__); \
+        SCOPE_DEFER(&__##NAME##_B_ClassObject__, __class_destroy__, __DEFAULT_PREDICATE__); \
+      } \
+    ); \
+    if (self != &__##NAME##_B_Default_Instance__) { \
+      SCOPE_PUSH(self, __##NAME##_B_static_destroy__); \
+    } \
+    EXPR; \
+    __ON_STATIC_INIT__(NAME##_B, \
+      __SET_CLASS_MASK_WAS_STATIC_INIT__(&(__##NAME##_B_ClassObject__.mask), TRUE); \
+      if (__##NAME##_B_ClassObject__.__class_object_init__) { \
+        __##NAME##_B_ClassObject__.__class_object_init__(&__##NAME##_B_ClassObject__); \
+      } \
+    ); \
+    return self; \
+  } \
+  void* NAME##_B_init(NAME##_B* self, ...) { \
+    if (self != &__##NAME##_B_Default_Instance__ && \
+        !__GET_CLASS_MASK_WAS_INIT__(&(__##NAME##_B_ClassObject__.mask))) { \
+      NAME##_B_init(&__##NAME##_B_Default_Instance__); \
+    } \
+    __##NAME##_B_static_init__(self); \
+    EXC_ASSERT(((__##NAME##_B_ClassObject__.mask & ABSTRACT) == 0) && "Abstract class is not instantiable!"); \
+    __##NAME##_B_ClassObject__.instance_count++; \
+    __ON_INIT__(NAME##_B, \
+      __SET_CLASS_MASK_WAS_INIT__(&(__##NAME##_B_ClassObject__.mask), TRUE); \
+    ); \
+    if (self != &__##NAME##_B_Default_Instance__) { \
+      SCOPE_PUSH(self, __class_destroy_instance__, NAME##_B_destroy); \
+    } \
+    return self; \
+  } \
+  void* NAME##_B_destroy(NAME##_B* self, ...) { \
+    return NULL; \
+  } \
+  void* __##NAME##_B_static_destroy__(NAME##_B* self)
 
 #define __AUX_CLS_VCLASS__(CLASS_NAME) (&__##CLASS_NAME##_Default_vClassObject__)
 #define __AUX_CLS_DEF_INST__(CLASS_NAME) (&__##CLASS_NAME##_Default_Instance__)
@@ -1101,7 +1164,7 @@ void* __aux_class_new_wrapper__(__vClassObject__* vcls, size_t size, __ClassInst
 
 // Base, Name, Type(Mask: 0 for default), EXPR for static init
 #define DefBridgeClass(NAME, TYPE, EXPR...) \
-  __AUX_BRIDGE_END__(NAME, TYPE, STATIC | BARE, EXPR)
+  __AUX_BRIDGE_END__(NAME, TYPE | STATIC | BARE, EXPR)
 
 
 #define CLS(CLASS_NAME...) (__AUX_CLS_ALLOCA__(CLASS_NAME))

@@ -398,4 +398,4 @@ void* eval_run(eval_proc_t* self, ...) {
   return NULL;
 }
 
-CLASS_END(eval_proc_t, STATIC, ;) DEFAULT_DESTROY(eval_proc_t);
+DefClass(DefaultBase, eval_proc_t, STATIC, ;) DEFAULT_DESTROY(eval_proc_t);

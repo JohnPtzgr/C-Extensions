@@ -11,7 +11,7 @@ typedef eval_proc_var_t;
 
 typedef eval_proc_op_t;
 
-DEF_CLASS(eval_proc_t,
+Class(DefaultBase, eval_proc_t,
   __vTable__* scope;
   size_t scope_indent;
   eval_proc_var_t* stack;
