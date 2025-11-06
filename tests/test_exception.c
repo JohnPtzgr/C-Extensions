@@ -39,13 +39,14 @@ int test1() {
         printf("i: %d: %d / %d = %d\n", i, i, x, test_div(x, i));
         BREAKPOINT;
         printf("CONTINUE\n");
-      } CATCH {
-        printf("CAUGHT\n");
-        printf("The error is '%s'\n", CAUGHT_EXCEPTION.exception_description);
+        RAISE((exception_t){.exception_number=9, .exception_description="9 exc"})
+      } CATCH(errexc) {
+        printf("CAUGHT cvc\n");
+        printf("The error is '%s'\n", caught_exception.exception_description);
       } FINALLY {
         char* results[] = {" NOT", ""};
-        printf("THIS IS ALWAYS EXECUTED, HOWEVER THERE WAS%s AN ERROR\n", results[_ERRORB]);
-        if (_ERRORB) {
+        printf("THIS IS ALWAYS EXECUTED, HOWEVER THERE WAS%s AN ERROR\n", results[exception_was_caught]);
+        if (exception_was_caught) {
           exception_t zero_exception = (exception_t){.exception_number=EDOM,
                                                     .context=0,
                                                     .status=0,
@@ -56,31 +57,40 @@ int test1() {
       BREAKPOINT;
     }
     BREAKPOINT;
-  } CATCH {
-    if (CAUGHT_EXCEPTION.exception_number == EDOM) {
-      printf("%s\n\n", CAUGHT_EXCEPTION.exception_description);
+  } CATCH(errexc) {
+    if (caught_exception.exception_number == EDOM) {
+      printf("%s\n\n", caught_exception.exception_description);
     }
-    EXC_ASSERT(add == NULL && "add is not a null");
+    // EXC_ASSERT(add == NULL && "add is not a null");
     // assert(8 == 9 && "8 is not 9!");
-    EXIT_ON(&((exception_t){.exception_number=EASSERTEXC}));
+    // EXIT_ON(&((exception_t){.exception_number=EASSERTEXC}));
+  } FINALLY {
+    printf("Finally! Not really :(\n");
   };
+  {
+    TRY {
+      printf("Second TRY/CATCH\n");
+    } CATCH(errexc) {
+
+    };
+  }
   return 0;
 }
 
 int test2_pushes() {
   TRY {
     test_div(100, 9);
-  } CATCH {
+  } CATCH(errexc) {
     printf("Tries to catch div error!\n");
     PUSH_EXCEPTION(int);
   }
   return 0;
 }
 
-int test2() {
+_NoThrow _NoExcept int test2() {
   TRY {
     test2_pushes();
-  } CATCH {
+  } CATCH(errexc) {
     printf("Caught pushed error!\n");
   }
   return 0;

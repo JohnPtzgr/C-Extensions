@@ -59,6 +59,7 @@
     "int.h": "c",
     "functional.h": "c",
     "socket_io.h": "c",
-    "allocator.h": "c"
+    "allocator.h": "c",
+    "pthread.h": "c"
   }
 }

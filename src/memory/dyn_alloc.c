@@ -1,4 +1,5 @@
 #include "dyn_alloc.h"
+#include <pthread.h>
 
 typedef struct __DEFER_POOL_NODE__
 {
@@ -58,6 +59,9 @@ void* __CALL_ACTION_N_ARGS__(generic_function_t action,
                              void* instance,
                              void** args) {
   if (__scope_stack_indentation_predicate__(instance, action)) {
+    if (args) {
+      free(args);
+    }
     return NULL;
   }
   if (!args) {
@@ -154,6 +158,10 @@ static void* __CHECK_DEFER_CHUNK_PREDICATE_N_ARGS__(generic_function_t predicate
                                              generic_function_t action,
                                              void** args) {
 
+  if (!predicate) {
+    return (void*)FALSE;
+  }
+  
   if (__scope_stack_indentation_predicate__(instance, action)) {
     return (void*)TRUE;
   }
@@ -396,18 +404,27 @@ size_t __scope_stack_skip__(__SCOPE_STACK__* stack,
                             void* instance) {
   size_t i = __scope_stack_find__(stack, action, instance);
   __scope_stack_mask_set_active__(&(stack->masks[i]), 0);
+  if (stack->args[i]) {
+    free(stack->args[i]);
+  }
   return stack->size;
 }
 
 size_t __scope_stack_skip_action__(__SCOPE_STACK__* stack, generic_function_t action) {
   size_t i = __scope_stack_find_action__(stack, action);
   __scope_stack_mask_set_active__(&(stack->masks[i]), 0);
+  if (stack->args[i]) {
+    free(stack->args[i]);
+  }
   return stack->size;
 }
 
 size_t __scope_stack_skip_instance__(__SCOPE_STACK__* stack, void* instance) {
   size_t i = __scope_stack_find_instance__(stack, instance);
   __scope_stack_mask_set_active__(&(stack->masks[i]), 0);
+  if (stack->args[i]) {
+    free(stack->args[i]);
+  }
   return stack->size;
 }
 
@@ -681,6 +698,9 @@ size_t __scope_defer_chunk_skip__(__SCOPE_DEFER_CHUNK__* chunk,
   if (index > chunk->size) {
     return (size_t)INVALID;
   }
+  if (chunk->args[index]) {
+    free(chunk->args[index]);
+  }
   chunk->size--;
   if (chunk->size > 0) {
     chunk->actions[index] = chunk->actions[chunk->size];
@@ -835,6 +855,15 @@ size_t __scope_defer_pool_add_token__(__SCOPE_DEFER_POOL__* pool){
 size_t __scope_defer_pool_skip__(__SCOPE_DEFER_POOL__* pool,
   void* instance,
   generic_function_t action) {
+
+  size_t chunk = __scope_defer_pool_find__(pool, instance, action);
+
+  if (chunk >= pool->size) {
+    return (size_t)INVALID;
+  }
+
+  __scope_defer_chunk_skip__(&pool->chunks[chunk], action, instance);
+
   RBNode* root = (RBNode*)pool->tree_root;
   RBNode* node = __TEMPLATE_1(__T_ARG_A__, rbFind)((__DEFER_POOL_NODE__){.action = action,.instance=instance},
                                                    &root);
@@ -842,6 +871,7 @@ size_t __scope_defer_pool_skip__(__SCOPE_DEFER_POOL__* pool,
                                       &root);
   pool->tree_root = (void*)root;
   PUSH_EXCEPTION(size_t);
+
   return (size_t)(node > 0);
 }
 
@@ -887,8 +917,8 @@ size_t __scope_defer_pool_force__(__SCOPE_DEFER_POOL__* pool,
 }
 
 size_t __scope_defer_pool_find__(__SCOPE_DEFER_POOL__* pool,
-  void* instance,
-  generic_function_t action) {
+                                 void* instance,
+                                 generic_function_t action) {
   RBNode* root = (RBNode*)pool->tree_root;
   RBNode* node = __TEMPLATE_1(__T_ARG_A__, rbFind)((__DEFER_POOL_NODE__){.action = action,.instance=instance},
                                                    &root);
@@ -1162,7 +1192,7 @@ size_t __scope_object_stage__(__SCOPE_OBJECT__* scope,
   }
   if (args_capacity == __SCOPE_OBJECT_STACK_ARGUMENT_SIZE__) {
     if (__ARG_CNT__ > 0) {
-      args = (void**)malloc(sizeof(void*) * (__ARG_CNT__ + 1));
+      args = (void**)calloc((__ARG_CNT__ + 1), sizeof(void*));
       PUSH_EXCEPTION(size_t);
       memcpy(args, __args_stack__, sizeof(void*) * (__ARG_CNT__ + 1));
     } else {
@@ -1280,11 +1310,47 @@ size_t __scope_object_change_bias__(__SCOPE_OBJECT__* scope,
 
 #include "../oop/templates_undef.h"
 
+__SCOPE_STACK__ __AUX_MT_SCOPE_STACK_INST__[2 * MAX_THREAD_COUNT] = {};
+__SCOPE_DEFER_POOL__ __AUX_MT_SCOPE_DEFER_POOL_INST__[2 * MAX_THREAD_COUNT] = {};
+__SCOPE_OBJECT__ __AUX_MT_SCOPE_OBJECT_INST__[2 * MAX_THREAD_COUNT] = {};
 
-__SCOPE_STACK__ __SCOPE_STACK_INST__ = (__SCOPE_STACK__){};
-__SCOPE_DEFER_POOL__ __SCOPE_DEFER_POOL_INST__ = (__SCOPE_DEFER_POOL__){};
-__SCOPE_OBJECT__ __SCOPE_OBJECT_INST__ = (__SCOPE_OBJECT__){};
 
+static inline size_t __aux_mt_get_thread_idx__(pthread_t thread_id) {
+  size_t seed = *(int*)&thread_id;
+  size_t step = 0;
+  size_t i = seed;
+  pthread_t i_thread = *(pthread_t*)__aux_default_thread_0_init_ptr__;
+  do {
+    i = (i + step) % (2 * MAX_THREAD_COUNT);
+    i_thread = ((pthread_t*)__aux_mt_thread_ids_ptr__)[i];
+    step = step * 2 + 1;
+  } while (!pthread_equal(i_thread, thread_id) && \
+           !pthread_equal(i_thread, \
+                          *(pthread_t*)__aux_default_thread_0_init_ptr__));
+  if (pthread_equal(i_thread,
+                    *(pthread_t*)__aux_default_thread_0_init_ptr__)) {
+    ((pthread_t*)__aux_mt_thread_ids_ptr__)[i] = thread_id;
+  }
+  return i;
+}
+
+__SCOPE_STACK__* __aux_mt_scope_stack_inst_location__() {
+  pthread_t self = pthread_self();
+  size_t i = __aux_mt_get_thread_idx__(self);
+  return &(__AUX_MT_SCOPE_STACK_INST__[i]);
+}
+
+__SCOPE_DEFER_POOL__* __aux_mt_scope_defer_pool_inst_location__() {
+  pthread_t self = pthread_self();
+  size_t i = __aux_mt_get_thread_idx__(self);
+  return &(__AUX_MT_SCOPE_DEFER_POOL_INST__[i]);
+}
+
+__SCOPE_OBJECT__* __aux_mt_scope_object_inst_location__() {
+  pthread_t self = pthread_self();
+  size_t i = __aux_mt_get_thread_idx__(self);
+  return &(__AUX_MT_SCOPE_OBJECT_INST__[i]);
+}
 
 void* __SCOPE_BEGIN__(__SCOPE_OBJECT__* scope,
   __SCOPE_DEFER_POOL__* pool,

@@ -1,4 +1,5 @@
 #include "../src/memory/dyn_alloc.h"
+// #include <pthread.h>
 
 void* doNothing(void* x, ...) {
   printf("X = %d\n", x);
@@ -34,15 +35,20 @@ int test_scope_stack() {
     // __scope_object_stage__(&scope, &x, destroyX, 0);
     // __scope_object_stage__(&scope, &x, 0, checkX, 0);
   }
+  STAGE(&x, checkX);
   SKIP(&x);
-  printf("FINISH\n");
   SCOPE_END
+  printf("FINISH\n");
+  checkX(&x, (void*)4, (void*)5, (void*)6);
   __scope_object_destroy__(&scope);
   return 0;
 }
 
 
 int main()
+// {
+//   printf("%d\n", *(pthread_t**)__aux_mt_thread_ids_ptr__);
+// }
 BEGIN
   test_scope_stack();
   RETURN(0);

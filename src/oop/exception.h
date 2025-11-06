@@ -1,4 +1,5 @@
 #include <errno.h>
+#include <stddef.h>
 
 #pragma once
 
@@ -6,6 +7,7 @@
 #define INVALID ((void*)-1)
 #endif // !INVALID
 
+#define MAX_THREAD_COUNT 256
 
 #define EXCEPTION_RETURNS INVALID
 
@@ -26,9 +28,6 @@ typedef struct exception_context_t
   char data[__DEFAULT_EXCEPTION_CONTEXT_SIZE__];
 } exception_context_t;
 
-extern exception_context_t _EXCEPTION_CONTEXT;
-extern unsigned long __EXCEPTION_SCOPE_INDENTATION_VAR;
-
 typedef int exception_status_t;
 
 typedef struct exception_t
@@ -39,60 +38,75 @@ typedef struct exception_t
   char* exception_description;
 } exception_t;
 
-extern exception_t _EXCEPTION;
-
-extern exception_t CAUGHT_EXCEPTION;
-extern exception_context_t CAUGHT_EXCEPTION_CONTEXT;
-
 
 #define EASSERTEXC 256
 
 #define __EXCEPTION_EXIT_CALLBACK__ exit
 
+extern exception_t caught_exception;
+
+extern void* __aux_mt_thread_ids_ptr__;
+extern void* __aux_default_thread_0_init_ptr__;
 
 #ifndef BOOL
 typedef char BOOL;
 typedef enum { FALSE = 0, TRUE = 1} BOOL_VALUES;
 #endif
 
-extern BOOL _ERRORB;
+exception_t* __errexc_location();
+exception_context_t* __errctx_location();
+size_t* __exception_scope_indent_location();
+
+#define errexc (*__errexc_location())
+
+#define errctx (*__errctx_location())
+
+#define __EXCEPTION_SCOPE_INDENTATION_VAR (*__exception_scope_indent_location())
+
+#define __AUX_KL(X, Y...) (X, Y)
+
+#define KL(X...) __AUX_KL(int, X)
+
+
 extern void(*_EXC_ASSERT_CALLBACK)();
 
 void* __check_uncaught_exception__(exception_t* exception);
 
-#define CHECK_UNCAUGHT __check_uncaught_exception__(&_EXCEPTION);
+#define CHECK_UNCAUGHT __check_uncaught_exception__(&errexc);
 
 #define TRY __EXCEPTION_SCOPE_INDENTATION_VAR++; \
-  _ERRORB = FALSE; \
   errno = 0; \
-  CAUGHT_EXCEPTION = (exception_t){}; \
-  CAUGHT_EXCEPTION_CONTEXT = (exception_context_t){}; \
   do
 
-#define BREAKPOINT if (errno || _EXCEPTION.exception_number) { _ERRORB = TRUE; break; }
+#define BREAKPOINT if (errno || errexc.exception_number) { break; }
 
-#define CATCH while (0); \
+#define CATCH(EXC...) while (0); \
   __EXCEPTION_SCOPE_INDENTATION_VAR--; \
-  CAUGHT_EXCEPTION = _EXCEPTION; \
-  CAUGHT_EXCEPTION_CONTEXT = _EXCEPTION_CONTEXT; \
-  _EXCEPTION = (exception_t){}; \
-  _EXCEPTION_CONTEXT = (exception_context_t){}; \
-  _ERRORB = _ERRORB || errno || _EXCEPTION.exception_number; \
-  if (!CAUGHT_EXCEPTION.exception_number) { \
-    CAUGHT_EXCEPTION.exception_number = errno; \
+  exception_t caught_exception = errexc; \
+  exception_context_t __CAUGHT_EXCEPTION_CONTEXT = errctx; \
+  if (!caught_exception.context || caught_exception.context == &errctx) { \
+    caught_exception.context = &__CAUGHT_EXCEPTION_CONTEXT; \
   } \
+  if (!caught_exception.exception_number) { \
+    caught_exception.exception_number = errno; \
+  } \
+  BOOL __aux_err_bool = (caught_exception.exception_number > 0) && \
+    (EXC.exception_number == caught_exception.exception_number); \
+  errexc = (exception_t){}; \
+  errctx = (exception_context_t){}; \
   errno = 0; \
-  if (_ERRORB)
+  BOOL exception_was_caught = __aux_err_bool; \
+  if (__aux_err_bool)
 
 void* __raise_exception__(exception_t* exception);
 
-#define RAISE(EXCEPTION) __raise_exception__(&(EXCEPTION));
+#define RAISE(EXCEPTION...) __raise_exception__(&(EXCEPTION));
 
-#define THROW(RETURN_TYPE, EXCEPTION) void* __EXCEPTION_RESULT__ = RAISE(EXCEPTION); \
+#define THROW(RETURN_TYPE, EXCEPTION...) void* __EXCEPTION_RESULT__ = RAISE(EXCEPTION); \
   return *((RETURN_TYPE*)&(__EXCEPTION_RESULT__));
 
-#define THROW_ON(RETURN_TYPE, EXCEPTION_NUMBER) \
-  if (EXCEPTION_NUMBER == _EXCEPTION.exception_number) { \
+#define THROW_ON(RETURN_TYPE, EXCEPTION_NUMBER...) \
+  if (EXCEPTION_NUMBER == errexc.exception_number) { \
     void* __EXCEPTION_RESULT__ = EXCEPTION_RETURNS; \
     return *((RETURN_TYPE*)&(__EXCEPTION_RESULT__)); \
   }
@@ -102,21 +116,14 @@ void* __exit_on_exception__(exception_t* exception, void*(*clean_up)(), ...);
 #define EXIT_ON(EXCEPTION...) __exit_on_exception__(EXCEPTION, 0);
 
 #define CLEAR_EXCEPTION errno = 0; \
-  _EXCEPTION = (exception_t){}; \
-  _EXCEPTION_CONTEXT = (exception_context_t){}; \
-  CAUGHT_EXCEPTION = (exception_t){}; \
-  CAUGHT_EXCEPTION_CONTEXT = (exception_context_t){}; \
-  _ERRORB = FALSE; \
-  errno = 0;
+  errexc = (exception_t){}; \
+  errctx = (exception_context_t){};
 
 #define __EXCEPTION_EXPR_TO_STR(expr) #expr
 
 #define __EXCEPTION_CONSTEXPR_AS_STR(expr) __EXCEPTION_EXPR_TO_STR(expr)
 
 #define FINALLY errno = 0; \
-  if (!__EXCEPTION_SCOPE_INDENTATION_VAR) { \
-    __exit_on_exception__(&_EXCEPTION, 0); \
-  } \
   for (int _EXCIZERO = 0; _EXCIZERO == 0; _EXCIZERO = 1)
 
 void* __exc_assert_fail__(exception_t* exception, char* description, const char* function_name, void(*callback)());
@@ -124,19 +131,19 @@ void* __exc_assert_fail__(exception_t* exception, char* description, const char*
 #define EXC_ASSERT_CALLBACK ((void*)0)
 
 #define PUSH_EXCEPTION(RETURN_TYPE) \
-  if (CAUGHT_EXCEPTION.exception_number) { \
-      THROW(RETURN_TYPE, CAUGHT_EXCEPTION); \
+  if (caught_exception.exception_number) { \
+      THROW(RETURN_TYPE, caught_exception); \
   } else { \
-    if (_ERRORB = (_EXCEPTION.exception_number || errno)) { \
-      if (!_EXCEPTION.exception_number) { \
-        _EXCEPTION.exception_number = errno; \
+    if (errexc.exception_number || errno) { \
+      if (!errexc.exception_number) { \
+        errexc.exception_number = errno; \
       } \
-      THROW(RETURN_TYPE, _EXCEPTION); \
+      THROW(RETURN_TYPE, errexc); \
     } \
   }
 
 #define EXC_ASSERT(EXPR...) ((EXPR) ? ((void*)0) : \
-  __exc_assert_fail__(&_EXCEPTION, \
+  __exc_assert_fail__(&errexc, \
     "Assertion failed! '" #EXPR "' in file " __FILE__ ":" __EXCEPTION_CONSTEXPR_AS_STR(__LINE__), \
     __func__, \
     EXC_ASSERT_CALLBACK) \

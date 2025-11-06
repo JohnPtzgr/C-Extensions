@@ -36,6 +36,12 @@
 #define MAX(A, B) (A > B ? A : B)
 #endif // !MAX
 
+#define __AUX_EXPAND_MACRO_VA_ARGS__(MACRO, ARGS...) \
+  MACRO##(ARGS)
+
+#define EXPAND_MACRO(MACRO, ARGS...) \
+  __AUX_EXPAND_MACRO_VA_ARGS__(MACRO, ARGS)
+
 #ifndef ARG1_VA_ARGS
 #define __AUX_EXP_MACRO_ARG__(MACRO_TO_EXP, ARG) MACRO_TO_EXP(ARG)
 #define ARG0_VA(ARG0...) ARG0
@@ -257,9 +263,14 @@ size_t __scope_object_force__(__SCOPE_OBJECT__* scope,
   generic_function_t action);
 
 
-extern __SCOPE_STACK__ __SCOPE_STACK_INST__;
-extern __SCOPE_DEFER_POOL__ __SCOPE_DEFER_POOL_INST__;
-extern __SCOPE_OBJECT__ __SCOPE_OBJECT_INST__;
+__SCOPE_STACK__* __aux_mt_scope_stack_inst_location__();
+__SCOPE_DEFER_POOL__* __aux_mt_scope_defer_pool_inst_location__();
+__SCOPE_OBJECT__* __aux_mt_scope_object_inst_location__();
+
+
+#define __SCOPE_STACK_INST__ (*__aux_mt_scope_stack_inst_location__())
+#define __SCOPE_DEFER_POOL_INST__ (*__aux_mt_scope_defer_pool_inst_location__())
+#define __SCOPE_OBJECT_INST__ (*__aux_mt_scope_object_inst_location__())
 
 void* __SCOPE_BEGIN__(__SCOPE_OBJECT__* scope,
   __SCOPE_DEFER_POOL__* pool,
