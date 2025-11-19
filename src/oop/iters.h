@@ -2,7 +2,8 @@
 
 #pragma once
 
-DEF_CLASS(iterator_t,
+Class(DefaultBase,
+  iterator_t,
   size_t step;
   void* cur_ptr;
   void* max_ptr;

@@ -254,7 +254,27 @@ static size_t __scope_stack_reserve__(__SCOPE_STACK__* stack, size_t capacity) {
   stack->instances = (void**)malloc(sizeof(void*) * capacity);
   stack->args = (void***)malloc(sizeof(void**) * capacity);
   stack->masks = (char*)malloc(capacity);
-  PUSH_EXCEPTION(size_t);
+  TRY {
+    EXC_ASSERT(stack->actions && stack->instances && stack->args && stack->masks);
+  } CATCH(errexc) {
+    if (stack->actions) {
+      free(stack->actions);
+      stack->actions = tmp_actions;
+    }
+    if (stack->instances) {
+      free(stack->instances);
+      stack->instances = tmp_instances;
+    }
+    if (stack->args) {
+      free(stack->args);
+      stack->args = tmp_args;
+    }
+    if (stack->masks) {
+      free(stack->masks);
+      stack->masks = tmp_masks;
+    }
+    THROW(size_t);
+  }
   if (stack->capacity) {
     memcpy(stack->actions,
       tmp_actions,
@@ -273,11 +293,14 @@ static size_t __scope_stack_reserve__(__SCOPE_STACK__* stack, size_t capacity) {
                              tmp_instances[i],
                              tmp_args[i]);
     }
-    free(tmp_actions);
-    free(tmp_instances);
-    free(tmp_masks);
-    free(tmp_args);
-    PUSH_EXCEPTION(size_t);
+    TRY {
+      free(tmp_actions);
+      free(tmp_instances);
+      free(tmp_masks);
+      free(tmp_args);
+    } CATCH(errexc) {
+      THROW(size_t);
+    }
   }
   stack->capacity = capacity;
   stack->size = MIN(stack->size, capacity);
@@ -551,7 +574,31 @@ static size_t __scope_defer_chunk_reserve__(__SCOPE_DEFER_CHUNK__* chunk, size_t
   chunk->instances = (void**)calloc(capacity, sizeof(void*));
   chunk->args = (void***)calloc(capacity, sizeof(void**));
   chunk->predicate_args = (void***)calloc(capacity, sizeof(void**));
-  PUSH_EXCEPTION(size_t);
+  TRY {
+    EXC_ASSERT(chunk->predicates && chunk->actions && chunk->instances && chunk->args && chunk->predicate_args);
+  } CATCH(errexc) {
+    if (chunk->predicates) {
+      free(chunk->predicates);
+      chunk->predicates = tmp_predicates;
+    }
+    if (chunk->actions) {
+      free(chunk->actions);
+      chunk->actions = tmp_actions;
+    }
+    if (chunk->instances) {
+      free(chunk->instances);
+      chunk->instances = tmp_instances;
+    }
+    if (chunk->args) {
+      free(chunk->args);
+      chunk->args = tmp_args;
+    }
+    if (chunk->predicate_args) {
+      free(chunk->predicate_args);
+      chunk->predicate_args = tmp_predicate_args;
+    }
+    THROW(size_t);
+  }
   if (chunk->capacity) {
     memcpy(chunk->predicates,
       tmp_predicates,
@@ -716,20 +763,32 @@ size_t __scope_defer_chunk_skip__(__SCOPE_DEFER_CHUNK__* chunk,
 static size_t __scope_defer_pool_reserve__(__SCOPE_DEFER_POOL__* pool, size_t capacity) {
   __SCOPE_DEFER_CHUNK__* tmp_chunks = pool->chunks;
   pool->chunks = (__SCOPE_DEFER_CHUNK__*)calloc(capacity, sizeof(__SCOPE_DEFER_CHUNK__));
-  PUSH_EXCEPTION(size_t);
+  TRY {
+    EXC_ASSERT(pool->chunks);
+  } CATCH(errexc) {
+    free(pool->chunks);
+    pool->chunks = tmp_chunks;
+    THROW(size_t)
+  }
   if (pool->capacity) {
-    size_t index_shift = 0;
-    for (size_t i = 0; i < pool->capacity; ++i) {
-      if (!(tmp_chunks[i].size && i < pool->size)) {
-        __scope_defer_chunk_destroy__(&(tmp_chunks[i]));
-        PUSH_EXCEPTION(size_t);
-        index_shift++;
-      } else {
-        pool->chunks[i - index_shift] = tmp_chunks[i];
+    TRY {
+      size_t index_shift = 0;
+      for (size_t i = 0; i < pool->capacity; ++i) {
+        if (!(tmp_chunks[i].size && i < pool->size)) {
+          __scope_defer_chunk_destroy__(&(tmp_chunks[i]));
+          PUSH_EXCEPTION(size_t);
+          index_shift++;
+        } else {
+          pool->chunks[i - index_shift] = tmp_chunks[i];
+        }
       }
+      free(tmp_chunks);
+      PUSH_EXCEPTION(size_t);
+    } CATCH(errexc) {
+      free(pool->chunks);
+      pool->chunks = tmp_chunks;
+      THROW(size_t)
     }
-    free(tmp_chunks);
-    PUSH_EXCEPTION(size_t);
   }
   pool->capacity = capacity;
   pool->size = MIN(pool->size, capacity);
@@ -1016,12 +1075,17 @@ size_t __scope_object_push__(__SCOPE_OBJECT__* scope,
       if (__ARG_CNT__ == args_capacity) {
         if (__ARG_CNT__ == __SCOPE_OBJECT_STACK_ARGUMENT_SIZE__) {
           args = (void**)malloc(sizeof(void*) * args_capacity * 2);
-          PUSH_EXCEPTION(size_t);
+          EXCTH_ASSERT(size_t, args);
           memcpy(args, __args_stack__, args_capacity);
         } else {
           void** tmp_args = args;
           args = (void**)malloc(sizeof(void*) * args_capacity * 2);
-          PUSH_EXCEPTION(size_t);
+          TRY {
+            EXC_ASSERT(args);
+          } CATCH(errexc) {
+            free(tmp_args);
+            THROW(size_t);
+          }
           memcpy(args, tmp_args, args_capacity);
           free(tmp_args);
           PUSH_EXCEPTION(size_t);
@@ -1034,7 +1098,7 @@ size_t __scope_object_push__(__SCOPE_OBJECT__* scope,
   if (args_capacity == __SCOPE_OBJECT_STACK_ARGUMENT_SIZE__) {
     if (__ARG_CNT__ > 0) {
       args = (void**)malloc(sizeof(void*) * (__ARG_CNT__ + 1));
-      PUSH_EXCEPTION(size_t);
+      EXCTH_ASSERT(size_t, args);
       memcpy(args, __args_stack__, args_capacity);
     } else {
       args = 0;
@@ -1076,12 +1140,17 @@ size_t __scope_object_defer__(__SCOPE_OBJECT__* scope,
       if (__ARG_CNT__ + 1 == args_capacity) {
         if (__ARG_CNT__ + 1 == __SCOPE_OBJECT_STACK_ARGUMENT_SIZE__) {
           args = (void**)malloc(sizeof(void*) * args_capacity * 2);
-          PUSH_EXCEPTION(size_t);
+          EXCTH_ASSERT(size_t, args);
           memcpy(args, __args_stack__, args_capacity);
         } else {
           void** tmp_args = args;
           args = (void**)malloc(sizeof(void*) * args_capacity * 2);
-          PUSH_EXCEPTION(size_t);
+          TRY {
+            EXC_ASSERT(args);
+          } CATCH(errexc) {
+            free(tmp_args);
+            THROW(size_t);
+          }
           memcpy(args, tmp_args, args_capacity);
           free(tmp_args);
           PUSH_EXCEPTION(size_t);
@@ -1094,7 +1163,7 @@ size_t __scope_object_defer__(__SCOPE_OBJECT__* scope,
   if (args_capacity == __SCOPE_OBJECT_STACK_ARGUMENT_SIZE__) {
     if (__ARG_CNT__ > 0) {
       args = (void**)malloc(sizeof(void*) * (__ARG_CNT__ + 1));
-      PUSH_EXCEPTION(size_t);
+      EXCTH_ASSERT(size_t, args);
       memcpy(args, __args_stack__, args_capacity);
     } else {
       args = 0;
@@ -1175,12 +1244,17 @@ size_t __scope_object_stage__(__SCOPE_OBJECT__* scope,
       if (__ARG_CNT__ + 1 == args_capacity) {
         if (__ARG_CNT__ + 1 == __SCOPE_OBJECT_STACK_ARGUMENT_SIZE__) {
           args = (void**)malloc(sizeof(void*) * args_capacity * 2);
-          PUSH_EXCEPTION(size_t);
+          EXCTH_ASSERT(size_t, args);
           memcpy(args, __args_stack__, args_capacity);
         } else {
           void** tmp_args = args;
           args = (void**)malloc(sizeof(void*) * args_capacity * 2);
-          PUSH_EXCEPTION(size_t);
+          TRY {
+            EXC_ASSERT(args);
+          } CATCH(errexc) {
+            free(tmp_args);
+            THROW(size_t);
+          }
           memcpy(args, tmp_args, args_capacity);
           free(tmp_args);
           PUSH_EXCEPTION(size_t);
@@ -1193,7 +1267,7 @@ size_t __scope_object_stage__(__SCOPE_OBJECT__* scope,
   if (args_capacity == __SCOPE_OBJECT_STACK_ARGUMENT_SIZE__) {
     if (__ARG_CNT__ > 0) {
       args = (void**)calloc((__ARG_CNT__ + 1), sizeof(void*));
-      PUSH_EXCEPTION(size_t);
+      EXCTH_ASSERT(size_t, args);
       memcpy(args, __args_stack__, sizeof(void*) * (__ARG_CNT__ + 1));
     } else {
       args = 0;
@@ -1270,8 +1344,8 @@ size_t __scope_object_force__(__SCOPE_OBJECT__* scope,
                               generic_function_t action) {
   RBNode* root = (RBNode*)scope->defer_pool->tree_root;
   RBNode* node = __TEMPLATE_1(__T_ARG_A__, rbFind)((__DEFER_POOL_NODE__){
-                                                   .action=action,
-                                                   .instance=instance},
+                                                    .action=action,
+                                                    .instance=instance},
                                                    &root);
   if (!scope->stack) {
     return 0;
@@ -1378,16 +1452,20 @@ void* __SCOPE_CALLOC__(__SCOPE_OBJECT__* scope,
   void* data;
   if (filler) {
     data = malloc(size * type_size);
-    PUSH_EXCEPTION(void*);
+    EXCTH_ASSERT(void*, data);
     for (size_t i = 0; i < size; ++i) {
       memcpy(data + type_size * i, filler, type_size);
     }
   } else {
     data = calloc(size, type_size);
-    PUSH_EXCEPTION(void*);
+    EXCTH_ASSERT(void*, data);
   }
-  SCOPE_PUSH(data, free);
-  PUSH_EXCEPTION(void*);
+  TRY {
+    SCOPE_PUSH(data, free);
+  } CATCH(errexc) {
+    free(data);
+    THROW(void*);
+  }
   return data;
 }
 
@@ -1424,7 +1502,7 @@ typedef struct __SCOPE_OBJECT_TRIPLET__ {
 
 __SCOPE_OBJECT__* __LOCAL_SCOPE_NEW__() {
   __SCOPE_OBJECT_TRIPLET__* scope = (__SCOPE_OBJECT_TRIPLET__*)malloc(sizeof(__SCOPE_OBJECT_TRIPLET__));
-  PUSH_EXCEPTION(__SCOPE_OBJECT__*);
+  EXCTH_ASSERT(__SCOPE_OBJECT__*, scope);
   return (__SCOPE_OBJECT__*)__scope_object_init__(&(scope->obj), &(scope->stack), &(scope->pool));
 }
 

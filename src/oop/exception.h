@@ -2,17 +2,61 @@
 #include <stddef.h>
 
 #pragma once
-
 #ifndef INVALID
 #define INVALID ((void*)-1)
 #endif // !INVALID
+
+#ifndef MIN
+#define MIN(A, B) (A < B ? A : B)
+#endif // !MAX
+
+
+#ifndef MAX
+#define MAX(A, B) (A > B ? A : B)
+#endif // !MAX
+
+#define __AUX_EXPAND_MACRO_VA_ARGS__(MACRO, ARGS...) \
+  MACRO##(ARGS)
+
+#define EXPAND_MACRO(MACRO, ARGS...) \
+  __AUX_EXPAND_MACRO_VA_ARGS__(MACRO, ARGS)
+
+#ifndef ARG1_VA_ARGS
+#define __AUX_EXP_MACRO_ARG__(MACRO_TO_EXP, ARG) MACRO_TO_EXP(ARG)
+#define ARG0_VA(ARG0...) ARG0
+#define ARG1_VA_ARGS( ARG1, ... ) ARG1
+#define ARG1_VA_ARGS_VA( ARG1, ... ) __VA_ARGS__
+#define ARG2_VA_ARGS( ARG1, ARG2, ... ) ARG2
+#define ARG2_VA_ARGS_VA( ARG1, ARG2, ... ) __VA_ARGS__
+#define ARG3_VA_ARGS( ARG1, ARG2, ARG3, ... ) ARG3
+#define ARG3_VA_ARGS_VA( ARG1, ARG2, ARG3, ... ) __VA_ARGS__
+#define ARG4_VA_ARGS( ARG1, ARG2, ARG3, ARG4, ... ) ARG4
+#define ARG4_VA_ARGS_VA( ARG1, ARG2, ARG3, ARG4, ... ) __VA_ARGS__
+#define ARG5_VA_ARGS( ARG1, ARG2, ARG3, ARG4, ARG5, ... ) ARG5
+#define ARG5_VA_ARGS_VA( ARG1, ARG2, ARG3, ARG4, ARG5, ... ) __VA_ARGS__
+#define ARG6_VA_ARGS( ARG1, ARG2, ARG3, ARG4, ARG5, ARG6, ... ) ARG6
+#define ARG6_VA_ARGS_VA( ARG1, ARG2, ARG3, ARG4, ARG5, ARG6, ... ) __VA_ARGS__
+#define ARG7_VA_ARGS( ARG1, ARG2, ARG3, ARG4, ARG5, ARG6, ARG7, ... ) ARG7
+#define ARG7_VA_ARGS_VA( ARG1, ARG2, ARG3, ARG4, ARG5, ARG6, ARG7, ... ) __VA_ARGS__
+#define ARG8_VA_ARGS( ARG1, ARG2, ARG3, ARG4, ARG5, ARG6, ARG7, ARG8, ... ) ARG8
+#define ARG8_VA_ARGS_VA( ARG1, ARG2, ARG3, ARG4, ARG5, ARG6, ARG7, ARG8, ... ) __VA_ARGS__
+
+#endif // CHOOSE __VA_ARGS__ ARGUMENT (Up to 8-th)
+
+#ifndef TO_STR_LITERAL
+#define TO_STR_LITERAL(ARG) #ARG
+#endif // !TO_STR_LITERAL
+
+#ifndef generic_function_t
+typedef void*(*generic_function_t)(void*, ... );
+#endif // !generic_function_t
 
 #define MAX_THREAD_COUNT 256
 
 #define EXCEPTION_RETURNS INVALID
 
 
-#define __DEFAULT_EXCEPTION_CONTEXT_SIZE__ 4096
+#define __DEFAULT_EXCEPTION_CONTEXT_SIZE__ 256
 #define __DEFAULT_EXCEPTION_CONTEXT_PREVIEW_SIZE__ 32
 
 
@@ -25,6 +69,10 @@
 
 typedef struct exception_context_t
 {
+  const char* filename;
+  const char* function_name;
+  unsigned int line;
+  unsigned int tracked_context_depth;
   char data[__DEFAULT_EXCEPTION_CONTEXT_SIZE__];
 } exception_context_t;
 
@@ -56,16 +104,13 @@ typedef enum { FALSE = 0, TRUE = 1} BOOL_VALUES;
 exception_t* __errexc_location();
 exception_context_t* __errctx_location();
 size_t* __exception_scope_indent_location();
+const char* exception_str(exception_t* exception);
 
 #define errexc (*__errexc_location())
 
 #define errctx (*__errctx_location())
 
 #define __EXCEPTION_SCOPE_INDENTATION_VAR (*__exception_scope_indent_location())
-
-#define __AUX_KL(X, Y...) (X, Y)
-
-#define KL(X...) __AUX_KL(int, X)
 
 
 extern void(*_EXC_ASSERT_CALLBACK)();
@@ -96,14 +141,14 @@ void* __check_uncaught_exception__(exception_t* exception);
   errctx = (exception_context_t){}; \
   errno = 0; \
   BOOL exception_was_caught = __aux_err_bool; \
-  if (__aux_err_bool)
+  for (size_t _EXCIZERO = __aux_err_bool; _EXCIZERO != 0; _EXCIZERO = 0)
 
 void* __raise_exception__(exception_t* exception);
 
 #define RAISE(EXCEPTION...) __raise_exception__(&(EXCEPTION));
 
-#define THROW(RETURN_TYPE, EXCEPTION...) void* __EXCEPTION_RESULT__ = RAISE(EXCEPTION); \
-  return *((RETURN_TYPE*)&(__EXCEPTION_RESULT__));
+#define THROW(RETURN_TYPE...) void* __EXCEPTION_RESULT__ = RAISE(ARG2_VA_ARGS(RETURN_TYPE, caught_exception)); \
+  return *((ARG1_VA_ARGS(RETURN_TYPE)*)&(__EXCEPTION_RESULT__));
 
 #define THROW_ON(RETURN_TYPE, EXCEPTION_NUMBER...) \
   if (EXCEPTION_NUMBER == errexc.exception_number) { \
@@ -123,31 +168,36 @@ void* __exit_on_exception__(exception_t* exception, void*(*clean_up)(), ...);
 
 #define __EXCEPTION_CONSTEXPR_AS_STR(expr) __EXCEPTION_EXPR_TO_STR(expr)
 
-#define FINALLY errno = 0; \
+#define FINALLY \
   for (int _EXCIZERO = 0; _EXCIZERO == 0; _EXCIZERO = 1)
 
-void* __exc_assert_fail__(exception_t* exception, char* description, const char* function_name, void(*callback)());
+void* __exc_assert_fail__(exception_t* exception, char* description, const char* function_name, const char* file_name, unsigned int line, void(*callback)());
 
 #define EXC_ASSERT_CALLBACK ((void*)0)
 
 #define PUSH_EXCEPTION(RETURN_TYPE) \
-  if (caught_exception.exception_number) { \
-      THROW(RETURN_TYPE, caught_exception); \
-  } else { \
-    if (errexc.exception_number || errno) { \
-      if (!errexc.exception_number) { \
-        errexc.exception_number = errno; \
-      } \
-      THROW(RETURN_TYPE, errexc); \
+  if (errexc.exception_number || errno) { \
+    if (!errexc.exception_number) { \
+      errexc.exception_number = errno; \
     } \
+    THROW(RETURN_TYPE, errexc); \
+  } else if (caught_exception.exception_number) { \
+      THROW(RETURN_TYPE, caught_exception); \
   }
 
 #define EXC_ASSERT(EXPR...) ((EXPR) ? ((void*)0) : \
   __exc_assert_fail__(&errexc, \
     "Assertion failed! '" #EXPR "' in file " __FILE__ ":" __EXCEPTION_CONSTEXPR_AS_STR(__LINE__), \
     __func__, \
+    __FILE__, \
+    __LINE__, \
     EXC_ASSERT_CALLBACK) \
   )
+
+#define EXCEPTION_CTX_LTR ((exception_context_t){.filename=__FILE__, \
+  .function_name=__func__, \
+  .line=__LINE__, \
+  .tracked_context_depth=__EXCEPTION_SCOPE_INDENTATION_VAR})
 
 #define EXCTH_ASSERT(RETURN_TYPE, EXPR...) \
   EXC_ASSERT(EXPR); \

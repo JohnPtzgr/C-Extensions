@@ -11,7 +11,8 @@
 
 #pragma once
 
-DEF_CLASS(socket_t
+Class(DefaultBase,
+  socket_t
   ,
   int fd;
   int domain;

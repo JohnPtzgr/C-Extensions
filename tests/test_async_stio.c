@@ -1,4 +1,4 @@
-#include "../src/oop/async_stio.h"
+#include "../src/async/async_stio.h"
 #include "stdio.h"
 
 COROUTINE_DECL(sda, int sd; BOOL j, int sd; void* state)
@@ -22,7 +22,7 @@ COROUTINE(sda) {
   COROUTINE_SAVEPOINT;
   printf("sda 1\n");
 
-  COROUTINE_CALL(gda);
+  COROUTINE_SYNC_CALL(gda, {});
   printf("gda - F\n");
 
   COROUTINE_SAVEPOINT;
@@ -42,8 +42,8 @@ COROUTINE(cda, 512) {
 }
 
 int main() {
-  COROUTINE_ADD(sda, .sd=10, .j=1);
-  COROUTINE_ADD(cda, .sd=10, .j=1);
+  COROUTINE_ADD(sda, {.sd=10, .j=1});
+  COROUTINE_ADD(cda, {.sd=10, .j=1});
   COROUTINE_SET_PADDING_SIZE(256);
   COROUTINE_RUN;
   return 0;

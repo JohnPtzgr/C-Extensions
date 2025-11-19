@@ -3,16 +3,12 @@
 
 #pragma once
 
-#ifndef __AUX_DEFAULT_CLASS_SUFFIX__
-#define __AUX_DEFAULT_CLASS_SUFFIX__ _S, , ,*
+#ifndef __AUX_CLASS_SUFFIX__
 #define __AUX_DEFAULT_CLASS_SUFFIX_STRUCT__ _S
 #define __AUX_DEFAULT_CLASS_SUFFIX_CLASS__
-#define __AUX_DEFAULT_CLASS_SUFFIX_POSTFIX__ 
+#define __AUX_DEFAULT_CLASS_PREFIX_TYPE__
+#define __AUX_CLASS_SUFFIX__ __AUX_DEFAULT_CLASS_SUFFIX_STRUCT__, __AUX_DEFAULT_CLASS_SUFFIX_CLASS__
 #endif // !__AUX_DEFAULT_CLASS_SUFFIX__
-
-#ifndef __CLASS_SUFFIX__
-#define __CLASS_SUFFIX__ __AUX_DEFAULT_CLASS_SUFFIX__
-#endif // !__CLASS_SUFFIX__
 
 #ifndef class
 #define class struct
@@ -386,10 +382,14 @@ typedef struct __ClassMetaObject__ {
 
 typedef struct type_object_t {
 
+  struct type_object_base_t {
+    __ClassMetaObject__ __meta__[0];
+  } __base__;
   __ClassMetaObject__* type_meta;
   const char* type_name;
   size_t type_size;
   size_t type_mask;
+  __ClassMetaObject__ __meta__[0];
 
 } type_object_t;
 
@@ -517,7 +517,8 @@ typedef struct __Interface__ {
 
 #define __AUX_DEFAULT_BASE_TYPEDEF_FUNDAMENTAL__(DEFAULT_BASE) \
   __AUX_DEFAULT_BASE_TYPEDEF_FUNDAMENTAL_EXP__(DEFAULT_BASE)
-  __AUX_DEFAULT_BASE_TYPEDEF_FUNDAMENTAL__(DefaultBase)
+
+__AUX_DEFAULT_BASE_TYPEDEF_FUNDAMENTAL__(DefaultBase)
 
 
 typedef struct __ClassObject__ {
@@ -653,41 +654,24 @@ void __SET_CLASS_MASK_WAS_STATIC_INIT__(size_t* mask, BOOL new_type);
 
 #define DEF_METHODS(...)
 
-#define __AUX_SUFFIX_CLASS_TYPEDEF_EXP__(NAME, SUFFIX) \
+#define __AUX_SUFFIX_CLASS_TYPE_EXP__(NAME, SUFFIX) \
   NAME##SUFFIX
 
-#define __AUX_SUFFIX_CLASS_TYPEDEF__(NAME, SUFFIX) \
-  __AUX_SUFFIX_CLASS_TYPEDEF_EXP__(NAME, SUFFIX)
+#define __AUX_SUFFIX_CLASS_TYPE__(NAME, SUFFIX) \
+  __AUX_SUFFIX_CLASS_TYPE_EXP__(NAME, SUFFIX)
 
-#define __AUX_SUFFIX_CLASS_EXP_ARGS_1__(NAME, SUFFIX...) \
-  __AUX_SUFFIX_CLASS_TYPEDEF__(NAME, ARG1_VA_ARGS(SUFFIX))
+#define __AUX_SUFFIX_CLASS_EXP_ARG__(NAME, SUFFIX...) \
+  __AUX_SUFFIX_CLASS_TYPE__(NAME, SUFFIX)
 
-#define __AUX_SUFFIX_CLASS_EXP_ARGS_2__(NAME, SUFFIX...) \
-  __AUX_SUFFIX_CLASS_TYPEDEF__(NAME, ARG2_VA_ARGS(SUFFIX))
+#define __AUX_CLASS_VARCLASS__(NAME...) \
+  __AUX_SUFFIX_CLASS_EXP_ARG__(NAME, __AUX_DEFAULT_CLASS_SUFFIX_CLASS__)
 
-#define __AUX_SUFFIX_CLASS_EXP_ARGS_3__(NAME, SUFFIX...) \
-  NAME ARG3_VA_ARGS(SUFFIX)
-
-#define __AUX_SUFFIX_CLASS_EXP_ARGS_4__(NAME, SUFFIX...) \
-  __AUX_SUFFIX_CLASS_TYPEDEF__(NAME, ARG4_VA_ARGS(SUFFIX))
-
-#define __AUX_CLASS_VARTYPE__(NAME) \
-  __AUX_SUFFIX_CLASS_EXP_ARGS_4__(NAME, \
-      __CLASS_SUFFIX__, *, , )
-
-#define __AUX_CLASS_VARSTRUCT__(NAME) \
-  __AUX_SUFFIX_CLASS_EXP_ARGS_1__(NAME, \
-      __CLASS_SUFFIX__)
+#define __AUX_CLASS_VARSTRUCT__(NAME...) \
+  __AUX_SUFFIX_CLASS_EXP_ARG__(NAME, __AUX_DEFAULT_CLASS_SUFFIX_STRUCT__)
 
 #define APPLY_SUFFIX() \
-  typedef __ClassInstance__ __AUX_SUFFIX_CLASS_EXP_ARGS_1__(DefaultBase, __CLASS_SUFFIX__); \
-  typedef __AUX_SUFFIX_CLASS_EXP_ARGS_3__( \
-      __AUX_SUFFIX_CLASS_EXP_ARGS_1__(DefaultBase, __CLASS_SUFFIX__), \
-      __CLASS_SUFFIX__, \
-      __AUX_DEFAULT_CLASS_SUFFIX_POSTFIX__, \
-      __AUX_DEFAULT_CLASS_SUFFIX_POSTFIX__) \
-      __AUX_SUFFIX_CLASS_EXP_ARGS_2__(DefaultBase, \
-          __CLASS_SUFFIX__, __AUX_DEFAULT_CLASS_SUFFIX_CLASS__); \
+  typedef __ClassInstance__ __AUX_CLASS_VARSTRUCT__(DefaultBase); \
+  typedef __AUX_CLASS_VARSTRUCT__(DefaultBase) __AUX_DEFAULT_CLASS_PREFIX_TYPE__ __AUX_CLASS_VARCLASS__(DefaultBase);
 
 APPLY_SUFFIX()
 
@@ -698,8 +682,8 @@ extern __AUX_CLASS_VARSTRUCT__(DefaultBase) __DefaultBase_Default_Instance__;
 extern __vClassObject__ __DefaultBase_Default_vClassObject__;
 extern type_object_t __DefaultBase_type__;
 extern type_object_t* DefaultBase_type;
-extern void* __DefaultBase_static_init__(__AUX_CLASS_VARTYPE__(DefaultBase) self);
-extern void* __DefaultBase_static_destroy__(__AUX_CLASS_VARTYPE__(DefaultBase) self);
+extern void* __DefaultBase_static_init__(__AUX_CLASS_VARSTRUCT__(DefaultBase)* self);
+extern void* __DefaultBase_static_destroy__(__AUX_CLASS_VARSTRUCT__(DefaultBase)* self);
 
 
 #define __GENERIC_CLASS_DECLARE_MACRO__(NAME, \
@@ -713,17 +697,11 @@ extern void* __DefaultBase_static_destroy__(__AUX_CLASS_VARTYPE__(DefaultBase) s
     CLASS_DEFINITION_EXPR... \
   ) \
   typedef struct __##NAME##_vClassObject__ __##NAME##_vClassObject__; \
-  typedef struct __AUX_SUFFIX_CLASS_EXP_ARGS_1__(NAME, __CLASS_SUFFIX__) \
+  typedef struct __AUX_CLASS_VARSTRUCT__(NAME) \
   { \
     CLASS_FIELDS; \
-  } __AUX_SUFFIX_CLASS_EXP_ARGS_1__(NAME, __CLASS_SUFFIX__); \
-  typedef __AUX_SUFFIX_CLASS_EXP_ARGS_3__( \
-      __AUX_SUFFIX_CLASS_EXP_ARGS_1__(NAME, __CLASS_SUFFIX__), \
-      __CLASS_SUFFIX__, \
-      __AUX_DEFAULT_CLASS_SUFFIX_POSTFIX__, \
-      __AUX_DEFAULT_CLASS_SUFFIX_POSTFIX__) \
-      __AUX_SUFFIX_CLASS_EXP_ARGS_2__(NAME, \
-          __CLASS_SUFFIX__, __AUX_DEFAULT_CLASS_SUFFIX_CLASS__); \
+  } __AUX_CLASS_VARSTRUCT__(NAME); \
+  typedef __AUX_CLASS_VARSTRUCT__(NAME) __AUX_DEFAULT_CLASS_PREFIX_TYPE__ __AUX_CLASS_VARCLASS__(NAME); \
   typedef struct NAME##_R \
   { \
     RAW_FIELDS; \
@@ -757,17 +735,16 @@ extern void* __DefaultBase_static_destroy__(__AUX_CLASS_VARTYPE__(DefaultBase) s
     struct __##NAME##_vClassObjectMeta__ __meta__; \
   } __##NAME##_vClassObject__; \
   typedef struct __##NAME##_ClassInterface__ { \
-    __AUX_CLASS_VARTYPE__(NAME) self; \
+    __AUX_CLASS_VARSTRUCT__(NAME)* self; \
     const __##NAME##_vClassObject__* __meta__; \
   } __##NAME##_ClassInterface__; \
-  extern void* __##NAME##_static_init__(__AUX_CLASS_VARTYPE__(NAME) self); \
-  extern void* __##NAME##_static_destroy__(__AUX_CLASS_VARTYPE__(NAME) self); \
-  extern void* NAME##_init(__AUX_CLASS_VARTYPE__(NAME) self , ...); \
-  extern void* NAME##_destroy(__AUX_CLASS_VARTYPE__(NAME) self, ...); \
+  extern void* __##NAME##_static_init__(__AUX_CLASS_VARSTRUCT__(NAME)* self); \
+  extern void* __##NAME##_static_destroy__(__AUX_CLASS_VARSTRUCT__(NAME)* self); \
+  extern void* NAME##_init(__AUX_CLASS_VARSTRUCT__(NAME)* self , ...); \
+  extern void* NAME##_destroy(__AUX_CLASS_VARSTRUCT__(NAME)* self, ...); \
   extern __ClassObject__ __##NAME##_ClassObject__; \
   extern __##NAME##_vClassObject__ __##NAME##_Default_vClassObject__; \
-  extern __AUX_SUFFIX_CLASS_EXP_ARGS_1__(NAME, \
-      __CLASS_SUFFIX__) __##NAME##_Default_Instance__; \
+  extern __AUX_CLASS_VARSTRUCT__(NAME) __##NAME##_Default_Instance__; \
   extern type_object_t __##NAME##_type__; \
   extern type_object_t* NAME##_type; \
   extern __InheritanceList__ __##NAME##__InheritanceList__; \
@@ -810,9 +787,7 @@ extern void* __DefaultBase_static_destroy__(__AUX_CLASS_VARTYPE__(DefaultBase) s
                                 .cls=&__##NAME##_ClassObject__, \
                                 .__meta__.__protected__=(__vClassObjectPrt__*)&(__##NAME##_Default_vClassObject__.__meta__.__prot_vcls_data__), \
                                 .__base__=&__##BASE##_Default_vClassObject__}; \
-  __AUX_SUFFIX_CLASS_EXP_ARGS_1__(NAME, \
-      __CLASS_SUFFIX__) __##NAME##_Default_Instance__ = (__AUX_SUFFIX_CLASS_EXP_ARGS_1__(NAME, \
-                                                                                         __CLASS_SUFFIX__)){}; \
+  __AUX_CLASS_VARSTRUCT__(NAME) __##NAME##_Default_Instance__ = (__AUX_CLASS_VARSTRUCT__(NAME)){}; \
   type_object_t __##NAME##_type__ = (type_object_t){.type_mask=MASK, \
                                                     .type_size=sizeof(__AUX_CLASS_VARSTRUCT__(NAME)), \
                                                     .type_meta=(__ClassMetaObject__*)&__##NAME##_Default_vClassObject__, \
@@ -822,14 +797,13 @@ extern void* __DefaultBase_static_destroy__(__AUX_CLASS_VARTYPE__(DefaultBase) s
   __InheritanceListNode__ __##NAME##__InheritanceListNodes__[__STATIC_INHERITANCE_LIST_NODES__] = {}; \
   class_field_t __##NAME##_fields__[sizeof(__##NAME##_fields__) / sizeof(class_field_t)] = {}; \
   class_field_t __##NAME##_static_fields__[sizeof(__##NAME##_static_fields__) / sizeof(class_field_t)] = {}; \
-  void* __##NAME##_static_init__(__AUX_CLASS_VARTYPE__(NAME) self) { \
+  void* __##NAME##_static_init__(__AUX_CLASS_VARSTRUCT__(NAME)* self) { \
     __##BASE##_ClassObject__.__static_init__((void*)self); \
     __ON_STATIC_INIT__(NAME, \
       if ((void*)self != (void*)&__##NAME##_Default_Instance__) { \
-        __##NAME##_static_init__((__AUX_CLASS_VARTYPE__(NAME))(void*)&__##NAME##_Default_Instance__); \
+        __##NAME##_static_init__((void*)&__##NAME##_Default_Instance__); \
       } else { \
-        *(__AUX_SUFFIX_CLASS_EXP_ARGS_1__(NAME, __CLASS_SUFFIX__)*)self = \
-            (__AUX_SUFFIX_CLASS_EXP_ARGS_1__(NAME, __CLASS_SUFFIX__)){}; \
+        *self = (__AUX_CLASS_VARSTRUCT__(NAME)){}; \
         if (!__##NAME##_ClassObject__.inherits_from) { \
           __##NAME##_ClassObject__.inherits_from = &__##NAME##__InheritanceList__; \
           __InheritanceList_init__(__##NAME##_ClassObject__.inherits_from, __##NAME##__InheritanceListNodes__); \
@@ -858,18 +832,18 @@ extern void* __DefaultBase_static_destroy__(__AUX_CLASS_VARTYPE__(DefaultBase) s
     ); \
     return self; \
   } \
-  void* __##NAME##_static_destroy__(__AUX_CLASS_VARTYPE__(NAME) self)
+  void* __##NAME##_static_destroy__(__AUX_CLASS_VARSTRUCT__(NAME)* self)
 
 #define __GENERIC_CLASS_SEPARATE_DEFINE_MACRO_EXTERN_CLASS_OBJECT__(NAME, MASK, EXPR...) \
   __ClassObject__ __##NAME##_ClassObject__ = \
     (__ClassObject__){.mask=MASK, \
-                      .instance_size=sizeof(NAME), \
+                      .instance_size=sizeof(__AUX_CLASS_VARSTRUCT__(NAME)), \
                       .vclass_size=sizeof(__##NAME##_vClassObject__), \
                       .default_vcls=(__vClassObject__*)&__##NAME##_Default_vClassObject__, \
                       .default_instance=(__ClassInstance__*)&__##NAME##_Default_Instance__, \
                       .name=#NAME, \
-                      .fields=__##NAME##_fields__, \
-                      .static_fields=__##NAME##_static_fields__, \
+                      .fields=(class_field_t**)&__##NAME##_fields__, \
+                      .static_fields=(class_field_t**)&__##NAME##_static_fields__, \
                       .__static_init__=(generic_function_t)__##NAME##_static_init__, \
                       .__static_destroy__=(generic_function_t)__##NAME##_static_destroy__, \
                       EXPR};
@@ -879,12 +853,12 @@ extern void* __DefaultBase_static_destroy__(__AUX_CLASS_VARTYPE__(DefaultBase) s
     (__##NAME##_vClassObject__){.__init__=(generic_function_t)NAME##_init, \
                                 .__destroy__=(generic_function_t)NAME##_destroy, \
                                 .cls=&__##NAME##_ClassObject__, \
-                                .__protected__=(__vClassObjectPrt__*)&(__##NAME##_Default_vClassObject__.__prot_vcls_data__), \
+                                .__meta__.__protected__=(__vClassObjectPrt__*)&(__##NAME##_Default_vClassObject__.__prot_vcls_data__), \
                                 .__base__=&__##BASE##_Default_vClassObject__, \
                                 EXPR}; \
 
 #define __GENERIC_CLASS_SEPARATE_DEFINE_MACRO_EXTERN_DEFAULT_INSTANCE__(NAME, MASK, EXPR...) \
-  NAME __##NAME##_Default_Instance__ = (NAME){EXPR}; \
+  __AUX_CLASS_VARSTRUCT__(NAME) __##NAME##_Default_Instance__ = (__AUX_CLASS_VARSTRUCT__(NAME)){EXPR}; \
 
 #define __GENERIC_CLASS_SEPARATE_DEFINE_MACRO_END__(NAME, MASK, EXPR...) \
   type_object_t __##NAME##_type__ = (type_object_t){.type_mask=MASK, \
@@ -896,13 +870,13 @@ extern void* __DefaultBase_static_destroy__(__AUX_CLASS_VARTYPE__(DefaultBase) s
   __InheritanceListNode__ __##NAME##__InheritanceListNodes__[__STATIC_INHERITANCE_LIST_NODES__] = {}; \
   class_field_t __##NAME##_fields__[sizeof(__##NAME##_fields__)] = {}; \
   class_field_t __##NAME##_static_fields__[sizeof(__##NAME##_static_fields__)] = {}; \
-  void* __##NAME##_static_init__(NAME* self) { \
+  void* __##NAME##_static_init__(__AUX_CLASS_VARSTRUCT__(NAME)* self) { \
     __##BASE##_ClassObject__.__static_init__((void*)self); \
     __ON_STATIC_INIT__(NAME, \
       if (self != &__##NAME##_Default_Instance__) { \
         __##NAME##_static_init__(&__##NAME##_Default_Instance__); \
       } else { \
-        *self = (NAME){}; \
+        *self = (__AUX_CLASS_VARSTRUCT__(NAME)){}; \
         if (!__##NAME##_ClassObject__.inherits_from) { \
           __##NAME##_ClassObject__.inherits_from = &__##NAME##__InheritanceList__; \
           __InheritanceList_init__(__##NAME##_ClassObject__.inherits_from, __##NAME##__InheritanceListNodes__); \
@@ -931,7 +905,7 @@ extern void* __DefaultBase_static_destroy__(__AUX_CLASS_VARTYPE__(DefaultBase) s
     ); \
     return self; \
   } \
-  void* __##NAME##_static_destroy__(NAME* self)
+  void* __##NAME##_static_destroy__(__AUX_CLASS_VARSTRUCT__(NAME)* self)
 
 
 #define __AUX_CLASS_DECL_EXP__(NAME, \
@@ -961,7 +935,7 @@ extern void* __DefaultBase_static_destroy__(__AUX_CLASS_VARTYPE__(DefaultBase) s
                          __AUX_CLASS_VARSTRUCT__(BASE) __base__; \
                          ARG2_VA_ARGS(ARGS, ;, ;, ;, ;, ;, ;); \
                          __AUX_CLASS_VCLASS_T__(NAME)* __meta__, \
-                         BASE __base__; \
+                         __AUX_CLASS_VARSTRUCT__(BASE) __base__; \
                          ARG2_VA_ARGS(ARGS, ;, ;, ;, ;, ;, ;), \
                          __AUX_CLASS_VCLASS_T__(BASE)* __base__; \
                          ARG3_VA_ARGS(ARGS, ;, ;, ;, ;, ;, ;), \
@@ -977,26 +951,31 @@ extern void* __DefaultBase_static_destroy__(__AUX_CLASS_VARTYPE__(DefaultBase) s
                          __AUX_CLASS_VARSTRUCT__(BASE) __base__; \
                          ARG2_VA_ARGS(ARGS, ;, ;, ;, ;, ;, ;); \
                          __vClassObject__ __meta__[0], \
-                         BASE __base__; \
+                         __AUX_CLASS_VARSTRUCT__(BASE) __base__; \
                          ARG2_VA_ARGS(ARGS, ;, ;, ;, ;, ;, ;), \
                          __AUX_CLASS_VCLASS_T__(BASE)* __base__; \
                          ARG3_VA_ARGS(ARGS, ;, ;, ;, ;, ;, ;), \
                          ARG4_VA_ARGS(ARGS, ;, ;, ;, ;, ;, ;), \
                          ARG5_VA_ARGS(ARGS, 0, 0, 0, 0, 0, 0), \
                          ARG6_VA_ARGS(ARGS, 0, 0, 0, 0, 0, 0), \
+                         __##BASE##_FundamentalVClass__, \
                          ARG7_VA_ARGS(ARGS, ;, ;, ;, ;, ;, ;) \
                          ) \
 
 #define __AUX_CLASS_DECL_BRIDGE__(BASE, ARGS...) \
   __AUX_CLASS_DECL_EXP__(BASE##_B, \
                          BASE __base__; \
+                         ARG2_VA_ARGS(ARGS, ;, ;, ;, ;, ;, ;); \
                          __vClassObject__ __meta__[0], \
-                         BASE __base__;, \
+                         BASE __base__; \
                          ARG2_VA_ARGS(ARGS, ;, ;, ;, ;, ;, ;), \
+                         __AUX_CLASS_VCLASS_T__(DefaultBase)* __base__; \
                          ARG3_VA_ARGS(ARGS, ;, ;, ;, ;, ;, ;), \
-                         ARG4_VA_ARGS(ARGS, 0, 0, 0, 0, 0, 0), \
+                         ARG4_VA_ARGS(ARGS, ;, ;, ;, ;, ;, ;), \
                          ARG5_VA_ARGS(ARGS, 0, 0, 0, 0, 0, 0), \
-                         ARG6_VA_ARGS(ARGS, ;, ;, ;, ;, ;, ;) \
+                         ARG6_VA_ARGS(ARGS, 0, 0, 0, 0, 0, 0), \
+                         __DefaultBase_FundamentalVClass__, \
+                         ARG7_VA_ARGS(ARGS, ;, ;, ;, ;, ;, ;) \
                          ) \
 
 #define __AUX_CLASS_END_CLASS_OBJ__(NAME, MASK, EXPR...) \
@@ -1019,7 +998,7 @@ extern void* __DefaultBase_static_destroy__(__AUX_CLASS_VARTYPE__(DefaultBase) s
     (__##NAME##_B_vClassObject__){.__init__=(generic_function_t)NAME##_B_init, \
                                   .__destroy__=(generic_function_t)NAME##_B_destroy, \
                                   .cls=&__##NAME##_B_ClassObject__, \
-                                  .__protected__=(__vClassObjectPrt__*)&(__##NAME##_B_Default_vClassObject__.__prot_vcls_data__)}; \
+                                  .__meta__.__protected__=(__vClassObjectPrt__*)&(__##NAME##_B_Default_vClassObject__.__meta__.__prot_vcls_data__)}; \
   type_object_t __##NAME##_B_type__ = (type_object_t){.type_mask=MASK | BARE | STATIC | BRIDGE, \
                                                       .type_size=sizeof(NAME), \
                                                       .type_meta=(__ClassMetaObject__*)&__##NAME##_B_Default_vClassObject__, \
@@ -1027,8 +1006,8 @@ extern void* __DefaultBase_static_destroy__(__AUX_CLASS_VARTYPE__(DefaultBase) s
   type_object_t* NAME##_B_type = &__##NAME##_B_type__; \
   __InheritanceList__ __##NAME##_B__InheritanceList__ = (__InheritanceList__){}; \
   __InheritanceListNode__ __##NAME##_B__InheritanceListNodes__[__STATIC_INHERITANCE_LIST_NODES__] = {}; \
-  class_field_t __##NAME##_B_fields__[sizeof(__##NAME##_B_fields__)] = {}; \
-  class_field_t __##NAME##_B_static_fields__[sizeof(__##NAME##_B_static_fields__)] = {}; \
+  class_field_t __##NAME##_B_fields__[sizeof(__##NAME##_B_fields__) / sizeof(class_field_t)] = {}; \
+  class_field_t __##NAME##_B_static_fields__[sizeof(__##NAME##_B_static_fields__) / sizeof(class_field_t)] = {}; \
   void* __##NAME##_B_static_init__(NAME##_B* self) { \
     __ON_STATIC_INIT__(NAME##_B, \
       if (self != &__##NAME##_B_Default_Instance__) { \
@@ -1135,13 +1114,13 @@ extern void* __DefaultBase_static_destroy__(__AUX_CLASS_VARTYPE__(DefaultBase) s
 
 #define __AUX_CLS_VCLASS__(CLASS_NAME) (&__##CLASS_NAME##_Default_vClassObject__)
 #define __AUX_CLS_DEF_INST__(CLASS_NAME) (&__##CLASS_NAME##_Default_Instance__)
-#define __AUX_CLS_CLASS_INIT__(CLASS_NAME) (__AUX_CLASS_VARTYPE__(CLASS_NAME))CLASS_NAME##_init
+#define __AUX_CLS_CLASS_INIT__(CLASS_NAME) (__AUX_CLASS_VARSTRUCT__(CLASS_NAME)*)CLASS_NAME##_init
 
 #define __AUX_CLS_VCLASS_EXP__(CLASS_NAME) __AUX_EXP_MACRO_ARG__(__AUX_CLS_VCLASS__, CLASS_NAME)
 #define __AUX_CLS_CLASS_INIT_EXP__(CLASS_NAME) __AUX_EXP_MACRO_ARG__(__AUX_CLS_CLASS_INIT__, CLASS_NAME)
 
 #define __AUX_CLS_ALLOCA__(CLASS_NAME...) \
-  __AUX_CLS_CLASS_INIT_EXP__(ARG1_VA_ARGS(CLASS_NAME))((__AUX_CLASS_VARTYPE__(CLASS_NAME))alloca(sizeof(__AUX_CLASS_VARSTRUCT__(ARG1_VA_ARGS(CLASS_NAME)))), ARG1_VA_ARGS_VA(CLASS_NAME, 0))
+  __AUX_CLS_CLASS_INIT_EXP__(ARG1_VA_ARGS(CLASS_NAME))((__AUX_CLASS_VARSTRUCT__(ARG1_VA_ARGS(CLASS_NAME))*)alloca(sizeof(__AUX_CLASS_VARSTRUCT__(ARG1_VA_ARGS(ARG1_VA_ARGS(CLASS_NAME))))), ARG1_VA_ARGS_VA(CLASS_NAME, 0))
 
 void* __aux_class_new_wrapper__(__ClassObject__* cls, size_t size, __ClassInstance__* template_instance);
 
@@ -1209,7 +1188,7 @@ void* __aux_class_new_wrapper__(__ClassObject__* cls, size_t size, __ClassInstan
   return self; \
 
 #define DefInit(NAME, EXPR...) \
-  void* NAME##_init(__AUX_CLASS_VARTYPE__(NAME) self, ...) { \
+  void* NAME##_init(__AUX_CLASS_VARSTRUCT__(NAME)* self, ...) { \
     __AUX_INIT_BEGIN__(NAME); \
     EXPR; \
     __AUX_INIT_END__(NAME); \
@@ -1239,7 +1218,7 @@ void* __aux_class_new_wrapper__(__ClassObject__* cls, size_t size, __ClassInstan
   __AUX_FIELD_DELTA_ADDR__(CLASS, METHOD, __init__)
 
 #define __AUX_METHOD_SHIFT_ID__(CLASS, METHOD, ID) \
-  ((ID >= (sizeof(__#CLASS##_FundamentalVClass__) / sizeof(void*))) ? (ID - __AUX_FIELD_DELTA_ADDR__(CLASS, __method_shift__,)) : (ID))
+  ((ID >= (sizeof(__##CLASS##_FundamentalVClass__) / sizeof(void*))) ? (ID - __AUX_FIELD_DELTA_ADDR__(CLASS, __method_shift__, METHOD)) : (ID))
 
 #define __AUX_METHOD_SHIFT__(CLASS, METHOD, ID) __AUX_SMETHOD__(CLASS, __method_shift__)[__AUX_METHOD_SHIFT_ID__(CLASS, METHOD, ID)]
 
@@ -1249,13 +1228,13 @@ void* __aux_class_new_wrapper__(__ClassObject__* cls, size_t size, __ClassInstan
 
 #define IMETHOD(CLASS, METHOD, INSTANCE...) __AUX_IMETHOD__(CLASS, METHOD, INSTANCE)(INSTANCE, 0)
 
-#define __AUX_DEFAULT_DESTROY_EXPAND__(NAME, ARGS...) { ARGS return NULL; } void* NAME##_destroy(__AUX_CLASS_VARTYPE__(NAME) self, ...) { ARGS return NULL; }
+#define __AUX_DEFAULT_DESTROY_EXPAND__(NAME, ARGS...) { ARGS return NULL; } void* NAME##_destroy(__AUX_CLASS_VARSTRUCT__(NAME)* self, ...) { ARGS return NULL; }
 
 #define __AUX_DEFAULT_DESTROY_ARGS__(NAME, ARGS...) __AUX_DEFAULT_DESTROY_EXPAND__(NAME, ARGS)
 
 #define DEFAULT_DESTROY(NAME...) __AUX_DEFAULT_DESTROY_ARGS__(ARG1_VA_ARGS(NAME), ARG1_VA_ARGS_VA(NAME, ;))
 
-#define DEFAULT_INIT(NAME) void* NAME##_init(__AUX_CLASS_VARTYPE__(NAME) self, ...) { \
+#define DEFAULT_INIT(NAME) void* NAME##_init(__AUX_CLASS_VARSTRUCT__(NAME)* self, ...) { \
   __AUX_INIT_BEGIN__(NAME); \
   __AUX_INIT_END__(NAME); \
 }

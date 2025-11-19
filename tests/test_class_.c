@@ -26,6 +26,7 @@ DefInit(tst_c)
 
 int asda() {
   struct tst_c_S as;
+  tst_c* asd = CLS(tst_c);
   // as.__base__.__meta__->cls;
   // tst_c da;
   // tst_c_y jkj;

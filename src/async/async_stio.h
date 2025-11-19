@@ -1,4 +1,4 @@
-#include "exception.h"
+#include "../oop/exception.h"
 #include "setjmp.h"
 #include "stdarg.h"
 
@@ -50,8 +50,10 @@ typedef struct async_handler_t {
   async_coroutine_t* cr_list_data;
 } async_handler_t;
 
-void __async_coroutine_call__(async_coroutine_t* self,
-                              async_coroutine_t* target);
+void __async_coroutine_sync_call__(async_coroutine_t* self,
+                                   async_coroutine_t* target);
+void* __async_coroutine_async_call__(async_coroutine_t** self,
+                                     async_coroutine_t* target);
 void* __aux_async_coroutine_init_calloc__(size_t size);
 
 void* __async_handler_init__(async_handler_t* self, size_t stack_size);
@@ -75,6 +77,7 @@ async_handler_t* __aux_mt_async_handler_location__();
     size_t __size__; \
     STATE_STRUCT_DEF; \
   } NAME##_cr_state; \
+  async_coroutine_t* __##NAME##_aux_crt_get__(NAME##_cr_args args); \
   void NAME##_coroutine(async_coroutine_t* crt, NAME##_cr_args* args);
 
 typedef struct NULL_cr_state {
@@ -89,7 +92,15 @@ typedef struct NULL_cr_state {
   crt->__signal__ = 1; \
 
 #define __AUX_COROUTINE_DEF_EXP__(NAME, STACK_SIZE) \
-  size_t __##NAME##_stack_size__() { return STACK_SIZE; } \
+  async_coroutine_t* __##NAME##_aux_crt_get__(NAME##_cr_args args) { \
+    async_coroutine_t* crt = __aux_async_coroutine_init_calloc__(sizeof(async_coroutine_t)); \
+    crt->function = (coroutine_function_t)NAME##_coroutine; \
+    crt->arg_size = sizeof(NAME##_cr_args); \
+    crt->stack_size_ubnd = STACK_SIZE; \
+    crt->arg = __aux_async_coroutine_init_calloc__(sizeof(NAME##_cr_args)); \
+    *(NAME##_cr_args*)crt->arg = args; \
+    return crt; \
+  } \
   void NAME##_coroutine(async_coroutine_t* crt, NAME##_cr_args* args)
 
 #define __AUX_COROUTINE_DEF__(NAME, STACK_SIZE) \
@@ -121,15 +132,12 @@ typedef struct NULL_cr_state {
 
 #define COROUTINE_EXIT \
   __async_handler_remove__(&__async_handler__, crt); \
-  longjmp(__async_handler__.__jmp_buf__, crt->__signal__);
+  longjmp(__async_handler__.__jmp_buf__, 1);
 
 
 #define COROUTINE_ADD(NAME, ARG...) \
   (async_coroutine_t*)__async_handler_add__(&__async_handler__, \
-                                            &(async_coroutine_t){.arg=&(NAME##_cr_args){ARG}, \
-                                                                 .function=(coroutine_function_t)NAME##_coroutine, \
-                                                                 .arg_size=sizeof(NAME##_cr_args), \
-                                                                 .stack_size_ubnd=__##NAME##_stack_size__()});
+                                            __##NAME##_aux_crt_get__((NAME##_cr_args)ARG));
 
 #define COROUTINE_RUN \
   __async_handler_call__(&__async_handler__);
@@ -138,16 +146,23 @@ typedef struct NULL_cr_state {
   (__async_handler__.stack_size = SIZE)
 
 
-#define COROUTINE_CALL(TARGET, ARG...) \
+#define COROUTINE_SYNC_CALL(TARGET, ARGS...) \
   __async_handler_save__(&__async_handler__, crt, NULL); \
   if (!(__aux_tmp_ascr__ = setjmp(crt->__jmp_buf__))) { \
-    __async_coroutine_call__(crt, \
-                             &(async_coroutine_t){.arg=&(TARGET##_cr_args){ARG}, \
-                                                  .function=(coroutine_function_t)TARGET##_coroutine, \
-                                                  .arg_size=sizeof(TARGET##_cr_args)}); \
+    __async_coroutine_sync_call__(crt, \
+                                  __##TARGET##_aux_crt_get__((TARGET##_cr_args)ARGS)); \
   } \
   crt = &__async_handler__.cr_list_data[__aux_tmp_ascr__ - 1]; \
   __async_handler_restore__(&__async_handler__, crt, NULL); \
   crt->__signal__ = 1; \
+
+#define COROUTINE_ASYNC_CALL(TARGET, ARGS...) \
+  __async_coroutine_async_call__(&crt, \
+                                 __##TARGET##_aux_crt_get__((TARGET##_cr_args)ARGS)); \
   
-#define 
+#define AWAIT(CRT) \
+  while (!CRT->result) { \
+    COROUTINE_SAVEPOINT; \
+  } \
+
+

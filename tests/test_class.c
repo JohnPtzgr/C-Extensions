@@ -10,7 +10,7 @@ DefClass(DefaultBase, X, STATIC,
   int x = 0;
   int y = self->z;
   y += 1;
-  __X_Default_vClassObject__.__call__ = (generic_function_t)call;
+  __X_Default_vClassObject__._f.__call__ = (generic_function_t)call;
 ) DEFAULT_DESTROY(X)
 DefInit(X,
   ;
@@ -25,11 +25,11 @@ Class(DefaultBase,
   Y,
   PRIVATE(int_t, x);
   char x;
-  size_t y;,  
+  size_t y;,
   generic_function_t show;
 );
 // #include "../src/built-ins/int.h"
-void* show2(Y* self, void* args) {
+void* show2(Y_S* self, void* args) {
   printf("SHOW:%c\n", self->x);
   // self->__p_x->value;
   return NULL;
@@ -38,11 +38,11 @@ DefClass(DefaultBase, Y, 0,
   __ON_INIT__(Y,
     printf("INIT CLASS: %llu\n", self->x);
   );
-  printf("IS INNER Y: %llu\n", __GET_CLASS_MASK_IS_INNER__(&__CLASS_MASK__(Y)));
+  // printf("IS INNER Y: %llu\n", __GET_CLASS_MASK_IS_INNER__(&__CLASS_MASK__(Y)));
   self->x = 'a';
   self->__meta__->__cast__ = (generic_function_t)show2;
 ) DEFAULT_DESTROY(Y)
-void* Y_init(Y* self, ...) {
+void* Y_init(Y_S* self, ...) {
   __AUX_INIT_BEGIN__(Y);
   // printf("META VCLS %d\n", self->__base__.__meta__->vcls);
   // printf("ACTL VCLS %d\n", &__Y_Default_vClassObject__);
@@ -50,11 +50,12 @@ void* Y_init(Y* self, ...) {
   // printf("ACTL CLS %d\n", &__Y_sClassObject__);
   // printf("VCLS CLS %d\n", __Y_Default_vClassObject__.cls);
   // printf("DMET CLS %d\n", __Y_Default_MetaData__.cls);
+  self->__meta__->show = (generic_function_t)show2;
   __vTableHash__ hash = __class_vtable_hash__("show");
   printf("HASH IS %d-%d\n", hash.hashX, hash.hashY);
-  __vTable_add__(self->__meta__->vtable, hash, (__vTableNode__){.data=show2});
+  __vTable_add__(self->__meta__->__meta__.__vtable__, hash, (__vTableNode__){.data=show2});
   BEGIN
-  X a = (X){};
+  X a = (X_S){};
   __ClassMetaObject__ vbvb;
   X_init(&a);
   END
@@ -67,18 +68,19 @@ int test1() {
   Y b = (Y){};
   X_init(&a);
   Y_init(&b);
-  SMETHOD(Y, show, &b);
-  b.__meta__->__cast__(&b, 0);
+  b.__meta__->show(&b, 0);
+  // SMETHOD(Y, show, &b);
+  // b.__meta__->__cast__(&b, 0);
   printf("Name is %s\n", a.__meta__->cls->name);
   a.z = 0;
   __vTableHash__ hash = __class_vtable_hash__("show");
   printf("HASH IS %d-%d\n", hash.hashX, hash.hashY);
-  for (size_t i = 0; i < b.__meta__->vtable->size; ++i) {
-    printf("%d - (D) %d - (M) %d\n", i, b.__meta__->vtable->data[i].data, b.__meta__->vtable->data[i].mask);
+  for (size_t i = 0; i < b.__meta__->__meta__.__vtable__->size; ++i) {
+    printf("%d - (D) %d - (M) %d\n", i, b.__meta__->__meta__.__vtable__->data[i].data, b.__meta__->__meta__.__vtable__->data[i].mask);
   }
-  printf("show: %d\n", __vTable_get__(b.__meta__->vtable, hash)->data);
-  printf("ACTL show: %d\n", show2);
-  ((generic_function_t)(__vTable_get__(b.__meta__->vtable, __class_vtable_hash__("show"))->data))(&b, 0);
+  // printf("show: %d\n", __vTable_get__(b.__meta__->__meta__.__vtable__, hash)->data);
+  // printf("ACTL show: %d\n", show2);
+  // ((generic_function_t)(__vTable_get__(b.__meta__->__meta__.__vtable__, __class_vtable_hash__("show"))->data))(&b, 0);
   END
   return 0;
 }
@@ -86,13 +88,14 @@ int test1() {
 Class(DefaultBase, base1, int c, int a, int c)
 DefClass(DefaultBase, base1, 0,
   self->__meta__->a = 100;
-  self->__meta__->__call__ = (generic_function_t)100;
+  self->__meta__->_f.__call__ = (generic_function_t)100;
   printf("INIT BASE1!\n");
 )
 DEFAULT_DESTROY(base1)
 void* base1_init(base1* self, ...) {
   __AUX_INIT_BEGIN__(base1)
-  __vTable_add__(((__ClassInstance__*)self)->__meta__->vtable, __class_vtable_hash__("0"), (__vTableNode__){.data=(void*)90});
+  // __vTable
+  __vTable_add__(((__ClassInstance__*)self)->__meta__->__meta__.__vtable__, __class_vtable_hash__("0"), (__vTableNode__){.data=(void*)90});
   printf("base1 DYN INIT! %d / %d\n", self, &__base1_Default_Instance__);
   __AUX_INIT_END__(base1)
   return self;
@@ -115,15 +118,15 @@ int test2() {
   base1 x = (base1){};
   base1_init(&x);
   printf("VCLS! %d\n", ((__ClassInstance__*)&x)->__meta__->cls->default_vcls);
-  printf("CALL! %d\n", ((__ClassInstance__*)&x)->__meta__->__call__);
-  printf("VT %d\n", __vTable_get__(((__ClassInstance__*)&x)->__meta__->vtable, __class_vtable_hash__("0"))->data);
+  printf("CALL! %d\n", ((__ClassInstance__*)&x)->__meta__->_f.__call__);
+  printf("VT %d\n", __vTable_get__(((__ClassInstance__*)&x)->__meta__->__meta__.__vtable__, __class_vtable_hash__("0"))->data);
   child1 y = (child1){};
   child1_init(&y);
   // for (size_t i = 0; i < __VCLASS_METHOD_COUNT__; ++i) {
   //   printf("- %d -\n", *(&(((__ClassInstance__*)&y)->__meta__->__init__) + i));
   // }
-  printf("CALL! %d\n", ((__ClassInstance__*)&y)->__meta__->__call__);
-  printf("VT %d\n", __vTable_get__(((__ClassInstance__*)&y)->__meta__->vtable, __class_vtable_hash__("0"))->data);
+  printf("CALL! %d\n", ((__ClassInstance__*)&y)->__meta__->_f.__call__);
+  printf("VT %d\n", __vTable_get__(((__ClassInstance__*)&y)->__meta__->__meta__.__vtable__, __class_vtable_hash__("0"))->data);
   END
   return 0;
 }
@@ -139,9 +142,9 @@ int aaa = sizeof(struct pp);
 
 Class(DefaultBase, base2, int c; PRIVATE(pp, dsa), int a; PRIVATE(pp, asd), int c)
 //
-struct pp {
-  int a;
-};
+// struct pp {
+//   int a;
+// };
 DefClass(DefaultBase, base2, 0,
   self->c = 0;
   printf("INIT BASE2!\n");
@@ -150,10 +153,10 @@ DEFAULT_DESTROY(base2)
 void* base2add(base2* self, base2* other) {
   printf("ADD!\n");
   // Protected
-  ((__base2_vClassObjectPrt__*)self->__meta__->__protected__->data)->c;
+  ((__base2_vClassObjectPrt__*)self->__meta__->__meta__.__protected__->data)->c;
   // Private
-  self->__p_dsa->a;
-  self->__meta__->__p_asd->a;
+  self->__p_dsa->_;
+  self->__meta__->__p_asd->__;
   Static_Cast(int, self->c);
   Static_Cast(float, self);
   Dynamic_Cast(base1, base2, self);
@@ -162,7 +165,7 @@ void* base2add(base2* self, base2* other) {
 }
 void* base2_init(base2* self, ...) {
   __AUX_INIT_BEGIN__(base2)
-  ((__ClassInstance__*)self)->__meta__->__add__ = (generic_function_t)base2add;
+  ((__ClassInstance__*)self)->__meta__->_f.__add__ = (generic_function_t)base2add;
   printf("base2 DYN INIT! %d / %d\n", self, &__base2_Default_Instance__);
   __AUX_INIT_END__(base2)
   return self;
@@ -190,7 +193,7 @@ void* base2_init(base2* self, ...) {
 Class(base1, child2, base2 __base2__; int d, __base2_vClassObject__* __base2__; int b, int c)
 DefClass(base1, child2, 0,
   printf("INHERITED BASE1!\n");
-  __AUX_ADD_INHERITS__(child2, base2, __base2__);
+  // __AUX_ADD_INHERITS__(child2, base2, __base2__);
   printf("INHERITED BASE2!\n");
   printf("INIT CHILD2!\n");
 ) DEFAULT_DESTROY(child2)
@@ -252,18 +255,18 @@ int test3() {
   base2_init(&a);
   base2_init(&b);
   a.__meta__->a;
-  a.__meta__->__prot_vcls_data__;
+  a.__meta__->__meta__.__prot_vcls_data__;
   printf("BFR: %d\n", a.c);
-  ((__ClassInstance__*)&a)->__meta__->__add__(&a, &b);
+  ((__ClassInstance__*)&a)->__meta__->_f.__add__(&a, &b);
   printf("AFT: %d\n", a.c);
   child2 c = (child2){};
   child2 d = (child2){};
   child2_init(&c);
   child2_init(&d);
   printf("ADD: %d\n", c.__base2__.c);
-  ((__ClassInstance__*)&c)->__meta__->__add__(&c + \
-    ((__ClassInstance__*)&c)->__meta__->method_shift[__m_add__],
-    &d + ((__ClassInstance__*)&c)->__meta__->method_shift[__m_add__]);
+  ((__ClassInstance__*)&c)->__meta__->_f.__add__(&c + \
+    ((__ClassInstance__*)&c)->__meta__->__method_shift__[__m_add__],
+    &d + ((__ClassInstance__*)&c)->__meta__->__method_shift__[__m_add__]);
   printf("ADD: %d\n", c.__base2__.c);
   CLS(cls_prot);
   END

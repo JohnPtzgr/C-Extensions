@@ -1,9 +1,11 @@
-#include "container.h"
+#include "../memory/container.h"
 #include "../oop/types.h"
 
 #pragma once
 
-DEF_CLASS(
+Class(
+  DefaultBase
+  ,
   vector_t
   ,
   smartptr_t data;

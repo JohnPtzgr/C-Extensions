@@ -2,17 +2,13 @@
 #include <cstdlib>
 
 int main(int argc, const char** argv) {
-  ;
-  try
-  {
+  try {
     ;
-  }
-  catch(const std::exception& e)
-  {
+  } catch(const std::exception& e) {
+    e.what();
     std::cerr << e.what() << '\n';
   }
-  try
-  {
+  try {
     ;
   }
   catch(const std::exception& e)

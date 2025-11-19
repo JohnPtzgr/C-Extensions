@@ -23,58 +23,8 @@
 #endif
 #endif
 
-#ifndef INVALID
-#define INVALID ((void*)-1)
-#endif // !INVALID
-
-#ifndef MIN
-#define MIN(A, B) (A < B ? A : B)
-#endif // !MAX
-
-
-#ifndef MAX
-#define MAX(A, B) (A > B ? A : B)
-#endif // !MAX
-
-#define __AUX_EXPAND_MACRO_VA_ARGS__(MACRO, ARGS...) \
-  MACRO##(ARGS)
-
-#define EXPAND_MACRO(MACRO, ARGS...) \
-  __AUX_EXPAND_MACRO_VA_ARGS__(MACRO, ARGS)
-
-#ifndef ARG1_VA_ARGS
-#define __AUX_EXP_MACRO_ARG__(MACRO_TO_EXP, ARG) MACRO_TO_EXP(ARG)
-#define ARG0_VA(ARG0...) ARG0
-#define ARG1_VA_ARGS( ARG1, ... ) ARG1
-#define ARG1_VA_ARGS_VA( ARG1, ... ) __VA_ARGS__
-#define ARG2_VA_ARGS( ARG1, ARG2, ... ) ARG2
-#define ARG2_VA_ARGS_VA( ARG1, ARG2, ... ) __VA_ARGS__
-#define ARG3_VA_ARGS( ARG1, ARG2, ARG3, ... ) ARG3
-#define ARG3_VA_ARGS_VA( ARG1, ARG2, ARG3, ... ) __VA_ARGS__
-#define ARG4_VA_ARGS( ARG1, ARG2, ARG3, ARG4, ... ) ARG4
-#define ARG4_VA_ARGS_VA( ARG1, ARG2, ARG3, ARG4, ... ) __VA_ARGS__
-#define ARG5_VA_ARGS( ARG1, ARG2, ARG3, ARG4, ARG5, ... ) ARG5
-#define ARG5_VA_ARGS_VA( ARG1, ARG2, ARG3, ARG4, ARG5, ... ) __VA_ARGS__
-#define ARG6_VA_ARGS( ARG1, ARG2, ARG3, ARG4, ARG5, ARG6, ... ) ARG6
-#define ARG6_VA_ARGS_VA( ARG1, ARG2, ARG3, ARG4, ARG5, ARG6, ... ) __VA_ARGS__
-#define ARG7_VA_ARGS( ARG1, ARG2, ARG3, ARG4, ARG5, ARG6, ARG7, ... ) ARG7
-#define ARG7_VA_ARGS_VA( ARG1, ARG2, ARG3, ARG4, ARG5, ARG6, ARG7, ... ) __VA_ARGS__
-#define ARG8_VA_ARGS( ARG1, ARG2, ARG3, ARG4, ARG5, ARG6, ARG7, ARG8, ... ) ARG8
-#define ARG8_VA_ARGS_VA( ARG1, ARG2, ARG3, ARG4, ARG5, ARG6, ARG7, ARG8, ... ) __VA_ARGS__
-
-#endif // CHOOSE __VA_ARGS__ ARGUMENT (Up to 8-th)
-
-#ifndef TO_STR_LITERAL
-#define TO_STR_LITERAL(ARG) #ARG
-#endif // !TO_STR_LITERAL
-
-#ifndef generic_function_t
-typedef void*(*generic_function_t)(void*, ... );
-typedef void*(*generic_function_t)(void*, ... );
-
 void* __CALL_FUNCTION__(generic_function_t, void*);
 void* __CALL_FUNCTION_N_ARGS__(generic_function_t, ... );
-#endif // METHOD RELATED DEFINITIONS
 
 
 #ifndef __SCOPE_STACK__

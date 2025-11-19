@@ -1,4 +1,4 @@
-#include "../src/oop/async_stio.h"
+#include "../src/async/async_stio.h"
 #include "fcntl.h"
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -7,6 +7,7 @@
 #include <string.h>
 #include "unistd.h"
 #include "stdlib.h"
+#include "time.h"
 
 COROUTINE_DECL(server_background,
   int server_fd;
@@ -15,12 +16,15 @@ COROUTINE_DECL(server_background,
   ,
   int s;
 )
+
 COROUTINE_DECL(process_client,
   int client_fd;
   struct sockaddr* client_addr;
   socklen_t client_len;
   ,
-  int x)
+  time_t timer;
+)
+
 COROUTINE_DECL(server_run,
   ,
   int server_fd;
@@ -47,19 +51,32 @@ static char buffer[4096];
 
 COROUTINE(process_client) {
   COROUTINE_INIT(process_client);
-  while (1) {
-    printf("Client Save\n");
+  ((process_client_cr_state*)crt->static_state_data)->timer = time(NULL);
+  while (state) {
     COROUTINE_SAVEPOINT;
-    printf("Client Resume\n");
 
-    bzero(buffer, 100);
+    if (!state) {
+      free(((process_client_cr_args*)crt->arg)->client_addr);
+      COROUTINE_EXIT
+    }
 
-    int n = read(((process_client_cr_args*)crt->arg)->client_fd, buffer, 100);
+    if ((time(NULL) - ((process_client_cr_state*)crt->static_state_data)->timer) > 12) {
+      close(((process_client_cr_args*)crt->arg)->client_fd);
+      free(((process_client_cr_args*)crt->arg)->client_addr);
+      printf("Client %d was timed-out!\n", ((process_client_cr_args*)crt->arg)->client_fd);
+      COROUTINE_EXIT;
+    }
+
+    bzero(buffer, 1024);
+
+    int n = read(((process_client_cr_args*)crt->arg)->client_fd, buffer, 1024);
     buffer[(n > 0) ? n : 0] = '\0';
 
     if (n < 1) {
       continue;
     }
+
+    ((process_client_cr_state*)crt->static_state_data)->timer = time(NULL);
 
     printf("Connection with client established: read %d bytes:\n%s\n", n, buffer);
 
@@ -72,9 +89,9 @@ COROUTINE(process_client) {
       COROUTINE_EXIT;
     }
 
-    if (!strncmp(buffer, "sudo -f quit", 12)) {
+    if (!strncmp(buffer, ":sudo q -f", 10)) {
       state = 0;
-      printf("'sudo -f quit' read\n");
+      printf("':sudo q -f' read\n");
       close(((process_client_cr_args*)crt->arg)->client_fd);
       free(((process_client_cr_args*)crt->arg)->client_addr);
       COROUTINE_EXIT;
@@ -87,13 +104,17 @@ COROUTINE(process_client) {
   }
 }
 
+int cnt;
+
 COROUTINE(server_run, 512) {
 
   COROUTINE_INIT(server_run);
 
-  printf("CR: %d\n", __async_handler__.cr_list_size);
-
   ((server_run_cr_state*)crt->static_state_data)->server_fd = socket(AF_INET, SOCK_STREAM, 0);
+
+  if (((server_run_cr_state*)crt->static_state_data)->server_fd < 0) {
+    perror("Open socket");
+  }
 
   bzero(&((server_run_cr_state*)crt->static_state_data)->server_addr, sizeof(((server_run_cr_state*)crt->static_state_data)->server_addr));
 
@@ -103,7 +124,9 @@ COROUTINE(server_run, 512) {
 
   bind(((server_run_cr_state*)crt->static_state_data)->server_fd, (struct sockaddr *) &((server_run_cr_state*)crt->static_state_data)->server_addr, sizeof(((server_run_cr_state*)crt->static_state_data)->server_addr));
 
-  listen(((server_run_cr_state*)crt->static_state_data)->server_fd, 10);
+  if (listen(((server_run_cr_state*)crt->static_state_data)->server_fd, 100)) {
+    perror("Listen failed");
+  }
 
   int flags = fcntl(((server_run_cr_state*)crt->static_state_data)->server_fd, F_GETFL, 0); // Get current flags
 
@@ -116,19 +139,17 @@ COROUTINE(server_run, 512) {
       perror("fcntl F_SETFL O_NONBLOCK");
       // Handle error
   }
-
-  // COROUTINE_ADD(server_background, \
-  //               .server_addr=(struct sockaddr *)&((server_run_cr_state*)crt->static_state_data)->server_addr, \
-  //               .server_fd=((server_run_cr_state*)crt->static_state_data)->server_fd, \
-  //               .server_len=sizeof(((server_run_cr_state*)crt->static_state_data)->server_addr))
-
-  printf("CR: %d\n", __async_handler__.cr_list_size);
+  
+  COROUTINE_ASYNC_CALL(server_background, \
+                       {.server_addr=(struct sockaddr *)&((server_run_cr_state*)crt->static_state_data)->server_addr, \
+                        .server_fd=((server_run_cr_state*)crt->static_state_data)->server_fd, \
+                        .server_len=sizeof(((server_run_cr_state*)crt->static_state_data)->server_addr)})
 
   while (state) {
 
-    sleep(2);
+    sleep(1);
 
-    printf("SERV_FD: %d - CRT(%d)\n", ((server_run_cr_state*)crt->static_state_data)->server_fd, crt);
+    printf("LOG: %d\n", cnt++);
 
     ((server_run_cr_state*)crt->static_state_data)->client_fd = accept(((server_run_cr_state*)crt->static_state_data)->server_fd, (struct sockaddr *)&((server_run_cr_state*)crt->static_state_data)->client_addr, &((server_run_cr_state*)crt->static_state_data)->client_len);
 
@@ -136,7 +157,7 @@ COROUTINE(server_run, 512) {
       if (errno == EAGAIN || errno == EWOULDBLOCK) {
         // No pending connections, continue with other tasks or wait using select/poll/epoll
         // printf("No pending connections, trying again later...\n");
-        printf("No connections to accept!\n");
+        // printf("No connections to accept!\n");
       } else {
         perror("accept");
         // Handle other accept errors
@@ -150,10 +171,10 @@ COROUTINE(server_run, 512) {
       struct sockaddr* client_addr = malloc(((server_run_cr_state*)crt->static_state_data)->client_len);
       memcpy(client_addr, &((server_run_cr_state*)crt->static_state_data)->client_addr, ((server_run_cr_state*)crt->static_state_data)->client_len);
 
-      COROUTINE_ADD(process_client, \
-                    .client_addr=client_addr, \
-                    .client_fd=((server_run_cr_state*)crt->static_state_data)->client_fd, \
-                    .client_len=((server_run_cr_state*)crt->static_state_data)->client_len);
+      COROUTINE_ASYNC_CALL(process_client, \
+                           {.client_addr=client_addr, \
+                            .client_fd=((server_run_cr_state*)crt->static_state_data)->client_fd, \
+                            .client_len=((server_run_cr_state*)crt->static_state_data)->client_len});
 
       printf("Coroutine Added! - %d\n", __async_handler__.cr_list_size);
     }
@@ -169,7 +190,7 @@ COROUTINE(server_run, 512) {
 
 int main() {
 
-  COROUTINE_ADD(server_run);
+  COROUTINE_ADD(server_run, {});
 
   COROUTINE_RUN;
 

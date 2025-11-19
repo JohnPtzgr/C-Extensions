@@ -4,7 +4,10 @@
 typedef void*(*alloc_function_t)(size_t);
 typedef void*(*free_function_t)(void*);
 
-DEF_CLASS(allocator_t
+Class(
+  DefaultBase
+  ,
+  allocator_t
   ,
   alloc_function_t alloc_fn;
   free_function_t free_fn);

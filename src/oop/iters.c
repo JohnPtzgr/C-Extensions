@@ -29,11 +29,12 @@ iterator_t* iterator_t_prev(iterator_t* self) {
   return self;
 }
 
-CLASS_END(iterator_t,
+DefClass(DefaultBase,
+  iterator_t,
   STATIC,
   __ON_INIT__(iterator_t,
-    __iterator_t_Default_vClassObject__.__inc__ = (generic_function_t)iterator_t_next;
-    __iterator_t_Default_vClassObject__.__dec__ = (generic_function_t)iterator_t_prev;
+    __iterator_t_Default_vClassObject__._f.__inc__ = (generic_function_t)iterator_t_next;
+    __iterator_t_Default_vClassObject__._f.__dec__ = (generic_function_t)iterator_t_prev;
   )
 ) DEFAULT_DESTROY(iterator_t)
 

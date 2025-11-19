@@ -2,7 +2,10 @@
 #pragma once
 
 
-DEF_CLASS(generic_container_t
+Class(
+  DefaultBase
+  ,
+  generic_container_t
   ,
   smartptr_t ptr;
   size_t size;

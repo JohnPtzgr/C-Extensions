@@ -42,7 +42,10 @@ void* socket_t_accept(socket_t* self,
   return self;
 }
 
-CLASS_END(socket_t, STATIC,
+DefClass(
+  DefaultBase,
+  socket_t,
+  STATIC,
   __ON_STATIC_INIT__(socket_t,
     __AUX_CLS_VCLASS__(socket_t)->start = (generic_function_t)socket_t_start;
     __AUX_CLS_VCLASS__(socket_t)->stop = (generic_function_t)socket_t_stop;

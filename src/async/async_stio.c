@@ -62,9 +62,10 @@ void* __async_handler_destroy__(async_handler_t* self) {
     return NULL;
   }
   for (size_t i = 0; i < self->cr_list_size; ++i) {
-    free(self->cr_list_data[i].heap_state_data);
+    free(self->cr_list_data[i].static_state_data);
   }
   free(self->cr_list_data);
+  sleep(10);
   self->cr_list_size = 0;
   return NULL;
 }
@@ -103,12 +104,15 @@ void __async_handler_manager__(async_handler_t* self) {
         continue;
       }
       if (jump_result = setjmp(self->__jmp_buf__)) {
+        if (!self->cr_list_size) {
+          return;
+        }
         switch (jump_result)
         {
           case -1:
             if (self->signal_handler) {
               manager_state = self->signal_handler(&self->cr_list_data[i],
-                                                   jump_result,
+                                                   -1,
                                                    manager_state);
             } else {
               __async_handler_remove__(self, &self->cr_list_data[i]);
@@ -132,7 +136,6 @@ void __async_handler_manager__(async_handler_t* self) {
         break;
       }
     }
-    sleep(0);
   }
   return;
 }
@@ -205,9 +208,14 @@ void* __async_handler_add__(async_handler_t* self, async_coroutine_t* crt) {
   }
   memcpy(&self->cr_list_data[self->cr_list_size], crt, sizeof(async_coroutine_t));
   self->cr_list_data[self->cr_list_size].handler = self;
-  self->cr_list_data[self->cr_list_size].arg = malloc(crt->arg_size);
-  memcpy(self->cr_list_data[self->cr_list_size].arg, crt->arg, crt->arg_size);
-  self->cr_list_data[self->cr_list_size].index = ++self->cr_list_size;
+  if (crt->arg_size > 4096) {
+    printf("ARGSIZE: %d\n", crt->arg_size);
+    crt->arg_size = 4096;
+  }
+  self->cr_list_data[self->cr_list_size].arg = crt->arg;
+  self->cr_list_data[self->cr_list_size].index = 1 + self->cr_list_size;
+  self->cr_list_size++;
+  free(crt);
   return &self->cr_list_data[self->cr_list_size - 1];
 }
 
@@ -310,8 +318,8 @@ void __async_handler_restore__(async_handler_t* self, async_coroutine_t* crt, ..
   return;
 }
 
-void __async_coroutine_call__(async_coroutine_t* self,
-                              async_coroutine_t* target) {
+void __async_coroutine_sync_call__(async_coroutine_t* self,
+                                   async_coroutine_t* target) {
   async_coroutine_t* src = malloc(sizeof(async_coroutine_t));
   memcpy(src, self, sizeof(async_coroutine_t));
   memcpy(self, target, sizeof(async_coroutine_t));
@@ -320,4 +328,12 @@ void __async_coroutine_call__(async_coroutine_t* self,
   memcpy(self->arg, target->arg, target->arg_size);
   self->dependency = src;
   self->function(self, self->arg);
+}
+
+void* __async_coroutine_async_call__(async_coroutine_t** self,
+                                     async_coroutine_t* target) {
+  size_t idx = (*self)->index - 1;
+  async_coroutine_t* trg = __async_handler_add__(&__async_handler__, target);
+  (*self) = &__async_handler__.cr_list_data[idx];
+  return trg;
 }
