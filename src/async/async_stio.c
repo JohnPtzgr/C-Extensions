@@ -169,7 +169,7 @@ size_t __async_handler_find__(async_handler_t* self, async_coroutine_t* crt) {
   for (size_t i = 0; i < self->cr_list_size; ++i) {
     if (self->cr_list_data[i].function == crt->function && \
         self->cr_list_data[i].heap_state_data == self->cr_list_data[i].heap_state_data && \
-        self->cr_list_data[i].static_state_data == self->cr_list_data[i].static_state_data ) {
+        self->cr_list_data[i].static_state_data == self->cr_list_data[i].static_state_data) {
       return i;
     }
   }
