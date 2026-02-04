@@ -1,13 +1,19 @@
 #include "../oop/class.h"
 #pragma once
 
-DEF_CLASS(linked_list_node_t
+Class(
+  DefaultBase
+  ,
+  linked_list_node_t
   ,
   struct linked_list_node_t* next;
   char value;
 )
 
-DEF_CLASS(linked_list_t
+Class(
+  DefaultBase
+  ,
+  linked_list_t
   ,
   linked_list_node_t* head;
   size_t size;

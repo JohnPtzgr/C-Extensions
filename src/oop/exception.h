@@ -1,4 +1,5 @@
 #include <errno.h>
+#include <stdint.h>
 #include <stddef.h>
 
 #pragma once
@@ -47,9 +48,10 @@
 #define TO_STR_LITERAL(ARG) #ARG
 #endif // !TO_STR_LITERAL
 
-#ifndef generic_function_t
 typedef void*(*generic_function_t)(void*, ... );
-#endif // !generic_function_t
+typedef char BOOL;
+typedef enum { FALSE = 0, TRUE = 1} BOOL_VALUES;
+typedef BOOL*(*generic_predicate_t)(void*, ... );
 
 #define MAX_THREAD_COUNT 256
 
@@ -59,6 +61,8 @@ typedef void*(*generic_function_t)(void*, ... );
 #define __DEFAULT_EXCEPTION_CONTEXT_SIZE__ 256
 #define __DEFAULT_EXCEPTION_CONTEXT_PREVIEW_SIZE__ 32
 
+#define __EXCEPTION_STACK_FRAME_STATIC_SIZE__ 32
+
 
 // The function never causes the program to terminate or exit early
 #define _NoThrow
@@ -67,8 +71,10 @@ typedef void*(*generic_function_t)(void*, ... );
 #define _NoExcept
 
 
-typedef struct exception_context_t
-{
+void* __aux_thread_safe_static_val_get__(void* static_list, size_t type_size);
+
+
+typedef struct exception_context_t {
   const char* filename;
   const char* function_name;
   unsigned int line;
@@ -76,10 +82,26 @@ typedef struct exception_context_t
   char data[__DEFAULT_EXCEPTION_CONTEXT_SIZE__];
 } exception_context_t;
 
+typedef struct exception_stack_frame_t {
+  const char* filename;
+  const char* function_name;
+  const char* exception_data;
+  uint16_t line;
+  uint16_t tracked_context_depth;
+  unsigned int exception_number;
+} exception_stack_frame_t;
+
+typedef struct exception_stack_t {
+  exception_stack_frame_t static_frames[__EXCEPTION_STACK_FRAME_STATIC_SIZE__];
+  exception_stack_frame_t* dynamic_frames;
+  size_t dynamic_stack_size;
+  size_t dynamic_stack_head_index;
+  size_t static_stack_head_index;
+} exception_stack_t;
+
 typedef int exception_status_t;
 
-typedef struct exception_t
-{
+typedef struct exception_t {
   unsigned int exception_number;
   exception_status_t status;
   exception_context_t* context;
@@ -96,19 +118,19 @@ extern exception_t caught_exception;
 extern void* __aux_mt_thread_ids_ptr__;
 extern void* __aux_default_thread_0_init_ptr__;
 
-#ifndef BOOL
-typedef char BOOL;
-typedef enum { FALSE = 0, TRUE = 1} BOOL_VALUES;
-#endif
-
+exception_t* __errexc_location();
+exception_stack_t* __errstack_location();
 exception_t* __errexc_location();
 exception_context_t* __errctx_location();
 size_t* __exception_scope_indent_location();
+BOOL __exception_check_any();
 const char* exception_str(exception_t* exception);
 
 #define errexc (*__errexc_location())
 
 #define errctx (*__errctx_location())
+
+#define errchk __exception_check_any()
 
 #define __EXCEPTION_SCOPE_INDENTATION_VAR (*__exception_scope_indent_location())
 

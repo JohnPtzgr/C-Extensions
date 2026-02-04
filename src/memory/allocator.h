@@ -10,6 +10,9 @@ Class(
   allocator_t
   ,
   alloc_function_t alloc_fn;
-  free_function_t free_fn);
+  free_function_t free_fn
+);
+
+extern allocator_t default_allocator;
 
 DEF_METHODS(__new__, __delete__, __init__, __destroy__, )

@@ -32,10 +32,10 @@ iterator_t* iterator_t_prev(iterator_t* self) {
 DefClass(DefaultBase,
   iterator_t,
   STATIC,
-  __ON_INIT__(iterator_t,
+  __ON_INIT__(iterator_t) {
     __iterator_t_Default_vClassObject__._f.__inc__ = (generic_function_t)iterator_t_next;
     __iterator_t_Default_vClassObject__._f.__dec__ = (generic_function_t)iterator_t_prev;
-  )
+  }
 ) DEFAULT_DESTROY(iterator_t)
 
 void* iterator_t_init(iterator_t* self, ...) {

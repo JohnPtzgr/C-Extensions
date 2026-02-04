@@ -1,6 +1,12 @@
 #include "time.h"
+#include "stdlib.h"
+#include "stdio.h"
 
-#include "../src/oop/class.h"
+#include "../src/oop/exception.h"
+
+#define __DEFAULT_VTABLE_SIZE__ 8
+#define __DEFAULT_VTABLE_MLT_OFFSET__ 8
+#define __VTABLE_SIZE_IS_POWER_OF_2__ TRUE
 
 typedef struct __vTableHash__
 {
@@ -30,24 +36,24 @@ typedef struct __vTable__
 } __vTable__;
 
 static inline size_t defaultVTableHasher(const char* key, char id) {
-
+  return ((size_t)key) ^ (id * 428565993458070227l) + (*key * 254122516461927209l);
   size_t lookup_primes[16] = {
-    428565993458070227,
-    254122516461927209,
-    532695996088977289,
-    313290182662825307,
-    860946449948972521,
-    319264523107532111,
-    202986391655519623,
-    275182499288387473,
-    962987202532100107,
-    733765330246036859,
-    147307587625942813,
-    613405566694294111,
-    769693398094706011,
-    398091924081499261,
-    727872227099913139,
-    400052032524586027
+    428565993458070227l,
+    254122516461927209l,
+    532695996088977289l,
+    313290182662825307l,
+    860946449948972521l,
+    319264523107532111l,
+    202986391655519623l,
+    275182499288387473l,
+    962987202532100107l,
+    733765330246036859l,
+    147307587625942813l,
+    613405566694294111l,
+    769693398094706011l,
+    398091924081499261l,
+    727872227099913139l,
+    400052032524586027l
   };
   size_t hash = (size_t)(defaultVTableHasher);
 
@@ -276,12 +282,14 @@ static inline BOOL __vTable_check__(__vTable__* table, char* key) {
   return FALSE;
 }
 
+#define ScalarFX 40
+
 
 int main() {
   __vTable__ t;
-  char* str = malloc(200000000);
+  char* str = malloc(20000000 * ScalarFX);
   size_t rnd = 1;
-  for (size_t i = 0; i < 200000000; ++i) {
+  for (size_t i = 0; i < 20000000 * ScalarFX; ++i) {
     rnd <<= 2;
     rnd = (rnd * 147307587625942813) & 428565993458070227;
     str[i] = 32 + ((rnd + i) & 63);
@@ -290,7 +298,7 @@ int main() {
   printf("init\n");
   clock_t time_s = clock();
   rnd = 1;
-  for (size_t i = 0; i < 12000000; ++i) {
+  for (size_t i = 0; i < 1200000 * ScalarFX; ++i) {
     rnd = (rnd * 428565993458070227 * (str[i * 16] + 1)) % 147307587625942813;
     str[i * 16 + 15] = '\0';
     str[i * 16 + (rnd & 7)] = 'a';
@@ -307,7 +315,7 @@ int main() {
   printf("Time diff - %d ms\n", (time_f - time_s) * 1000 / CLOCKS_PER_SEC);
   time_s = clock();
   rnd = 1;
-  for (size_t i = 0; i < 12000000; ++i) {
+  for (size_t i = 0; i < 1200000 * ScalarFX; ++i) {
     if (!__vTable_check__(&t, str + 16 * i)) {
       printf("%d - Critical Error!\n", i);
       free(str);

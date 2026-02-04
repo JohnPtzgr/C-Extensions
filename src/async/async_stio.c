@@ -151,7 +151,7 @@ void* __async_handler_call__(async_handler_t* self) {
     stack_padding_size = max_size;
     self->stack_size = stack_padding_size;
   }
-  printf("StackSize: %d\n", stack_padding_size);
+  // printf("StackSize: %d\n", stack_padding_size);
   char stack_padding[stack_padding_size];
   stack_padding[0] = 0;
   stack_padding[stack_padding_size - 1] = stack_padding_size & (char)(__SCHAR_MAX__ * 2 + 1);

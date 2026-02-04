@@ -60,6 +60,12 @@ size_t* __exception_scope_indent_location() {
 }
 
 
+void* __aux_thread_safe_static_val_get__(void* static_list, size_t type_size) {
+  pthread_t self = pthread_self();
+  size_t i = __aux_mt_get_thread_idx__(self);
+  return static_list + (i * type_size);
+}
+
 
 void* __raise_exception__(exception_t* exception) {
   errexc = *exception;
@@ -112,8 +118,12 @@ void* __exit_on_exception__(exception_t* exception, void*(*clean_up)(), ...) {
   return NULL;
 }
 
+BOOL __exception_check_any() {
+  return errno || errexc.exception_number;
+}
+
 void* __check_uncaught_exception__(exception_t* exception) {
-  if (errno || errexc.exception_number) {
+  if (errchk) {
     __exit_on_exception__(exception, 0);
   }
   return NULL;

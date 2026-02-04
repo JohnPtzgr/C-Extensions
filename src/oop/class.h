@@ -634,15 +634,11 @@ void __SET_CLASS_MASK_WAS_STATIC_INIT__(size_t* mask, BOOL new_type);
 
 #endif // CLASS MASK RELATED DEFINITIONS
 
-#define __ON_INIT__(NAME, EXPR...) \
-  if (!__GET_CLASS_MASK_WAS_INIT__(&(__##NAME##_ClassObject__.mask))) { \
-    EXPR; \
-  }
+#define __ON_INIT__(NAME...) \
+  if (!__GET_CLASS_MASK_WAS_INIT__(&(__##NAME##_ClassObject__.mask)))
 
-#define __ON_STATIC_INIT__(NAME, EXPR...) \
-  if (!__GET_CLASS_MASK_WAS_STATIC_INIT__(&(__##NAME##_ClassObject__.mask))) { \
-    EXPR; \
-  }
+#define __ON_STATIC_INIT__(NAME...) \
+  if (!__GET_CLASS_MASK_WAS_STATIC_INIT__(&(__##NAME##_ClassObject__.mask)))
 
 #define __CLASS_MASK__(NAME) __##NAME##_ClassObject__.mask
 
@@ -798,12 +794,12 @@ extern void* __DefaultBase_static_destroy__(__AUX_CLASS_VARSTRUCT__(DefaultBase)
   class_field_t __##NAME##_fields__[sizeof(__##NAME##_fields__) / sizeof(class_field_t)] = {}; \
   class_field_t __##NAME##_static_fields__[sizeof(__##NAME##_static_fields__) / sizeof(class_field_t)] = {}; \
   void* __##NAME##_static_init__(__AUX_CLASS_VARSTRUCT__(NAME)* self) { \
+    *self = (__AUX_CLASS_VARSTRUCT__(NAME)){}; \
     __##BASE##_ClassObject__.__static_init__((void*)self); \
-    __ON_STATIC_INIT__(NAME, \
+    __ON_STATIC_INIT__(NAME) { \
       if ((void*)self != (void*)&__##NAME##_Default_Instance__) { \
         __##NAME##_static_init__((void*)&__##NAME##_Default_Instance__); \
       } else { \
-        *self = (__AUX_CLASS_VARSTRUCT__(NAME)){}; \
         if (!__##NAME##_ClassObject__.inherits_from) { \
           __##NAME##_ClassObject__.inherits_from = &__##NAME##__InheritanceList__; \
           __InheritanceList_init__(__##NAME##_ClassObject__.inherits_from, __##NAME##__InheritanceListNodes__); \
@@ -815,7 +811,7 @@ extern void* __DefaultBase_static_destroy__(__AUX_CLASS_VARSTRUCT__(DefaultBase)
         SCOPE_PUSH(&__##NAME##_ClassObject__, __class_destroy__); \
         SCOPE_DEFER(&__##NAME##_ClassObject__, __class_destroy__, __DEFAULT_PREDICATE__); \
       } \
-    ); \
+    }; \
     if (!__GET_CLASS_MASK_IS_BARE__(&(__##NAME##_ClassObject__.mask))) { \
       *(void**)(&self->__meta__) = (void*)&__##NAME##_Default_vClassObject__; \
     } \
@@ -823,13 +819,13 @@ extern void* __DefaultBase_static_destroy__(__AUX_CLASS_VARSTRUCT__(DefaultBase)
       SCOPE_PUSH(self, __##NAME##_static_destroy__); \
     } \
     EXPR; \
-    __ON_STATIC_INIT__(NAME, \
+    __ON_STATIC_INIT__(NAME) { \
       __SET_CLASS_MASK_WAS_STATIC_INIT__(&(__##NAME##_ClassObject__.mask), TRUE); \
       __class_inherit_static__(&__##NAME##_ClassObject__); \
       if (__##NAME##_ClassObject__.__class_object_init__) { \
         __##NAME##_ClassObject__.__class_object_init__(&__##NAME##_ClassObject__); \
       } \
-    ); \
+    }; \
     return self; \
   } \
   void* __##NAME##_static_destroy__(__AUX_CLASS_VARSTRUCT__(NAME)* self)
@@ -871,12 +867,12 @@ extern void* __DefaultBase_static_destroy__(__AUX_CLASS_VARSTRUCT__(DefaultBase)
   class_field_t __##NAME##_fields__[sizeof(__##NAME##_fields__)] = {}; \
   class_field_t __##NAME##_static_fields__[sizeof(__##NAME##_static_fields__)] = {}; \
   void* __##NAME##_static_init__(__AUX_CLASS_VARSTRUCT__(NAME)* self) { \
+    *self = (__AUX_CLASS_VARSTRUCT__(NAME)){}; \
     __##BASE##_ClassObject__.__static_init__((void*)self); \
-    __ON_STATIC_INIT__(NAME, \
+    __ON_STATIC_INIT__(NAME) { \
       if (self != &__##NAME##_Default_Instance__) { \
         __##NAME##_static_init__(&__##NAME##_Default_Instance__); \
       } else { \
-        *self = (__AUX_CLASS_VARSTRUCT__(NAME)){}; \
         if (!__##NAME##_ClassObject__.inherits_from) { \
           __##NAME##_ClassObject__.inherits_from = &__##NAME##__InheritanceList__; \
           __InheritanceList_init__(__##NAME##_ClassObject__.inherits_from, __##NAME##__InheritanceListNodes__); \
@@ -888,7 +884,7 @@ extern void* __DefaultBase_static_destroy__(__AUX_CLASS_VARSTRUCT__(DefaultBase)
         SCOPE_PUSH(&__##NAME##_ClassObject__, __class_destroy__); \
         SCOPE_DEFER(&__##NAME##_ClassObject__, __class_destroy__, __DEFAULT_PREDICATE__); \
       } \
-    ); \
+    }; \
     if (!__GET_CLASS_MASK_IS_BARE__(&(__##NAME##_ClassObject__.mask))) { \
       *(__ClassMetaObject__**)(&self->__meta__) = (__ClassMetaObject__*)&__##NAME##_Default_vClassObject__; \
     } \
@@ -896,13 +892,13 @@ extern void* __DefaultBase_static_destroy__(__AUX_CLASS_VARSTRUCT__(DefaultBase)
       SCOPE_PUSH(self, __##NAME##_static_destroy__); \
     } \
     EXPR; \
-    __ON_STATIC_INIT__(NAME, \
+    __ON_STATIC_INIT__(NAME) { \
       __SET_CLASS_MASK_WAS_STATIC_INIT__(&(__##NAME##_ClassObject__.mask), TRUE); \
       __class_inherit_static__(&__##NAME##_ClassObject__); \
       if (__##NAME##_ClassObject__.__class_object_init__) { \
         __##NAME##_ClassObject__.__class_object_init__(&__##NAME##_ClassObject__); \
       } \
-    ); \
+    }; \
     return self; \
   } \
   void* __##NAME##_static_destroy__(__AUX_CLASS_VARSTRUCT__(NAME)* self)
@@ -932,9 +928,9 @@ extern void* __DefaultBase_static_destroy__(__AUX_CLASS_VARSTRUCT__(DefaultBase)
 
 #define __AUX_CLASS_DECL__(BASE, NAME, ARGS...) \
   __AUX_CLASS_DECL_EXP__(NAME, \
+                         __AUX_CLASS_VCLASS_T__(NAME)* __meta__; \
                          __AUX_CLASS_VARSTRUCT__(BASE) __base__; \
-                         ARG2_VA_ARGS(ARGS, ;, ;, ;, ;, ;, ;); \
-                         __AUX_CLASS_VCLASS_T__(NAME)* __meta__, \
+                         ARG2_VA_ARGS(ARGS, ;, ;, ;, ;, ;, ;), \
                          __AUX_CLASS_VARSTRUCT__(BASE) __base__; \
                          ARG2_VA_ARGS(ARGS, ;, ;, ;, ;, ;, ;), \
                          __AUX_CLASS_VCLASS_T__(BASE)* __base__; \
@@ -948,9 +944,9 @@ extern void* __DefaultBase_static_destroy__(__AUX_CLASS_VARSTRUCT__(DefaultBase)
 
 #define __AUX_CLASS_DECL_BARE__(BASE, NAME, ARGS...) \
   __AUX_CLASS_DECL_EXP__(NAME, \
+                         __vClassObject__ __meta__[0]; \
                          __AUX_CLASS_VARSTRUCT__(BASE) __base__; \
-                         ARG2_VA_ARGS(ARGS, ;, ;, ;, ;, ;, ;); \
-                         __vClassObject__ __meta__[0], \
+                         ARG2_VA_ARGS(ARGS, ;, ;, ;, ;, ;, ;), \
                          __AUX_CLASS_VARSTRUCT__(BASE) __base__; \
                          ARG2_VA_ARGS(ARGS, ;, ;, ;, ;, ;, ;), \
                          __AUX_CLASS_VCLASS_T__(BASE)* __base__; \
@@ -964,18 +960,16 @@ extern void* __DefaultBase_static_destroy__(__AUX_CLASS_VARSTRUCT__(DefaultBase)
 
 #define __AUX_CLASS_DECL_BRIDGE__(BASE, ARGS...) \
   __AUX_CLASS_DECL_EXP__(BASE##_B, \
-                         BASE __base__; \
-                         ARG2_VA_ARGS(ARGS, ;, ;, ;, ;, ;, ;); \
-                         __vClassObject__ __meta__[0], \
-                         BASE __base__; \
-                         ARG2_VA_ARGS(ARGS, ;, ;, ;, ;, ;, ;), \
+                         __vClassObject__ __meta__[0]; \
+                         DefaultBase __base__; \
+                         BASE value, \
                          __AUX_CLASS_VCLASS_T__(DefaultBase)* __base__; \
-                         ARG3_VA_ARGS(ARGS, ;, ;, ;, ;, ;, ;), \
-                         ARG4_VA_ARGS(ARGS, ;, ;, ;, ;, ;, ;), \
-                         ARG5_VA_ARGS(ARGS, 0, 0, 0, 0, 0, 0), \
-                         ARG6_VA_ARGS(ARGS, 0, 0, 0, 0, 0, 0), \
+                         ARG1_VA_ARGS(ARGS, ;, ;, ;, ;, ;, ;), \
+                         ARG2_VA_ARGS(ARGS, ;, ;, ;, ;, ;, ;), \
+                         ARG3_VA_ARGS(ARGS, 0, 0, 0, 0, 0, 0), \
+                         ARG4_VA_ARGS(ARGS, 0, 0, 0, 0, 0, 0), \
                          __DefaultBase_FundamentalVClass__, \
-                         ARG7_VA_ARGS(ARGS, ;, ;, ;, ;, ;, ;) \
+                         ARG5_VA_ARGS(ARGS, ;, ;, ;, ;, ;, ;) \
                          ) \
 
 #define __AUX_CLASS_END_CLASS_OBJ__(NAME, MASK, EXPR...) \
@@ -1009,38 +1003,38 @@ extern void* __DefaultBase_static_destroy__(__AUX_CLASS_VARSTRUCT__(DefaultBase)
   class_field_t __##NAME##_B_fields__[sizeof(__##NAME##_B_fields__) / sizeof(class_field_t)] = {}; \
   class_field_t __##NAME##_B_static_fields__[sizeof(__##NAME##_B_static_fields__) / sizeof(class_field_t)] = {}; \
   void* __##NAME##_B_static_init__(NAME##_B* self) { \
-    __ON_STATIC_INIT__(NAME##_B, \
+    *self = (NAME##_B){}; \
+    __ON_STATIC_INIT__(NAME##_B) { \
       if (self != &__##NAME##_B_Default_Instance__) { \
         __##NAME##_B_static_init__(&__##NAME##_B_Default_Instance__); \
       } else { \
-        *self = (NAME##_B){}; \
         SCOPE_PUSH(&__##NAME##_B_ClassObject__, __class_destroy__); \
         SCOPE_DEFER(&__##NAME##_B_ClassObject__, __class_destroy__, __DEFAULT_PREDICATE__); \
       } \
-    ); \
+    }; \
     if (self != &__##NAME##_B_Default_Instance__) { \
       SCOPE_PUSH(self, __##NAME##_B_static_destroy__); \
     } \
     EXPR; \
-    __ON_STATIC_INIT__(NAME##_B, \
+    __ON_STATIC_INIT__(NAME##_B) { \
       __SET_CLASS_MASK_WAS_STATIC_INIT__(&(__##NAME##_B_ClassObject__.mask), TRUE); \
       if (__##NAME##_B_ClassObject__.__class_object_init__) { \
         __##NAME##_B_ClassObject__.__class_object_init__(&__##NAME##_B_ClassObject__); \
       } \
-    ); \
+    }; \
     return self; \
   } \
   void* NAME##_B_init(NAME##_B* self, ...) { \
     if (self != &__##NAME##_B_Default_Instance__ && \
         !__GET_CLASS_MASK_WAS_INIT__(&(__##NAME##_B_ClassObject__.mask))) { \
-      NAME##_B_init(&__##NAME##_B_Default_Instance__); \
+      NAME##_B_init(&__##NAME##_B_Default_Instance__, 0); \
     } \
     __##NAME##_B_static_init__(self); \
     EXC_ASSERT(((__##NAME##_B_ClassObject__.mask & ABSTRACT) == 0) && "Abstract class is not instantiable!"); \
     __##NAME##_B_ClassObject__.instance_count++; \
-    __ON_INIT__(NAME##_B, \
+    __ON_INIT__(NAME##_B) { \
       __SET_CLASS_MASK_WAS_INIT__(&(__##NAME##_B_ClassObject__.mask), TRUE); \
-    ); \
+    }; \
     if (self != &__##NAME##_B_Default_Instance__) { \
       SCOPE_PUSH(self, NAME##_B_destroy); \
     } \
@@ -1070,7 +1064,7 @@ extern void* __DefaultBase_static_destroy__(__AUX_CLASS_VARSTRUCT__(DefaultBase)
   class_field_t __##NAME##_B_static_fields__[sizeof(__##NAME##_B_static_fields__)] = {}; \
   type_object_t* NAME##_B_type = &__##NAME##_B_type__; \
   void* __##NAME##_B_static_init__(NAME##_B* self) { \
-    __ON_STATIC_INIT__(NAME##_B, \
+    __ON_STATIC_INIT__(NAME##_B) { \
       if (self != &__##NAME##_B_Default_Instance__) { \
         __##NAME##_B_static_init__(&__##NAME##_B_Default_Instance__); \
       } else { \
@@ -1078,30 +1072,30 @@ extern void* __DefaultBase_static_destroy__(__AUX_CLASS_VARSTRUCT__(DefaultBase)
         SCOPE_PUSH(&__##NAME##_B_ClassObject__, __class_destroy__); \
         SCOPE_DEFER(&__##NAME##_B_ClassObject__, __class_destroy__, __DEFAULT_PREDICATE__); \
       } \
-    ); \
+    }; \
     if (self != &__##NAME##_B_Default_Instance__) { \
       SCOPE_PUSH(self, __##NAME##_B_static_destroy__); \
     } \
     EXPR; \
-    __ON_STATIC_INIT__(NAME##_B, \
+    __ON_STATIC_INIT__(NAME##_B) { \
       __SET_CLASS_MASK_WAS_STATIC_INIT__(&(__##NAME##_B_ClassObject__.mask), TRUE); \
       if (__##NAME##_B_ClassObject__.__class_object_init__) { \
         __##NAME##_B_ClassObject__.__class_object_init__(&__##NAME##_B_ClassObject__); \
       } \
-    ); \
+    }; \
     return self; \
   } \
   void* NAME##_B_init(NAME##_B* self, ...) { \
     if (self != &__##NAME##_B_Default_Instance__ && \
         !__GET_CLASS_MASK_WAS_INIT__(&(__##NAME##_B_ClassObject__.mask))) { \
-      NAME##_B_init(&__##NAME##_B_Default_Instance__); \
+      NAME##_B_init(&__##NAME##_B_Default_Instance__, 0); \
     } \
     __##NAME##_B_static_init__(self); \
     EXC_ASSERT(((__##NAME##_B_ClassObject__.mask & ABSTRACT) == 0) && "Abstract class is not instantiable!"); \
     __##NAME##_B_ClassObject__.instance_count++; \
-    __ON_INIT__(NAME##_B, \
+    __ON_INIT__(NAME##_B) { \
       __SET_CLASS_MASK_WAS_INIT__(&(__##NAME##_B_ClassObject__.mask), TRUE); \
-    ); \
+    }; \
     if (self != &__##NAME##_B_Default_Instance__) { \
       SCOPE_PUSH(self, NAME##_B_destroy); \
     } \
@@ -1127,7 +1121,7 @@ void* __aux_class_new_wrapper__(__ClassObject__* cls, size_t size, __ClassInstan
 #define __AUX_CLS_MALLOC__(CLASS_NAME...) \
   (ARG1_VA_ARGS(CLASS_NAME)*)__aux_class_new_wrapper__((__vClassObject__*)__AUX_CLS_VCLASS_EXP__(ARG1_VA_ARGS(CLASS_NAME)), ARG2_VA_ARGS(CLASS_NAME, 1), (__ClassInstance__*)__AUX_CLS_ALLOCA__(ARG1_VA_ARGS(CLASS_NAME), ARG2_VA_ARGS_VA(CLASS_NAME, 0, 0))) \
 
-#define __AUX_CLS_COPY__(CLASS_NAME, ARGS...) ((CLASS_NAME*)__AUX_CLS_VCLASS__(CLASS_NAME)->__copy__(__AUX_CLS_ALLOCA__(CLASS_NAME), ARG1_VA_ARGS_VA(ARGS, __AUX_CLS_DEF_INST__(CLASS_NAME))))
+#define __AUX_CLS_COPY__(CLASS_NAME, ARGS...) ((CLASS_NAME*)__AUX_CLS_VCLASS__(CLASS_NAME)->__copy__(alloca(sizeof(CLASS_NAME)), ARGS))
 
 #define __M_VA_ARG__( ARGS_COUNT, DEFAULT_ARGS... ) \
   va_list __RAW_METHOD_ARGS__; \
@@ -1148,28 +1142,27 @@ void* __aux_class_new_wrapper__(__ClassObject__* cls, size_t size, __ClassInstan
 #define __AUX_INIT_BEGIN__(NAME) \
   if ((void*)self != (void*)&__##NAME##_Default_Instance__ && \
       !__GET_CLASS_MASK_WAS_INIT__(&(__##NAME##_ClassObject__.mask))) { \
-    NAME##_init((void*)&__##NAME##_Default_Instance__); \
+    NAME##_init((void*)&__##NAME##_Default_Instance__, 0); \
   } \
   __##NAME##_static_init__((void*)self); \
   EXC_ASSERT(((__##NAME##_ClassObject__.mask & ABSTRACT) == 0) && "Abstract class is not instantiable!"); \
-  __##NAME##_ClassObject__.instance_count++; \
-  __ON_INIT__(NAME, \
+  __ON_INIT__(NAME) { \
     if (!__GET_CLASS_MASK_IS_STATIC__(&(__##NAME##_ClassObject__.mask))) { \
       __class_init__((__ClassObject__*)&__##NAME##_ClassObject__); \
       if (__GET_CLASS_MASK_DERIVED__(&(__##NAME##_ClassObject__.mask))) { \
         __class_inherit__(&__##NAME##_ClassObject__); \
       } \
     } \
-  ); \
+  }; \
 
 #define __AUX_ADD_DERIVED__(NAME, BASE, FIELD_NAME) { \
   __##BASE##_ClassObject__.__static_init__((void*)(&(self->FIELD_NAME))); \
-    __ON_INIT__(NAME, \
+    __ON_INIT__(NAME) { \
       __InheritanceList_add__(__##NAME##_ClassObject__.inherits_from, \
                               (void*)self, \
                               (void*)&(self->FIELD_NAME), \
                               &__##BASE##_ClassObject__); \
-    ); \
+    }; \
   } \
 
 // Base class name, This class name, Field name
@@ -1179,9 +1172,9 @@ void* __aux_class_new_wrapper__(__ClassObject__* cls, size_t size, __ClassInstan
 
 #define __AUX_INIT_END__(NAME) \
   __##NAME##_ClassObject__.instance_count++; \
-  __ON_INIT__(NAME, \
+  __ON_INIT__(NAME) { \
     __SET_CLASS_MASK_WAS_INIT__(&(__##NAME##_ClassObject__.mask), TRUE); \
-  ); \
+  }; \
   if ((void*)self != (void*)&__##NAME##_Default_Instance__) { \
     SCOPE_PUSH(self, NAME##_destroy); \
   } \
