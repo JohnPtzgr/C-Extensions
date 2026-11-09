@@ -9,6 +9,18 @@
 #include <unistd.h>
 #include <string.h>
 
+
+
+typedef struct promise_dependency_handler_t {
+  promise_handler_t** dependency_src_list; // List of promises that depend on this promise
+  promise_handler_t** dependency_trg_list; // List of promises that this promise depends on
+  unsigned int src_list_size;
+  unsigned int trg_list_size;
+  unsigned int src_list_capacity;
+  unsigned int trg_list_capacity;
+  pthread_mutex_t mutex;
+} promise_dependency_handler_t;
+
 jmp_buf __AUX_CR_JUMP_BUFF_ENVS__[2 * MAX_THREAD_COUNT] = {};
 
 jmp_buf* __cr_jmp_buff_location__() {

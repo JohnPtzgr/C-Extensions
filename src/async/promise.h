@@ -1,6 +1,7 @@
 #include <setjmp.h>
 #include <sys/time.h>
 #include "../oop/class.h"
+// #include "pthread.h"
 
 #pragma once
 
@@ -29,16 +30,6 @@ typedef generic_predicate_t promise_predicate_t;
 typedef struct promise_handler_t promise_handler_t;
 typedef struct promise_dependency_handler_t promise_dependency_handler_t;
 
-
-typedef struct promise_dependency_handler_t {
-  promise_handler_t** dependency_src_list; // List of promises that depend on this promise
-  promise_handler_t** dependency_trg_list; // List of promises that this promise depends on
-  unsigned short src_list_size;
-  unsigned short trg_list_size;
-  unsigned short src_list_capacity;
-  unsigned short trg_list_capacity;
-} promise_dependency_handler_t;
-
 typedef struct promise_handler_t {
   promise_target_t target;
   void* args;
@@ -46,8 +37,7 @@ typedef struct promise_handler_t {
   void* result;
   promise_predicate_t predicate;
   promise_callback_t callback;
-  struct promise_handler_t** dependencies;
-  size_t ref_count;
+  promise_dependency_handler_t* dependencies;
   promise_handler_mask_t mask;
   promise_handler_status_t status;
   promise_handler_signal_t signal;

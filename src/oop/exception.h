@@ -48,6 +48,14 @@
 #define TO_STR_LITERAL(ARG) #ARG
 #endif // !TO_STR_LITERAL
 
+#ifndef __glibc_unlikely
+    #ifdef __GNUC__
+        #define __glibc_unlikely(x) __builtin_expect(x, 0)
+    #else
+        #define __glibc_unlikely(x) (x)
+    #endif
+#endif // !__glibc_unlikely
+
 typedef void*(*generic_function_t)(void*, ... );
 typedef char BOOL;
 typedef enum { FALSE = 0, TRUE = 1} BOOL_VALUES;
@@ -106,6 +114,7 @@ typedef struct exception_t {
   exception_status_t status;
   exception_context_t* context;
   char* exception_description;
+  struct exception_t* cause;
 } exception_t;
 
 
@@ -123,7 +132,7 @@ exception_stack_t* __errstack_location();
 exception_t* __errexc_location();
 exception_context_t* __errctx_location();
 size_t* __exception_scope_indent_location();
-BOOL __exception_check_any();
+// inline BOOL __exception_check_any();
 const char* exception_str(exception_t* exception);
 
 #define errexc (*__errexc_location())
@@ -134,6 +143,7 @@ const char* exception_str(exception_t* exception);
 
 #define __EXCEPTION_SCOPE_INDENTATION_VAR (*__exception_scope_indent_location())
 
+#define __exception_check_any() ( errno || errexc.exception_number )
 
 extern void(*_EXC_ASSERT_CALLBACK)();
 
@@ -149,27 +159,32 @@ void* __check_uncaught_exception__(exception_t* exception);
 
 #define CATCH(EXC...) while (0); \
   __EXCEPTION_SCOPE_INDENTATION_VAR--; \
-  exception_t caught_exception = errexc; \
-  exception_context_t __CAUGHT_EXCEPTION_CONTEXT = errctx; \
-  if (!caught_exception.context || caught_exception.context == &errctx) { \
-    caught_exception.context = &__CAUGHT_EXCEPTION_CONTEXT; \
+  exception_t caught_exception; \
+  BOOL exception_was_caught = FALSE; \
+  BOOL __aux_err_bool = FALSE; \
+  if (__glibc_unlikely(errchk)) { \
+    exception_t caught_exception = errexc; \
+    exception_context_t __CAUGHT_EXCEPTION_CONTEXT = errctx; \
+    if (!caught_exception.context || caught_exception.context == &errctx) { \
+      caught_exception.context = &__CAUGHT_EXCEPTION_CONTEXT; \
+    } \
+    if (!caught_exception.exception_number) { \
+      caught_exception.exception_number = errno; \
+    } \
+    BOOL __aux_err_bool = (caught_exception.exception_number > 0) && \
+      (EXC.exception_number == caught_exception.exception_number); \
+    errexc = (exception_t){}; \
+    errctx = (exception_context_t){}; \
+    errno = 0; \
   } \
-  if (!caught_exception.exception_number) { \
-    caught_exception.exception_number = errno; \
-  } \
-  BOOL __aux_err_bool = (caught_exception.exception_number > 0) && \
-    (EXC.exception_number == caught_exception.exception_number); \
-  errexc = (exception_t){}; \
-  errctx = (exception_context_t){}; \
-  errno = 0; \
-  BOOL exception_was_caught = __aux_err_bool; \
   for (size_t _EXCIZERO = __aux_err_bool; _EXCIZERO != 0; _EXCIZERO = 0)
 
-void* __raise_exception__(exception_t* exception);
+void* __raise_exception__(exception_t* exception, exception_t* cause);
 
-#define RAISE(EXCEPTION...) __raise_exception__(&(EXCEPTION));
+#define RAISE(EXCEPTION...) __raise_exception__(&ARG1_VA_ARGS(EXCEPTION), ARG2_VA_ARGS(EXCEPTION, NULL));
 
-#define THROW(RETURN_TYPE...) void* __EXCEPTION_RESULT__ = RAISE(ARG2_VA_ARGS(RETURN_TYPE, caught_exception)); \
+#define THROW(RETURN_TYPE...) void* __EXCEPTION_RESULT__ = RAISE(ARG2_VA_ARGS(RETURN_TYPE, caught_exception), \
+    ARG3_VA_ARGS(RETURN_TYPE, &caught_exception, NULL)); \
   return *((ARG1_VA_ARGS(RETURN_TYPE)*)&(__EXCEPTION_RESULT__));
 
 #define THROW_ON(RETURN_TYPE, EXCEPTION_NUMBER...) \
@@ -216,7 +231,8 @@ void* __exc_assert_fail__(exception_t* exception, char* description, const char*
     EXC_ASSERT_CALLBACK) \
   )
 
-#define EXCEPTION_CTX_LTR ((exception_context_t){.filename=__FILE__, \
+#define EXCEPTION_CTX_LTR ((exception_context_t){ \
+  .filename=__FILE__, \
   .function_name=__func__, \
   .line=__LINE__, \
   .tracked_context_depth=__EXCEPTION_SCOPE_INDENTATION_VAR})

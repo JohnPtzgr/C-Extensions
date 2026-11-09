@@ -67,11 +67,14 @@ void* __aux_thread_safe_static_val_get__(void* static_list, size_t type_size) {
 }
 
 
-void* __raise_exception__(exception_t* exception) {
+void* __raise_exception__(exception_t* exception, exception_t* cause) {
   errexc = *exception;
   if (exception->context) {
     errctx = *(exception->context);
     errexc.context = &errctx;
+  }
+  if (cause) {
+    errexc.cause = cause;
   }
   errno = exception->exception_number;
   if (!__EXCEPTION_SCOPE_INDENTATION_VAR) {
@@ -118,9 +121,9 @@ void* __exit_on_exception__(exception_t* exception, void*(*clean_up)(), ...) {
   return NULL;
 }
 
-BOOL __exception_check_any() {
-  return errno || errexc.exception_number;
-}
+// inline BOOL __exception_check_any() {
+//   return errno || errexc.exception_number;
+// }
 
 void* __check_uncaught_exception__(exception_t* exception) {
   if (errchk) {
